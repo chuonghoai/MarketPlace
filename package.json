@@ -4,8 +4,9 @@
   "description": "Root workspace for Marketplace project",
   "private": true,
   "scripts": {
-    "backend:dev": "cd backend && npm run start:dev",
-    "start:dev": "cd backend && npm run start:dev",
+    "backend:dev": "cd backend && npm run dev",
+    "backend:prod": "cd backend && npm run prod",
+    "start:dev": "cd backend && npm run dev",
 
     "web:dev": "cd web && npm run dev",
     "web:prod": "cd web && npm run prod",

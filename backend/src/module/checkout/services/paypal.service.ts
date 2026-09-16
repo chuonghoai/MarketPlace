@@ -7,7 +7,7 @@ export class PaypalService {
   private readonly baseUrl: string;
 
   constructor(private configService: ConfigService) {
-    const environment = this.configService.get<string>(ENV_VARS.PAYPAL_ENVIRONMENT) || 'sandbox';
+    const environment = this.getRequiredEnv(ENV_VARS.PAYPAL_ENVIRONMENT);
     this.baseUrl = environment === 'sandbox' 
       ? 'https://api-m.sandbox.paypal.com' 
       : 'https://api-m.paypal.com';

@@ -19,12 +19,18 @@ import { MailModule } from '../mails/mail.module';
     CacheModule.register(),
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>(ENV_VARS.JWT_ACCESS_SECRET),
-        signOptions: {
-          expiresIn: (configService.get<string>(ENV_VARS.JWT_ACCESS_EXPIRES_IN) || '7d') as any,
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>(ENV_VARS.JWT_ACCESS_SECRET);
+        if (!secret) throw new Error('JWT_ACCESS_SECRET is required in environment');
+        const expiresIn = configService.get<string>(ENV_VARS.JWT_ACCESS_EXPIRES_IN);
+        if (!expiresIn) throw new Error('JWT_ACCESS_EXPIRES_IN is required in environment');
+        return {
+          secret,
+          signOptions: {
+            expiresIn: expiresIn as any,
+          },
+        };
+      },
     }),
   ],
   providers: [AuthService, JwtStrategy],

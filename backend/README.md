@@ -118,179 +118,172 @@ src/
 
 ---
 
-## ⚙️ Cài đặt dự án
+## ⚙️ Cài đặt dự án & Khởi chạy Nhanh
 
-Để chạy dự án trên môi trường local, máy tính của bạn cần cài đặt sẵn **Node.js (v18+)**, **MySQL** và **OpenSearch**.
+Hệ thống Backend MarketNest yêu cầu **Node.js (v18+)** và các dịch vụ: **MySQL 8.0**, **Redis** và **OpenSearch**.
 
-### 1️⃣ Clone source code
-```bash
-git clone <repository-url>
-cd BE-TMDT
-```
-
-### 2️⃣ Cài đặt thư viện
+### 1️⃣ Cài đặt thư viện dependencies
+Tại thư mục `backend`:
 ```bash
 npm install
-# hoặc
-yarn install
 ```
 
-### 3️⃣ Cấu hình môi trường
-Tạo file `.env` tại thư mục gốc và cấu hình các biến cần thiết (Xem chi tiết ở mục bên dưới).
+---
+
+## 🔑 Cấu hình Biến Môi Trường (Environment Configuration)
+
+Hệ thống được chuẩn hóa tối giản thành **2 file môi trường duy nhất**:
+- **`.env.dev`**: Môi trường phát triển cục bộ (Local Development).
+- **`.env.prod`**: Môi trường triển khai thực tế (Production Deployment).
+
+> 🔒 **Bảo mật**: Cả 2 file này đều được khai báo trong `.gitignore` để tránh rò rỉ secret lên Git.
+
+### 1. Môi trường Development (`.env.dev`)
+Dùng khi phát triển hằng ngày trên máy cá nhân:
+```env
+PORT=3000
+NODE_ENV=development
+APP_ENV=dev
+
+APP_PUBLIC_URL=http://localhost:5173
+BACKEND_PUBLIC_URL=http://localhost:3000
+PAYMENT_CALLBACK_BASE_URL=http://localhost:3000
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASS=root
+DB_NAME=marketnest_db
+DB_SSL=false
+
+REDIS_URI=redis://127.0.0.1:6379
+
+OPENSEARCH_NODE=http://127.0.0.1:9200
+OPENSEARCH_USERNAME=admin
+OPENSEARCH_PASSWORD=admin
+
+JWT_ACCESS_SECRET=marketnest_dev_access_secret_key_super_secure_123456
+JWT_REFRESH_SECRET=marketnest_dev_refresh_secret_key_super_secure_654321
+JWT_ACCESS_EXPIRES_IN=7d
+```
+
+### 2. Môi trường Production (`.env.prod`)
+Dùng khi build và triển khai sản phẩm thật, trỏ tới hạ tầng Cloud Database, Cloud Redis và Production URLs:
+```env
+PORT=3000
+NODE_ENV=production
+APP_ENV=prod
+
+APP_PUBLIC_URL=https://marketnestplatform.vercel.app
+BACKEND_PUBLIC_URL=https://marketnestplatform.onrender.com
+PAYMENT_CALLBACK_BASE_URL=https://marketnestplatform.onrender.com
+CORS_ALLOWED_ORIGINS=https://marketnestplatform.vercel.app
+
+DB_HOST=your_prod_mysql_host
+DB_PORT=3306
+DB_USER=your_prod_mysql_user
+DB_PASS=your_prod_mysql_password
+DB_NAME=tmdtdb
+DB_SSL=true
+
+REDIS_URI=rediss://default:your_password@your_prod_redis:6379
+```
+
+### 3. Bảng danh mục biến môi trường chi tiết
+
+| Biến | Ý nghĩa | Ví dụ Dev | Ví dụ Prod |
+| :--- | :--- | :--- | :--- |
+| `PORT` | Cổng HTTP Server lắng nghe | `3000` | `3000` |
+| `NODE_ENV` | Chế độ Node runtime | `development` | `production` |
+| `APP_ENV` | Phân hệ môi trường | `dev` | `prod` |
+| `APP_PUBLIC_URL` | URL công khai của Frontend (để chuyển hướng) | `http://localhost:5173` | `https://marketnestplatform.vercel.app` |
+| `BACKEND_PUBLIC_URL` | URL công khai của Backend | `http://localhost:3000` | `https://marketnestplatform.onrender.com` |
+| `PAYMENT_CALLBACK_BASE_URL` | URL nhận Webhook/IPN thanh toán | `http://localhost:3000` | `https://marketnestplatform.onrender.com` |
+| `CORS_ALLOWED_ORIGINS` | Danh sách Origin cho phép gọi API (phân tách bởi dấu phẩy) | `http://localhost:5173,http://localhost:3000` | `https://marketnestplatform.vercel.app` |
+| `DB_HOST` | Host máy chủ MySQL | `127.0.0.1` | `mysql-cluster.prod.com` |
+| `DB_PORT` | Cổng kết nối MySQL | `3306` | `3306` |
+| `DB_USER` | Tên người dùng MySQL | `root` | `prod_user` |
+| `DB_PASS` | Mật khẩu MySQL | `root` | `strong_pass` |
+| `DB_NAME` | Tên cơ sở dữ liệu | `marketnest_db` | `tmdtdb` |
+| `DB_SSL` | Bật/tắt SSL cho kết nối Database | `false` (Local MySQL) | `true` (Cloud DB) |
+| `REDIS_URI` | Chuỗi URI kết nối Redis | `redis://127.0.0.1:6379` | `rediss://...` |
+| `OPENSEARCH_NODE` | URL máy chủ OpenSearch | `http://127.0.0.1:9200` | `https://...` |
+| `OPENSEARCH_USERNAME` | Tên đăng nhập OpenSearch | `admin` | `prod_admin` |
+| `OPENSEARCH_PASSWORD` | Mật khẩu OpenSearch | `admin` | `prod_pass` |
+| `JWT_ACCESS_SECRET` | Secret mã hóa Access Token | `dev_secret_key` | `prod_secret_key` |
+| `JWT_REFRESH_SECRET` | Secret mã hóa Refresh Token | `dev_refresh_key` | `prod_refresh_key` |
+| `JWT_ACCESS_EXPIRES_IN`| Thời hạn sống của Access Token | `7d` | `7d` |
+| `CLOUDINARY_*` | Bộ cấu hình tải ảnh Cloudinary | `...` | `...` |
+| `MAIL_*` | Cấu hình SMTP Nodemailer | `...` | `...` |
+| `ADMIN_*` | Thông tin tài khoản Admin khởi tạo ban đầu | `admin@marketnest.com` | `...` |
+| `MOMO_*` / `VNP_*` / `PAYPAL_*` | Khóa tích hợp cổng thanh toán | Sandbox credentials | Production credentials |
 
 ---
 
-## 🔑 Cấu hình biến môi trường
+## ▶️ Hướng Dẫn Chạy Dự Án
 
-Dự án quản lý cấu hình thông qua 3 loại môi trường (Environment) khác nhau:
+Hệ thống được thiết kế cơ chế **Strict Isolation** (Cô lập tuyệt đối): Khi chạy lệnh dev thì 100% chỉ nạp `.env.dev`, khi chạy lệnh prod thì 100% chỉ nạp `.env.prod`, không bao giờ xảy ra tình trạng nạp nhầm biến môi trường.
 
-### 1. Local (`.env.local`)
-**Mục đích:**
-- Phát triển hằng ngày.
-- Chạy trên máy cá nhân.
-- **Giải thích:** Cấu hình để phục vụ Frontend đang chạy trên `localhost`. Các kết nối cơ sở dữ liệu và service được sử dụng cho môi trường cục bộ.
+### 1. Chạy Development (Khuyên dùng khi lập trình)
 
-### 2. LAN (`.env.lan`)
-**Mục đích:**
-- Test trên thiết bị khác trong cùng mạng LAN (ví dụ: dùng điện thoại truy cập qua WiFi).
-- **Giải thích:** Các URL chuyển hướng (Payment Redirect, Return URLs) được thay bằng IP LAN thực tế (Ví dụ: `http://192.168.1.32`) thay vì `localhost`, giúp điện thoại quay lại được ứng dụng sau khi thanh toán.
-
-### 3. Preview (`.env.preview`)
-**Mục đích:**
-- Hỗ trợ Frontend test bản production build ở môi trường local.
-- **Quan trọng:** File preview có thể linh hoạt thay đổi:
-  - **Cấu hình giống Local:** Nếu Frontend preview bằng `localhost` trên máy tính.
-  - **Cấu hình giống LAN:** Nếu Frontend preview và truy cập qua thiết bị mobile (thay bằng IP LAN).
-  - **Cấu hình Production:** Khi deploy, file này cũng có thể mang thiết lập của server đám mây.
-
----
-
-**Danh sách các biến môi trường (Áp dụng chung theo đúng thứ tự file `.env`):**
-
-| Biến | Ý nghĩa |
-| :--- | :--- |
-| **Server** | |
-| `PORT` | Cổng chạy server (VD: 3000) |
-| **Environment Configuration** | |
-| `APP_PUBLIC_URL` | URL công khai của Frontend để Backend chuyển hướng (Redirect) |
-| `BACKEND_PUBLIC_URL` | URL công khai của Backend để truy xuất tài nguyên tĩnh/Swagger |
-| `PAYMENT_CALLBACK_BASE_URL` | URL (như Ngrok) để các cổng thanh toán gọi Webhook/IPN về |
-| `CORS_ALLOWED_ORIGINS` | Danh sách các Origin được phép gọi API qua CORS |
-| `NODE_ENV` | Chế độ chạy (VD: `development`, `production`) |
-| **Database MySQL** | |
-| `DB_HOST` | Host kết nối MySQL |
-| `DB_PORT` | Cổng kết nối MySQL |
-| `DB_USER` | Tên đăng nhập MySQL |
-| `DB_PASS` | Mật khẩu MySQL |
-| `DB_NAME` | Tên cơ sở dữ liệu |
-| **JWT** | |
-| `JWT_ACCESS_SECRET` | Khóa bí mật dùng để mã hóa Access Token |
-| `JWT_REFRESH_SECRET` | Khóa bí mật dùng để mã hóa Refresh Token |
-| `JWT_ACCESS_EXPIRES_IN` | Thời gian sống của Access Token (VD: `1h`, `7d`) |
-| **Cloudinary** | |
-| `CLOUDINARY_CLOUD_NAME` | Tên Cloud của tài khoản Cloudinary |
-| `CLOUDINARY_API_KEY` | API Key của Cloudinary |
-| `CLOUDINARY_API_SECRET` | Secret Key của Cloudinary |
-| `CLOUDINARY_FOLDER` | Thư mục lưu ảnh mặc định trên Cloudinary |
-| **Mailer** | |
-| `MAIL_HOST` | Host SMTP của Email |
-| `MAIL_PORT` | Cổng SMTP |
-| `MAIL_USER` | Email gửi đi |
-| `MAIL_PASS` | Mật khẩu ứng dụng của Email |
-| `MAIL_FROM` | Tên hiển thị người gửi |
-| **Admin** | |
-| `ADMIN_MAIL` | Email của tài khoản Admin mặc định khởi tạo ban đầu |
-| `ADMIN_PASSWORD` | Mật khẩu mặc định của Admin |
-| `ADMIN_FULL_NAME` | Tên hiển thị của Admin |
-| `ADMIN_AVATAR_URL` | URL ảnh đại diện của Admin |
-| **MoMo Payment** | |
-| `MOMO_PARTNER_CODE` | Partner Code do MoMo cấp |
-| `MOMO_ACCESS_KEY` | Access Key của MoMo |
-| `MOMO_SECRET_KEY` | Secret Key của MoMo |
-| `MOMO_ENDPOINT` | URL gọi tạo giao dịch MoMo |
-| **VNPay Payment** | |
-| `VNP_TMN_CODE` | Website Code (TMN) do VNPay cấp |
-| `VNP_HASH_SECRET` | Chuỗi bí mật Hash Secret của VNPay |
-| `VNP_URL` | URL cổng thanh toán VNPay |
-| **PayPal Payment** | |
-| `PAYPAL_CLIENT_ID` | Client ID ứng dụng PayPal |
-| `PAYPAL_CLIENT_SECRET` | Secret Key ứng dụng PayPal |
-| `PAYPAL_ENVIRONMENT` | Môi trường PayPal (`sandbox` hoặc `live`) |
-| **Open Search** | |
-| `OPENSEARCH_NODE` | URL kết nối hệ thống tìm kiếm OpenSearch |
-| `OPENSEARCH_USERNAME` | Tên đăng nhập OpenSearch |
-| `OPENSEARCH_PASSWORD` | Mật khẩu OpenSearch |
-
----
-
-## ▶️ Chạy dự án
-
-Hệ thống hỗ trợ chuyển đổi mượt mà giữa các môi trường thông qua các script cấu hình sẵn.
-
-### 1. Development mode (Chạy Local)
-
-**Mục đích:**
-- Viết code hằng ngày, phát triển tính năng mới.
-- Tự động tải lại code (hot-reload) khi có thay đổi.
-- Kết nối với Frontend đang chạy trên `localhost`.
-
-**Thông tin:**
-- Lệnh khởi chạy:
+- **Cách 1: Chạy từ thư mục `backend/`:**
   ```bash
-  npm run start:local
+  npm run dev
+  # hoặc
+  npm run start:dev
   ```
-- URL lắng nghe: `http://localhost:3000`
-- Environment tương ứng: Đọc từ file `.env.local`
+
+- **Cách 2: Chạy từ thư mục gốc Monorepo:**
+  ```bash
+  npm run backend:dev
+  ```
+
+- **Đặc điểm:**
+  - Tự động nạp cấu hình từ `.env.dev`.
+  - Bật tính năng Hot-reload (tự restart server khi lưu code).
+  - Backend chạy tại: `http://localhost:3000`.
 
 ---
 
-### 2. LAN / Mobile Testing mode (Test trên Điện thoại)
+### 2. Chạy Production (Dùng khi kiểm thử bản release hoặc deploy)
 
-**Mục đích:**
-- Hỗ trợ Frontend kiểm thử trên điện thoại thật qua mạng WiFi nội bộ.
-- Đảm bảo Backend trả về URL chuyển hướng (Payment Redirect / Return URLs) mang IP LAN chính xác, giúp điện thoại có thể quay lại app sau khi thanh toán xong thay vì bị lỗi tìm về `localhost`.
-
-**Thông tin:**
-- Lệnh khởi chạy:
+- **Bước 1: Build mã nguồn:**
   ```bash
-  npm run start:lan
+  npm run build:prod
   ```
-- URL lắng nghe: Server lắng nghe tại IP LAN (Ví dụ: `http://192.168.1.32:3000`)
-- Environment tương ứng: Đọc từ file `.env.lan` (Lưu ý: Bạn phải mở file này và thay thế các chuỗi `<YOUR_LOCAL_IP>` thành IP LAN thực tế của máy).
+
+- **Bước 2: Khởi chạy server Production:**
+  - **Từ thư mục `backend/`:**
+    ```bash
+    npm run prod
+    # hoặc
+    npm run start:prod
+    ```
+  - **Từ thư mục gốc Monorepo:**
+    ```bash
+    npm run backend:prod
+    ```
+
+- **Đặc điểm:**
+  - Tự động nạp cấu hình từ `.env.prod`.
+  - Chạy bằng Node.js tối ưu hiệu năng từ thư mục `dist/`.
 
 ---
 
-### 3. Preview mode (Hỗ trợ Frontend Test PWA)
+## ❓ Khắc phục sự cố thường gặp (Troubleshooting)
 
-**Mục đích:**
-- Phục vụ cho Frontend khi đang chạy thử bản build (cổng `4173`).
-- Giúp Frontend test tính năng cài đặt PWA hoàn chỉnh với API thật sự trên môi trường thử nghiệm.
+1. **Lỗi `REDIS_URI is not defined in environment variables`:**
+   - Nguyên nhân: Chưa tạo hoặc thiếu biến `REDIS_URI` trong file `.env.dev`.
+   - Khắc phục: Đảm bảo file `.env.dev` có dòng `REDIS_URI=redis://127.0.0.1:6379`.
 
-**Thông tin:**
-- Lệnh khởi chạy:
-  ```bash
-  npm run start:preview
-  ```
-- URL lắng nghe: Hỗ trợ gọi API qua cổng `3000` (Localhost hoặc LAN IP tùy cấu hình Frontend).
-- Environment tương ứng: Đọc từ file `.env.preview` (Thay đổi `<YOUR_LOCAL_IP>` nếu test bằng điện thoại).
+2. **Lỗi kết nối MySQL `ECONNREFUSED 127.0.0.1:3306`:**
+   - Nguyên nhân: MySQL cục bộ chưa được bật hoặc thông số kết nối chưa đúng.
+   - Khắc phục: Kiểm tra dịch vụ MySQL đang chạy và kiểm tra lại `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASS` trong file `.env.dev`.
 
----
-
-### 4. Production mode (Môi trường Thực tế)
-
-**Mục đích:**
-- Chạy phiên bản đã được biên dịch tối ưu (Production Build) trên các máy chủ đám mây như VPS, Vercel, Docker.
-- (Không dùng file `.env`, các biến môi trường sẽ được nạp trực tiếp qua bảng điều khiển của Server).
-
-**Thông tin:**
-- Lệnh khởi chạy:
-  ```bash
-  # 1. Build source code
-  npm run build
-  
-  # 2. Khởi chạy bằng Node.js gốc (không qua ts-node)
-  npm run start:prod
-  ```
+3. **Lỗi SSL Handshake khi kết nối Database:**
+   - Nguyên nhân: Kết nối tới MySQL local nhưng lại bật SSL.
+   - Khắc phục: Đảm bảo biến `DB_SSL=false` trong file `.env.dev`. Khi deploy lên Cloud MySQL (Aiven, RDS), hãy đặt `DB_SSL=true` trong `.env.prod`.
 
 ---
 

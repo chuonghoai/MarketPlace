@@ -39,8 +39,14 @@ export class AdminsService implements OnApplicationBootstrap {
       this.logger.log('Admin user not found. Creating default admin...');
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
       
-      const adminFullName = this.configService.get<string>(ENV_VARS.ADMIN_FULL_NAME) || 'Admin';
-      const adminAvatarUrl = this.configService.get<string>(ENV_VARS.ADMIN_AVATAR_URL) || '';
+      const adminFullName = this.configService.get<string>(ENV_VARS.ADMIN_FULL_NAME);
+      if (!adminFullName) {
+        throw new Error('ADMIN_FULL_NAME is not defined in environment variables');
+      }
+      const adminAvatarUrl = this.configService.get<string>(ENV_VARS.ADMIN_AVATAR_URL);
+      if (!adminAvatarUrl) {
+        throw new Error('ADMIN_AVATAR_URL is not defined in environment variables');
+      }
 
       adminUser = this.userRepository.create({
         email: adminMail,

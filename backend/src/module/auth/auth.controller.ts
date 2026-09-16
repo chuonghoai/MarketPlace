@@ -6,7 +6,8 @@ import {
   HttpStatus,
   UseGuards,
   Request,
-  Res
+  Res,
+  InternalServerErrorException
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -36,7 +37,10 @@ export class AuthController {
     const result = await this.authService.login(loginDto);
 
     if (result.success && result.data?.accessToken) {
-      const expiresStr = this.configService.get<StringValue>(ENV_VARS.JWT_ACCESS_EXPIRES_IN) || '7d';
+      const expiresStr = this.configService.get<StringValue>(ENV_VARS.JWT_ACCESS_EXPIRES_IN);
+      if (!expiresStr) {
+        throw new InternalServerErrorException('Missing env: JWT_ACCESS_EXPIRES_IN');
+      }
       const isProduction = process.env.NODE_ENV === 'production';
       res.cookie('accessToken', result.data.accessToken, {
         httpOnly: true,
@@ -64,7 +68,10 @@ export class AuthController {
     const result = await this.authService.register(registerDto);
 
     if (result.success && result.data?.accessToken) {
-      const expiresStr = this.configService.get<StringValue>(ENV_VARS.JWT_ACCESS_EXPIRES_IN) || '7d';
+      const expiresStr = this.configService.get<StringValue>(ENV_VARS.JWT_ACCESS_EXPIRES_IN);
+      if (!expiresStr) {
+        throw new InternalServerErrorException('Missing env: JWT_ACCESS_EXPIRES_IN');
+      }
       const isProduction = process.env.NODE_ENV === 'production';
       res.cookie('accessToken', result.data.accessToken, {
         httpOnly: true,

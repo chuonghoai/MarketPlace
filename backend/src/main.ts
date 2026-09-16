@@ -14,12 +14,20 @@ async function bootstrap() {
 
   app.set('trust proxy', 'loopback');
 
-  const isProduction = process.env.NODE_ENV === 'production';
+  const activeEnv = process.env.APP_ENV;
+  if (!activeEnv) {
+    throw new Error('APP_ENV is required in environment variables (dev or prod)');
+  }
+  console.log(`[Bootstrap] Starting MarketNest Backend in [${activeEnv.toUpperCase()}] mode (NODE_ENV: ${process.env.NODE_ENV})...`);
+
+  const rawCors = process.env.CORS_ALLOWED_ORIGINS;
+  if (!rawCors) {
+    throw new Error('CORS_ALLOWED_ORIGINS is required in environment variables');
+  }
+  const allowedOrigins = rawCors.split(',').map((o) => o.trim()).filter(Boolean);
 
   app.enableCors({
-    origin: isProduction 
-      ? 'https://marketnestplatform.vercel.app'
-      : 'http://localhost:5173',
+    origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
     credentials: true,
   });
 
@@ -51,7 +59,12 @@ async function bootstrap() {
     });
   }
 
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  const port = process.env.PORT;
+  if (!port) {
+    throw new Error('PORT is required in environment variables');
+  }
+  await app.listen(port, '0.0.0.0');
+  console.log(`[Bootstrap] MarketNest Backend is running at http://localhost:${port} [${activeEnv.toUpperCase()}]`);
 }
 bootstrap();
 

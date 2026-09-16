@@ -21,6 +21,20 @@ import { OrdersModule } from './module/orders/orders.module';
 import { VouchersModule } from './module/vouchers/vouchers.module';
 import { OpensearchModule } from './module/opensearch/opensearch.module';
 import { RedisModule } from './module/redis/redis.module';
+import { ENV_VARS } from './constants/env.constants';
+import * as path from 'path';
+
+const activeEnv = process.env.APP_ENV;
+if (!activeEnv) {
+  throw new Error('APP_ENV environment variable is required (must be "dev" or "prod")');
+}
+const targetEnvFile = activeEnv === 'prod' ? '.env.prod' : '.env.dev';
+
+const resolvedEnvPaths = [
+  path.resolve(process.cwd(), targetEnvFile),
+  path.resolve(process.cwd(), 'backend', targetEnvFile),
+  path.resolve(__dirname, '..', targetEnvFile),
+];
 
 @Module({
   imports: [
@@ -34,22 +48,37 @@ import { RedisModule } from './module/redis/redis.module';
 
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: process.env.APP_ENV ? `.env.${process.env.APP_ENV}` : '.env',
+      envFilePath: resolvedEnvPaths,
+      expandVariables: true,
     }),
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get<string>('DB_HOST'),
-        port: config.get<number>('DB_PORT'),
-        username: config.get<string>('DB_USER'),
-        password: config.get<string>('DB_PASS'),
-        database: config.get<string>('DB_NAME'),
-        autoLoadEntities: true,
-        synchronize: true,
-        ssl: { rejectUnauthorized: false }
-      }),
+      useFactory: (config: ConfigService) => {
+        const isSsl = config.get<string>(ENV_VARS.DB_SSL) === 'true';
+        const dbHost = config.get<string>(ENV_VARS.DB_HOST);
+        if (!dbHost) throw new Error('DB_HOST environment variable is required');
+        const dbPort = config.get<number>(ENV_VARS.DB_PORT);
+        if (!dbPort) throw new Error('DB_PORT environment variable is required');
+        const dbUser = config.get<string>(ENV_VARS.DB_USER);
+        if (!dbUser) throw new Error('DB_USER environment variable is required');
+        const dbPass = config.get<string>(ENV_VARS.DB_PASS);
+        if (!dbPass) throw new Error('DB_PASS environment variable is required');
+        const dbName = config.get<string>(ENV_VARS.DB_NAME);
+        if (!dbName) throw new Error('DB_NAME environment variable is required');
+
+        return {
+          type: 'mysql',
+          host: dbHost,
+          port: Number(dbPort),
+          username: dbUser,
+          password: dbPass,
+          database: dbName,
+          autoLoadEntities: true,
+          synchronize: true,
+          ssl: isSsl ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
 
     AuthModule,

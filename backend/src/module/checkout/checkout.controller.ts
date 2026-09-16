@@ -1,14 +1,19 @@
-import { Controller, Post, Body, Req, Res, UseGuards, HttpCode, HttpStatus, Get, Param, Query } from '@nestjs/common';
+import { Controller, Post, Body, Req, Res, UseGuards, HttpCode, HttpStatus, Get, Param, Query, InternalServerErrorException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { CheckoutService } from './checkout.service';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
 import { PrepareCheckoutDto } from './dto/prepare-checkout.dto';
 import { PrepareCartCheckoutDto } from './dto/prepare-cart-checkout.dto';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { ConfigService } from '@nestjs/config';
+import { ENV_VARS } from '../../constants/env.constants';
 
 @Controller()
 export class CheckoutController {
-  constructor(private readonly checkoutService: CheckoutService) { }
+  constructor(
+    private readonly checkoutService: CheckoutService,
+    private readonly configService: ConfigService,
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Post('orders/prepare')
@@ -77,8 +82,10 @@ export class CheckoutController {
   async handlePayPalCapture(@Query('token') token: string, @Query('orderId') orderId: string, @Res() res: any) {
     await this.checkoutService.capturePayPalOrder(token, orderId);
     
-    
-    const frontendUrl = process.env.APP_PUBLIC_URL || 'http://localhost:5173';
+    const frontendUrl = this.configService.get<string>(ENV_VARS.APP_PUBLIC_URL);
+    if (!frontendUrl) {
+      throw new InternalServerErrorException('APP_PUBLIC_URL is not configured in environment');
+    }
     return res.redirect(`${frontendUrl}/order/checkout/result?orderId=${orderId}`);
   }
 
@@ -86,7 +93,10 @@ export class CheckoutController {
   async handlePayPalCancel(@Query('orderId') orderId: string, @Res() res: any) {
     await this.checkoutService.cancelPayPalOrder(orderId);
 
-    const frontendUrl = process.env.APP_PUBLIC_URL || 'http://localhost:5173';
+    const frontendUrl = this.configService.get<string>(ENV_VARS.APP_PUBLIC_URL);
+    if (!frontendUrl) {
+      throw new InternalServerErrorException('APP_PUBLIC_URL is not configured in environment');
+    }
     return res.redirect(`${frontendUrl}/order/checkout/result?orderId=${orderId}`);
   }
 
