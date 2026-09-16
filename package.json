@@ -8,6 +8,7 @@
     "start:dev": "cd backend && npm run start:dev",
 
     "web:dev": "cd web && npm run dev",
+    "web:prod": "cd web && npm run prod",
     "start": "cd web && npm run dev"
   }
 }
