@@ -1,0 +1,75 @@
+@startuml 06_liveness_email
+
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "d(email)" as n1
+usecase " " as n2
+usecase " " as n3
+usecase "u(email)" as n4
+usecase " " as n5
+usecase " " as n6
+usecase " " as n7
+usecase "u(email)" as n8
+usecase " " as n9
+usecase " " as n10
+usecase " " as n11
+usecase " " as n12
+usecase " " as n13
+usecase "u(email)" as n14
+usecase "u(email)" as n15
+usecase " " as n16
+usecase " " as n17
+usecase " " as n18
+usecase "u(email)" as n19
+usecase " " as n20
+usecase " " as n21
+usecase " " as n22
+usecase "u(email)" as n23
+usecase "Exit" as end_node
+note right of end_node : k(email)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3 : True
+n2 --> n4 : False
+n3 --> end_node
+n4 --> n5
+n5 --> n6 : True
+n5 --> n7 : False
+n6 --> end_node
+n7 --> n8 : True
+n7 --> n10 : False
+n8 --> n9
+n9 --> end_node
+n10 --> n11 : True
+n10 --> n12 : False
+n11 --> end_node
+n12 --> n13 : True
+n12 --> n14 : False
+n13 --> end_node
+n14 --> n15
+n15 --> n16
+n16 --> n17 : True
+n16 --> n18 : False
+n17 --> end_node
+n18 --> n19
+n19 --> n20
+n20 --> n21
+n21 --> n22
+n22 --> n23
+n23 --> end_node
+
+@enduml
+
+' Báo cáo kịch bản email:
+' - Biến email được định nghĩa tại node 1: d(email)
+' - Biến email được sử dụng tại node 4, 8, 14, 15, 19, 23: u(email)
+' - Biến email bị hủy tại node Exit: k(email)
+' - Chuỗi thao tác:
+'   - Path 2: d(1) -> u(4) -> k(Exit) (Hợp lệ)
+'   - Path 3: d(1) -> u(4) -> u(8) -> k(Exit) (Hợp lệ)
+'   - Path 6: d(1) -> u(4) -> u(14) -> u(15) -> k(Exit) (Hợp lệ)
+'   - Path 7: d(1) -> u(4) -> u(14) -> u(15) -> u(19) -> u(23) -> k(Exit) (Hợp lệ)
+' Kết luận: Tính hợp lệ của biến email được đảm bảo (không có lỗi ~d, ~u, ~k).
