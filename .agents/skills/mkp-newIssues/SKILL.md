@@ -34,7 +34,14 @@ Mục đích: Tiếp nhận mô tả lỗi/bug từ người dùng hoặc quá t
 ### Step 3 — Xác định Issue ID và Title
 - Format Title bắt buộc: `[MKP-xxx] <Tóm tắt ngắn gọn lỗi>`
   - `MKP-xxx`: Mã định danh bug/issue (Ví dụ: `[MKP-001]`, `[MKP-002]`,...).
-  - Nếu người dùng đã cung cấp mã ID, sử dụng mã đó. Nếu chưa có, hãy gợi ý mã ID tiếp theo hoặc mặc định bắt đầu từ `[MKP-001]`.
+  - Để xác định `MKP-xxx`, trước tiên dùng lệnh `gh --version` để xác định máy tính có github được kết nối hay ko.
+  - Nếu chưa có, hãy yêu cầu người dùng cài đặt Github CLI bằng lệnh `winget install --id GitHub.cli`, sau đó yêu cầu người dùng tắt IDE và mở lại để tải được CLI
+  - Sau đó kiểm tra lại bằng lệnh `gh --version` để xác định máy tính đã tải thành công GitHub CLI hay chưa.
+  - Nếu Github CLI đã sẵn sàng trên máy tính, hãy chạy lệnh `gh issue list` để lấy các danh sách issues đã có trên repo Github
+  - Nếu lệnh trả về lỗi chưa đăng nhập, hãy yêu cầu người dùng tự chạy lệnh `gh auth login` để tiến hành đăng nhập Github
+  - Cuối cùng chạy lại lệnh `gh issue list` để lấy các danh sách issues đã có trên repo Github
+  - Từ danh sách issues trả về, tìm Issue ID lớn nhất trong tiêu đề của issues có mẫu `[MKP-xxx]`
+  - Số tiếp theo của `[MKP-xxx]` là số cần để làm ID của issue mới và gợi ý cho người dùng sử dụng mã số đó. Nếu người dùng đã cung cấp mã ID, sử dụng mã đó.
   - Tiêu đề phải rõ ràng, súc tích, phản ánh đúng bản chất lỗi.
 
 ### Step 4 — Soạn thảo nội dung Issue Description (Body)
