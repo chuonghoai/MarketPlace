@@ -39,8 +39,47 @@ Tạo thư mục `docs/white_box_testing/[ten_chuc_nang]/`.
 ### File 1: `01_service_source.md`
 - Tổng hợp code logic của service trực tiếp xử lý chức năng và các hàm được gọi từ bên ngoài service (ví dụ: Util, Helper, Mapper, service khác) nếu có ảnh hưởng đến luồng, vào duy nhất một file Markdown. Không tạo thêm file riêng. Ghi rõ đường dẫn file gốc và tên hàm của code được bổ sung.
 - Không sao chép trùng lặp các hàm nội bộ nếu đã nằm trong code logic service được trích dẫn. Không sửa code gốc của project.
-- Đánh số node thống nhất trên toàn bộ nội dung file (đánh số trực tiếp trong code).
-- **Quy tắc cho `&&` và `||`**: Phải đánh node riêng cho từng điều kiện con. Ví dụ `if (a && b)` đánh thành `[1] a` và `[2] b`. Không gộp chung toàn bộ biểu thức phức hợp.
+- Đánh số node thống nhất trên toàn bộ nội dung file (đánh số trực tiếp trong code) theo các quy tắc chi tiết sau:
+  - **Điểm bắt đầu (Entry Point)**: Không mặc định đánh node ở dòng định nghĩa hàm. Chỉ đánh node tại đây (ví dụ Node `[1]`) nếu hàm có nhận tham số đầu vào (nhằm đại diện cho thao tác Definition `d()` của các tham số). Nếu hàm không có tham số (ví dụ `getIpAddress()`), tuyệt đối không được đánh node tại dòng định nghĩa hàm.
+  - **Lệnh tuần tự (Khai báo, gán, gọi hàm, return, throw)**: Mỗi câu lệnh độc lập không chứa điều kiện rẽ nhánh đều phải được đánh 1 node. Nếu lệnh trải dài nhiều dòng, đánh node ở dòng bắt đầu.
+  - **Vòng lặp (`for`, `while`)**: Dòng khai báo vòng lặp được đánh 1 node đại diện cho bước kiểm tra điều kiện lặp.
+  - **Toán tử 3 ngôi (Ternary)**: Phải đánh tách biệt thành 3 node (1 node cho điều kiện, 1 node cho nhánh true, 1 node cho nhánh false). VD: `cond /*[8]*/ ? true_expr /*[9]*/ : false_expr /*[10]*/`.
+  - **Xử lý ngoại lệ (`try-catch`)**: Không đánh node cho từ khóa `try {`. Từ khóa `catch (err) {` phải được đánh 1 node đại diện cho điểm bắt ngoại lệ.
+  - **Quy tắc cho `&&` và `||`**: Phải đánh node riêng cho từng điều kiện con. Ví dụ `if (a && b)` đánh thành `[1] a` và `[2] b`. Không gộp chung toàn bộ biểu thức phức hợp.
+- **Quy tắc cho `switch-case`**:
+  - **`switch (expression)`: Có đánh node**, đại diện cho nút điều kiện phân nhánh.
+  - **`case`: Không đánh node.** Các nhãn `case` chỉ là điểm định tuyến luồng thực thi, không phải node độc lập.
+  - **Khối lệnh bên trong từng `case`:** Đánh node theo các quy tắc đã được quy định trong skill (bao gồm `if/else`, vòng lặp, toán tử logic, lệnh thực thi).
+  - **`break`: Không đánh node.** Tuy nhiên, phải thể hiện chính xác luồng điều khiển sau `break` (thường là thoát khỏi switch), tránh nối nhầm sang `case` tiếp theo.
+  - **`default`: Không đánh node.** Các câu lệnh bên trong `default` vẫn phải được đánh node theo quy tắc chung.
+  - **Ví dụ chuẩn:**
+    ```c
+    int Test(int a, int b, int c)
+    {
+        int t;                      // [1]
+        switch (a)                  // [2]
+        {
+            case 2:
+                if (b > 9)          // [3]
+                    t = 1;           // [4]
+                else
+                    t = 8;           // [5]
+                break;
+            case 7:
+                if (b < 0 || b > 10) // [6], [7]
+                    t = 0;           // [8]
+                else
+                    if (c >= 3)      // [9]
+                        t = 3;       // [10]
+                    else
+                        t = 4;       // [11]
+                break;
+            default:
+                t = 5;               // [12]
+        }
+        return t;                    // [13]
+    }
+    ```
 
 ### File 2: `02_control_flow_graph.puml`
 - CFG cơ bản bằng PlantUML. Tuân thủ cấu trúc `template.puml`.

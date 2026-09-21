@@ -1,0 +1,162 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+usecase "2" as n2
+usecase "3" as n3
+usecase "4" as n4
+usecase "5" as n5
+usecase "6" as n6
+usecase "7" as n7
+usecase "8" as n8
+usecase "9" as n9
+usecase "10" as n10
+usecase "11" as n11
+usecase "12" as n12
+usecase "13" as n13
+usecase "14" as n14
+usecase "15" as n15
+usecase "16" as n16
+usecase "17" as n17
+usecase "18" as n18
+usecase "19" as n19
+usecase "20" as n20
+usecase "21" as n21
+usecase "22" as n22
+usecase "23" as n23
+usecase "24" as n24
+usecase "25" as n25
+usecase "26" as n26
+usecase "27" as n27
+usecase "28" as n28
+usecase "29" as n29
+usecase "30" as n30
+usecase "31" as n31
+usecase "32" as n32
+usecase "33" as n33
+usecase "34" as n34
+usecase "35" as n35
+usecase "36" as n36
+usecase "37" as n37
+usecase "38" as n38
+usecase "39" as n39
+usecase "40" as n40
+usecase "41" as n41
+usecase "42" as n42
+usecase "43" as n43
+usecase "44" as n44
+usecase "45" as n45
+usecase "46" as n46
+usecase "47" as n47
+usecase "48" as n48
+usecase "49" as n49
+usecase "50" as n50
+usecase "51" as n51
+usecase "52" as n52
+usecase "53" as n53
+usecase "54" as n54
+usecase "Exit" as end_node
+
+start_node --> n1
+n1 --> n2
+n2 --> n3 : true
+n2 --> n4 : false
+n3 --> end_node
+
+n4 --> n5
+n5 --> n6
+n6 --> n7 : true
+n6 --> n8 : false
+n7 --> n8
+
+n8 --> n9 : true
+n8 --> n10 : false
+n9 --> n11
+n10 --> n11
+
+n11 --> n12
+n12 --> n13 : case PREPARING
+n12 --> n14 : case SHIPPING
+n12 --> n15 : case DELIVERED
+n12 --> n16 : case SUCCESS
+n12 --> n17 : case CANCELLED
+n12 --> n18 : case RETURNED
+n12 --> n19 : default
+
+n13 --> n19
+n14 --> n19
+n15 --> n19
+n16 --> n19
+n17 --> n19
+n18 --> n19
+
+n19 --> n20
+n20 --> n22 : true
+n20 --> n21 : false
+n21 --> n22
+
+n22 --> n23
+n23 --> n24 : true
+n23 --> n25 : false
+n24 --> n25
+
+n25 --> n26
+n26 --> n27 : true
+n26 --> n30 : false
+n27 --> n28 : true
+n27 --> n30 : false
+
+n28 --> n29 : true
+n28 --> n30 : false
+n29 --> n28
+
+n30 --> n32 : true
+n30 --> n31 : false
+n31 --> n32 : true
+n31 --> n37 : false
+
+n32 --> n33
+n33 --> n34 : true
+n33 --> n37 : false
+n34 --> n35 : true
+n34 --> n37 : false
+
+n35 --> n36 : true
+n35 --> n37 : false
+n36 --> n35
+
+n37 --> n38
+n38 --> n39 : case PREPARING
+n38 --> n40 : case SHIPPING
+n38 --> n41 : case DELIVERED
+n38 --> n42 : case SUCCESS
+n38 --> n43 : case CANCELLED
+n38 --> n44 : case RETURNED
+n38 --> n45 : default
+
+n39 --> n46
+n40 --> n46
+n41 --> n46
+n42 --> n46
+n43 --> n46
+n44 --> n46
+n45 --> n46
+
+n46 --> n47 : true
+n46 --> n48 : false
+n47 --> n49
+n48 --> n49
+
+n49 --> n50
+n50 --> n51 : true
+n50 --> n54 : false
+n51 --> n52 : true
+n51 --> n54 : false
+
+n52 --> n53
+n53 --> n54
+n54 --> end_node
+
+@enduml

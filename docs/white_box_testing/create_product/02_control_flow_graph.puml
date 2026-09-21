@@ -1,0 +1,42 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+usecase "2" as n2
+usecase "3" as n3
+usecase "4" as n4
+usecase "5" as n5
+usecase "6" as n6
+usecase "7" as n7
+usecase "8" as n8
+usecase "9" as n9
+usecase "10" as n10
+usecase "11" as n11
+usecase "12" as n12
+usecase "13" as n13
+usecase "14" as n14
+usecase "Exit" as end_node
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+n3 --> n4 : true
+n3 --> n5 : false
+n4 --> end_node
+n5 --> n6
+n6 --> n7
+n7 --> n8
+n8 --> n13 : false
+n8 --> n9 : true
+n9 --> n13 : false
+n9 --> n10 : true
+n10 --> n11 : exception
+n10 --> n13 : success
+n11 --> n12
+n12 --> n13
+n13 --> n14
+n14 --> end_node
+
+@enduml
