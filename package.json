@@ -10,6 +10,18 @@
 
     "web:dev": "cd web && npm run dev",
     "web:prod": "cd web && npm run prod",
-    "start": "cd web && npm run dev"
+    "start": "cd web && npm run dev",
+    
+    "test": "playwright test",
+    "test:all": "playwright test",
+    "test:api": "playwright test --project=api",
+    "test:ui": "playwright test --project=ui",
+    "test:e2e": "playwright test --project=e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  },
+  "dependencies": {
+    "@types/node": "^26.6.2"
   }
 }

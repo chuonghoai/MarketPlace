@@ -6,6 +6,34 @@ import { LoggingInterceptor } from './core/common/interceptors/logging.intercept
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { exec } from 'child_process';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from './module/users/entities/user.entity';
+import { EUserRole } from './module/users/enums/user.enum';
+import * as bcrypt from 'bcrypt';
+
+async function seedUsers(app: NestExpressApplication) {
+  const userRepository = app.get(getRepositoryToken(User));
+  const usersToCreate = [
+    { email: 'admin@example.com', role: EUserRole.ADMIN },
+    { email: 'staff@example.com', role: EUserRole.STAFF },
+    { email: 'client@example.com', role: EUserRole.USER },
+  ];
+
+  for (const u of usersToCreate) {
+    const exists = await userRepository.findOne({ where: { email: u.email } });
+    if (!exists) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      const newUser = userRepository.create({
+        email: u.email,
+        password: hashedPassword,
+        fullName: u.role,
+        role: u.role,
+      });
+      await userRepository.save(newUser);
+      console.log(`[Seeder] Created ${u.role} user: ${u.email}`);
+    }
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -40,6 +68,8 @@ async function bootstrap() {
 
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
+
+  await seedUsers(app);
 
   const ngrokCmd = process.env.CMD_NGROK;
   if (ngrokCmd) {
