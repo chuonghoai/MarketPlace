@@ -8,5 +8,3 @@ dist-ssr/
 .vscode/*
 !.vscode/extensions.json
 docs/
-playwright/test-results/
-playwright/playwright-report/
