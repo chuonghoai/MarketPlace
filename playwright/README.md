@@ -66,3 +66,8 @@ npx playwright test playwright/api/login_api.spec.ts
 ```bash
 npx playwright test --ui
 ```
+
+### 4.8. Coi lại báo cáo
+```bash
+npx playwright show-report playwright\playwright-report
+```
