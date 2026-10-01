@@ -61,3 +61,8 @@ npx playwright test
 npx playwright test --project=api
 npx playwright test playwright/api/login_api.spec.ts
 ```
+
+### 4.7. Chạy có UI
+```bash
+npx playwright test --ui
+```

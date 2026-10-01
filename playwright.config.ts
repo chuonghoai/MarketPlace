@@ -7,10 +7,10 @@ export default defineConfig({
   expect: {
     timeout: 5000
   },
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  retries: 1,
+  workers: 1,
   reporter: [['html', { outputFolder: 'playwright/playwright-report' }]],
   use: {
     actionTimeout: 0,
@@ -21,7 +21,7 @@ export default defineConfig({
       name: 'api',
       testDir: './playwright/api',
       use: {
-        baseURL: 'http://localhost:3000',
+        baseURL: 'http://127.0.0.1:3000',
       },
     },
     {
@@ -29,6 +29,7 @@ export default defineConfig({
       testDir: './playwright/ui',
       use: {
         ...devices['Desktop Chrome'],
+        headless: false,
         baseURL: 'http://localhost:5173',
       },
     },
@@ -37,6 +38,7 @@ export default defineConfig({
       testDir: './playwright/e2e',
       use: {
         ...devices['Desktop Chrome'],
+        headless: false,
         baseURL: 'http://localhost:5173',
       },
     }
