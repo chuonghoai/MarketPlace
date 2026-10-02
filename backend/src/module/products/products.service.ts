@@ -67,7 +67,8 @@ export class ProductsService implements OnModuleInit {
     console.log('[getAllProducts] sortBy =', sortBy, '| minPrice =', minPrice, '| maxPrice =', maxPrice);
 
     const qb = this.productsRepository.createQueryBuilder('product')
-      .leftJoinAndSelect('product.category', 'category');
+      .leftJoinAndSelect('product.category', 'category')
+      .leftJoinAndSelect('product.artisan', 'artisan');
 
     if (dto.search) {
       const matchedIds = await this.opensearchService.searchProductIds(dto.search);
@@ -151,6 +152,9 @@ export class ProductsService implements OnModuleInit {
       weight: product.weight ? Number(product.weight) : undefined,
       careInstructions: product.careInstructions,
       categoryName: product.category?.name || 'Chưa phân loại',
+      artisanId: product.artisan?.id || null,
+      artisanName: product.artisan?.fullName || null,
+      artisanAvatar: product.artisan?.avatar || null,
     }));
 
     const response = new ApiResponse(true, 'Lấy danh sách sản phẩm thành công', formattedProducts);
@@ -168,7 +172,7 @@ export class ProductsService implements OnModuleInit {
   async getProductById(id: string, userId?: string) {
     const product = await this.productsRepository.findOne({
       where: { id },
-      relations: ['category', 'seller', 'seller.user'],
+      relations: ['category', 'artisan'],
     });
 
     if (!product) {
@@ -208,13 +212,11 @@ export class ProductsService implements OnModuleInit {
       categoryName: product.category?.name || 'Chưa phân loại',
       categoryId: product.category?.id,
       isFavorite,
-      sellerInfo: {
-        id: product.seller?.id,
-        name: product.seller?.user?.fullName,
-        avatarUrl: product.seller?.user?.avatarUrl,
-        totalProducts: product.seller?.totalProducts || 0,
-        averageRating: product.seller?.averageRating || 0,
-      },
+      artisanInfo: product.artisan ? {
+        id: product.artisan.id,
+        name: product.artisan.fullName,
+        avatarUrl: product.artisan.avatar,
+      } : null,
     };
   }
 
@@ -252,6 +254,7 @@ export class ProductsService implements OnModuleInit {
     const product = this.productsRepository.create({
       ...productData,
       category,
+      artisanId: dto.artisanId || null,
     });
 
     const saved = await this.productsRepository.save(product);
