@@ -16,13 +16,21 @@ export class WalletService {
 
   async topup(
     amount: number,
-    paymentMethod: 'DIRECT' | 'VNPAY' = 'DIRECT',
+    paymentMethod: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL' = 'DIRECT',
   ): Promise<ApiResponse<{ success?: boolean; paymentRequired?: boolean; paymentUrl?: string; balance?: number; transaction?: WalletTransaction }>> {
     return apiClient.post("/wallets/topup", { amount, paymentMethod });
   }
 
   async verifyVnpayTopup(queryString: string): Promise<ApiResponse<any>> {
     return apiClient.get(`/wallets/vnpay/verify${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async verifyMomoTopup(queryString: string): Promise<ApiResponse<any>> {
+    return apiClient.get(`/wallets/momo/verify${queryString ? `?${queryString}` : ''}`);
+  }
+
+  async verifyPaypalTopup(queryString: string): Promise<ApiResponse<any>> {
+    return apiClient.get(`/wallets/paypal/verify${queryString ? `?${queryString}` : ''}`);
   }
 
   async getTransactions(page = 1, limit = 20): Promise<ApiResponse<WalletTransactionListResponse>> {

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner, EntityManager } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -22,6 +22,12 @@ export class WalletsService {
     private readonly dataSource: DataSource,
     private readonly configService: ConfigService,
   ) {}
+
+  private getRequiredEnv(key: string): string {
+    const value = this.configService.get<string>(key);
+    if (!value) throw new InternalServerErrorException(`Missing env: ${key}`);
+    return value;
+  }
 
   async getOrCreateWallet(userId: string, manager?: EntityManager): Promise<Wallet> {
     const repo = manager ? manager.getRepository(Wallet) : this.walletRepository;
@@ -52,17 +58,39 @@ export class WalletsService {
   async topup(
     userId: string,
     amount: number,
-    paymentMethod: 'DIRECT' | 'VNPAY' = 'DIRECT',
+    paymentMethod: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL' = 'DIRECT',
     ipAddr = '127.0.0.1',
     description = 'Nạp tiền vào ví điện tử',
   ) {
-    if (amount <= 0) {
-      throw new BadRequestException('Số tiền nạp phải lớn hơn 0');
+    if (!amount || amount < 10000) {
+      throw new BadRequestException('Số tiền nạp tối thiểu là 10.000 ₫');
     }
 
     if (paymentMethod === 'VNPAY') {
       const txRef = `TOPUP_${Date.now()}_${userId.slice(0, 8)}`;
       const paymentUrl = this.buildVnpayPaymentUrl(txRef, amount, ipAddr);
+      return {
+        paymentRequired: true,
+        paymentUrl,
+        txRef,
+        amount,
+      };
+    }
+
+    if (paymentMethod === 'MOMO') {
+      const txRef = `TOPUP_MOMO_${Date.now()}_${userId.slice(0, 8)}`;
+      const paymentUrl = await this.buildMomoPaymentUrl(txRef, amount);
+      return {
+        paymentRequired: true,
+        paymentUrl,
+        txRef,
+        amount,
+      };
+    }
+
+    if (paymentMethod === 'PAYPAL') {
+      const txRef = `TOPUP_PAYPAL_${Date.now()}_${userId.slice(0, 8)}`;
+      const paymentUrl = await this.buildPaypalPaymentUrl(txRef, amount);
       return {
         paymentRequired: true,
         paymentUrl,
@@ -122,10 +150,10 @@ export class WalletsService {
   }
 
   buildVnpayPaymentUrl(txRef: string, totalAmount: number, ipAddr: string): string {
-    const tmnCode = this.configService.get<string>(ENV_VARS.VNP_TMN_CODE) || 'TMDTDEV1';
-    const secretKey = this.configService.get<string>(ENV_VARS.VNP_HASH_SECRET) || 'VNPAYSECRET';
-    const vnpUrl = this.configService.get<string>(ENV_VARS.VNP_URL) || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
-    const appUrl = this.configService.get<string>(ENV_VARS.APP_PUBLIC_URL) || 'http://localhost:5173';
+    const tmnCode = this.getRequiredEnv(ENV_VARS.VNP_TMN_CODE);
+    const secretKey = this.getRequiredEnv(ENV_VARS.VNP_HASH_SECRET);
+    const vnpUrl = this.getRequiredEnv(ENV_VARS.VNP_URL);
+    const appUrl = this.getRequiredEnv(ENV_VARS.APP_PUBLIC_URL);
     const returnUrl = `${appUrl}/profile/wallet?topup=vnpay`;
 
     const date = new Date();
@@ -175,7 +203,7 @@ export class WalletsService {
   }
 
   verifyVnpaySignature(query: any): boolean {
-    const secretKey = this.configService.get<string>(ENV_VARS.VNP_HASH_SECRET) || 'VNPAYSECRET';
+    const secretKey = this.getRequiredEnv(ENV_VARS.VNP_HASH_SECRET);
     const vnp_Params = { ...query };
     const secureHash = vnp_Params['vnp_SecureHash'];
     delete vnp_Params['vnp_SecureHash'];
@@ -193,6 +221,116 @@ export class WalletsService {
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
     return signed === secureHash;
+  }
+
+  async buildMomoPaymentUrl(txRef: string, totalAmount: number): Promise<string> {
+    const partnerCode = this.getRequiredEnv(ENV_VARS.MOMO_PARTNER_CODE);
+    const accessKey = this.getRequiredEnv(ENV_VARS.MOMO_ACCESS_KEY);
+    const secretKey = this.getRequiredEnv(ENV_VARS.MOMO_SECRET_KEY);
+    const endpoint = this.getRequiredEnv(ENV_VARS.MOMO_ENDPOINT);
+    const appUrl = this.getRequiredEnv(ENV_VARS.APP_PUBLIC_URL);
+    const callbackUrl = this.getRequiredEnv(ENV_VARS.PAYMENT_CALLBACK_BASE_URL);
+    const redirectUrl = `${appUrl}/profile/wallet?topup=momo`;
+    const ipnUrl = `${callbackUrl}/checkout/momo/ipn`;
+
+    const amount = Math.round(totalAmount).toString();
+    const orderInfo = `Nap tien vao vi dien tu ${txRef}`;
+    const requestId = txRef;
+    const extraData = '';
+    const requestType = 'payWithMethod';
+
+    const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${txRef}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+    const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
+
+    const requestBody = {
+      partnerCode,
+      partnerName: 'MarketPlace',
+      storeId: 'MarketPlace',
+      requestId,
+      amount,
+      orderId: txRef,
+      orderInfo,
+      redirectUrl,
+      ipnUrl,
+      lang: 'vi',
+      requestType,
+      autoCapture: true,
+      extraData,
+      signature,
+    };
+
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 6000);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(JSON.stringify(requestBody)).toString(),
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      const data = await response.json();
+      if (data.resultCode !== 0 || !data.payUrl) {
+        throw new InternalServerErrorException(data.message || 'Loi ket noi cong thanh toan MoMo');
+      }
+      return data.payUrl;
+    } catch (err: any) {
+      if (err instanceof InternalServerErrorException) throw err;
+      throw new InternalServerErrorException('Loi ket noi cong thanh toan MoMo');
+    }
+  }
+
+  async buildPaypalPaymentUrl(txRef: string, totalAmount: number): Promise<string> {
+    const appUrl = this.getRequiredEnv(ENV_VARS.APP_PUBLIC_URL);
+    const clientId = this.getRequiredEnv(ENV_VARS.PAYPAL_CLIENT_ID);
+    const clientSecret = this.getRequiredEnv(ENV_VARS.PAYPAL_CLIENT_SECRET);
+    const environment = this.getRequiredEnv(ENV_VARS.PAYPAL_ENVIRONMENT);
+    const baseUrl = environment === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+
+    try {
+      const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      const tokenRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'grant_type=client_credentials',
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenData.access_token) {
+        throw new InternalServerErrorException('Loi xac thuc cong thanh toan PayPal');
+      }
+
+      const amountUSD = (totalAmount / 25000).toFixed(2);
+      const orderRes = await fetch(`${baseUrl}/v2/checkout/orders`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenData.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          intent: 'CAPTURE',
+          purchase_units: [{ reference_id: txRef, amount: { currency_code: 'USD', value: amountUSD } }],
+          application_context: {
+            return_url: `${appUrl}/profile/wallet?topup=paypal&status=success&txRef=${txRef}&amount=${totalAmount}`,
+            cancel_url: `${appUrl}/profile/wallet?topup=paypal&status=cancel`,
+          },
+        }),
+      });
+      const orderData = await orderRes.json();
+      const approveLink = orderData.links?.find((l: any) => l.rel === 'payer-action');
+      if (!approveLink?.href) {
+        throw new InternalServerErrorException('Khong lay duoc lien ket thanh toan PayPal');
+      }
+      return approveLink.href;
+    } catch (err: any) {
+      if (err instanceof InternalServerErrorException) throw err;
+      throw new InternalServerErrorException('Loi ket noi cong thanh toan PayPal');
+    }
   }
 
   async deductBalance(
@@ -341,7 +479,16 @@ export class WalletsService {
   // Rút tiền (UC18)
 
   async createWithdrawal(userId: string, dto: CreateWithdrawalDto) {
-    if (dto.amount < 10000) {
+    if (!dto.bankName?.trim()) {
+      throw new BadRequestException('Vui lòng chọn hoặc nhập tên ngân hàng');
+    }
+    if (!dto.accountNumber?.trim()) {
+      throw new BadRequestException('Vui lòng nhập số tài khoản ngân hàng');
+    }
+    if (!dto.accountHolder?.trim()) {
+      throw new BadRequestException('Vui lòng nhập tên chủ tài khoản');
+    }
+    if (!dto.amount || dto.amount < 10000) {
       throw new BadRequestException('Số tiền rút tối thiểu là 10.000 ₫');
     }
 
@@ -362,8 +509,10 @@ export class WalletsService {
       }
 
       const balanceBefore = Number(wallet.balance);
-      if (balanceBefore < dto.amount) {
-        throw new BadRequestException('Số dư ví không đủ để thực hiện yêu cầu rút tiền');
+      if (dto.amount > balanceBefore) {
+        throw new BadRequestException(
+          `Số tiền rút (${dto.amount.toLocaleString('vi-VN')} ₫) không được vượt quá số dư hiện có (${balanceBefore.toLocaleString('vi-VN')} ₫)`,
+        );
       }
 
       const balanceAfter = balanceBefore - dto.amount;

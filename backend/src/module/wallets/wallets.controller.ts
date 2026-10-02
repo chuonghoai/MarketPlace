@@ -87,6 +87,66 @@ export class WalletsController {
     };
   }
 
+  @Get('momo/verify')
+  async verifyMomoTopup(@Req() req: any, @Query() query: any) {
+    if (query.resultCode && String(query.resultCode) !== '0' && String(query.resultCode) !== '00') {
+      return {
+        success: false,
+        message: 'Giao dịch nạp tiền qua MoMo không thành công hoặc đã bị hủy',
+      };
+    }
+
+    const amount = Number(query.amount);
+    if (!amount || amount <= 0) {
+      throw new BadRequestException('Số tiền nạp MoMo không hợp lệ');
+    }
+    const txRef = query.orderId || query.requestId || 'MOMO';
+
+    const result = await this.walletsService.topup(
+      req.user.id,
+      amount,
+      'DIRECT',
+      '127.0.0.1',
+      `Nạp tiền qua MoMo (${txRef})`,
+    );
+
+    return {
+      success: true,
+      message: 'Nạp tiền qua MoMo thành công',
+      data: result,
+    };
+  }
+
+  @Get('paypal/verify')
+  async verifyPaypalTopup(@Req() req: any, @Query() query: any) {
+    if (query.status === 'cancel') {
+      return {
+        success: false,
+        message: 'Giao dịch nạp tiền qua PayPal đã bị hủy',
+      };
+    }
+
+    const amount = Number(query.amount);
+    if (!amount || amount <= 0) {
+      throw new BadRequestException('Số tiền nạp PayPal không hợp lệ');
+    }
+    const txRef = query.txRef || query.token || 'PAYPAL';
+
+    const result = await this.walletsService.topup(
+      req.user.id,
+      amount,
+      'DIRECT',
+      '127.0.0.1',
+      `Nạp tiền qua PayPal (${txRef})`,
+    );
+
+    return {
+      success: true,
+      message: 'Nạp tiền qua PayPal thành công',
+      data: result,
+    };
+  }
+
   @Get('transactions')
   async getTransactions(
     @Req() req: any,

@@ -26,7 +26,34 @@ export const useWalletController = () => {
         } else {
           toast(res.message || 'Giao dịch VNPay thất bại', 'error');
         }
-        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    }
+
+    // Check if returning from MoMo Topup
+    if (window.location.search.includes('topup=momo')) {
+      walletService.verifyMomoTopup(window.location.search.slice(1)).then((res) => {
+        if (res.success) {
+          toast(res.message || tWallet('topupSuccess'), 'success');
+          store.fetchWallet();
+          store.fetchTransactions(1);
+        } else {
+          toast(res.message || 'Giao dịch MoMo thất bại', 'error');
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+      });
+    }
+
+    // Check if returning from PayPal Topup
+    if (window.location.search.includes('topup=paypal')) {
+      walletService.verifyPaypalTopup(window.location.search.slice(1)).then((res) => {
+        if (res.success) {
+          toast(res.message || tWallet('topupSuccess'), 'success');
+          store.fetchWallet();
+          store.fetchTransactions(1);
+        } else {
+          toast(res.message || 'Giao dịch PayPal thất bại', 'error');
+        }
         window.history.replaceState({}, document.title, window.location.pathname);
       });
     }
@@ -44,8 +71,8 @@ export const useWalletController = () => {
     setIsTopupModalOpen(false);
   }, []);
 
-  const handleConfirmTopup = useCallback(async (amount: number, method: 'DIRECT' | 'VNPAY' = 'DIRECT') => {
-    if (amount < 1000) {
+  const handleConfirmTopup = useCallback(async (amount: number, method: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL' = 'DIRECT') => {
+    if (amount < 10000) {
       toast(tWallet('topupMinError'), 'warning');
       return;
     }

@@ -59,7 +59,7 @@ export const useWalletStore = () => {
     }
   }, []);
 
-  const topup = useCallback(async (amount: number, method: 'DIRECT' | 'VNPAY' = 'DIRECT') => {
+  const topup = useCallback(async (amount: number, method: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL' = 'DIRECT') => {
     setTopupLoading(true);
     try {
       const res = await walletService.topup(amount, method);

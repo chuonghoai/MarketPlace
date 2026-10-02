@@ -10,6 +10,7 @@ export const WalletPage: React.FC = () => {
   const {
     wallet,
     transactions,
+    withdrawals,
     total,
     page,
     loading,
@@ -46,9 +47,10 @@ export const WalletPage: React.FC = () => {
         isLoading={loading}
       />
 
-      {/* Transactions History */}
+      {/* Transactions & Withdrawals History */}
       <WalletTransactionHistory
         transactions={transactions}
+        withdrawals={withdrawals}
         total={total}
         page={page}
         onPageChange={changePage}

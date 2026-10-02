@@ -4,7 +4,7 @@ import { tWallet } from '../../../../features/wallet/constants/walletL10n';
 interface TopupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (amount: number, method: 'DIRECT' | 'VNPAY') => Promise<void>;
+  onConfirm: (amount: number, method: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL') => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -18,7 +18,7 @@ export const TopupModal: React.FC<TopupModalProps> = ({
 }) => {
   const [selectedAmount, setSelectedAmount] = useState<number>(100000);
   const [customAmount, setCustomAmount] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'DIRECT' | 'VNPAY'>('DIRECT');
+  const [paymentMethod, setPaymentMethod] = useState<'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL'>('MOMO');
 
   if (!isOpen) return null;
 
@@ -36,10 +36,11 @@ export const TopupModal: React.FC<TopupModalProps> = ({
   };
 
   const effectiveAmount = customAmount ? Number(customAmount) : selectedAmount;
+  const isCustomUnderMin = Boolean(customAmount && Number(customAmount) < 10000);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (effectiveAmount >= 1000) {
+    if (effectiveAmount >= 10000) {
       onConfirm(effectiveAmount, paymentMethod);
     }
   };
@@ -80,44 +81,120 @@ export const TopupModal: React.FC<TopupModalProps> = ({
             <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
               {tWallet('topupMethod')}
             </label>
-            <div className="space-y-2">
-              <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                paymentMethod === 'DIRECT'
-                  ? 'border-primary-container bg-surface-container shadow-xs'
-                  : 'border-border-subtle hover:bg-surface-container'
-              }`}>
+            <div className="space-y-2.5">
+              <label
+                className={`flex items-center justify-between p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                  paymentMethod === 'MOMO'
+                    ? 'border-primary-container bg-surface-container shadow-xs'
+                    : 'border-border-subtle hover:border-primary-container/50 hover:bg-surface-container'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <img
+                    src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Logo-MoMo-Square-1024x1024.png"
+                    alt="MoMo"
+                    className="w-8 h-8 object-contain rounded-md shrink-0"
+                  />
+                  <div>
+                    <p className="font-semibold text-xs text-text-ink">{tWallet('topupMomo')}</p>
+                    <p className="text-[11px] text-text-muted">{tWallet('topupMomoDesc')}</p>
+                  </div>
+                </div>
                 <input
                   type="radio"
                   name="topupMethod"
-                  value="DIRECT"
-                  checked={paymentMethod === 'DIRECT'}
-                  onChange={() => setPaymentMethod('DIRECT')}
-                  className="text-primary-container"
+                  value="MOMO"
+                  checked={paymentMethod === 'MOMO'}
+                  onChange={() => setPaymentMethod('MOMO')}
+                  className="w-4 h-4 text-primary-container cursor-pointer"
                 />
-                <div className="flex-1">
-                  <p className="text-xs font-semibold text-text-ink">{tWallet('topupDirect')}</p>
-                </div>
               </label>
 
-              <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                paymentMethod === 'VNPAY'
-                  ? 'border-primary-container bg-surface-container shadow-xs'
-                  : 'border-border-subtle hover:bg-surface-container'
-              }`}>
+              <label
+                className={`flex items-center justify-between p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                  paymentMethod === 'VNPAY'
+                    ? 'border-primary-container bg-surface-container shadow-xs'
+                    : 'border-border-subtle hover:border-primary-container/50 hover:bg-surface-container'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <img
+                    src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png"
+                    alt="VNPAY"
+                    className="w-8 h-8 object-contain rounded-md shrink-0"
+                  />
+                  <div>
+                    <p className="font-semibold text-xs text-text-ink">{tWallet('topupVnpay')}</p>
+                    <p className="text-[11px] text-text-muted">{tWallet('topupVnpayDesc')}</p>
+                  </div>
+                </div>
                 <input
                   type="radio"
                   name="topupMethod"
                   value="VNPAY"
                   checked={paymentMethod === 'VNPAY'}
                   onChange={() => setPaymentMethod('VNPAY')}
-                  className="text-primary-container"
+                  className="w-4 h-4 text-primary-container cursor-pointer"
                 />
-                <div className="flex-1 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-text-ink">{tWallet('topupVnpay')}</p>
-                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-200">
-                    VNPAY QR
-                  </span>
+              </label>
+
+              <label
+                className={`flex items-center justify-between p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                  paymentMethod === 'PAYPAL'
+                    ? 'border-primary-container bg-surface-container shadow-xs'
+                    : 'border-border-subtle hover:border-primary-container/50 hover:bg-surface-container'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Paypal_2014_logo.png"
+                    alt="PayPal"
+                    className="w-8 h-8 object-contain rounded-md shrink-0"
+                  />
+                  <div>
+                    <p className="font-semibold text-xs text-text-ink">{tWallet('topupPaypal')}</p>
+                    <p className="text-[11px] text-text-muted">{tWallet('topupPaypalDesc')}</p>
+                  </div>
                 </div>
+                <input
+                  type="radio"
+                  name="topupMethod"
+                  value="PAYPAL"
+                  checked={paymentMethod === 'PAYPAL'}
+                  onChange={() => setPaymentMethod('PAYPAL')}
+                  className="w-4 h-4 text-primary-container cursor-pointer"
+                />
+              </label>
+
+              <label
+                className={`flex items-center justify-between p-3 border-2 rounded-xl cursor-pointer transition-all ${
+                  paymentMethod === 'DIRECT'
+                    ? 'border-primary-container bg-surface-container shadow-xs'
+                    : 'border-border-subtle hover:border-primary-container/50 hover:bg-surface-container'
+                }`}
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-8 h-8 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-xl">bolt</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-semibold text-xs text-text-ink">{tWallet('topupDirect')}</p>
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+                        Test
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-text-muted">{tWallet('topupDirectDesc')}</p>
+                  </div>
+                </div>
+                <input
+                  type="radio"
+                  name="topupMethod"
+                  value="DIRECT"
+                  checked={paymentMethod === 'DIRECT'}
+                  onChange={() => setPaymentMethod('DIRECT')}
+                  className="w-4 h-4 text-primary-container cursor-pointer"
+                />
               </label>
             </div>
           </div>
@@ -159,12 +236,20 @@ export const TopupModal: React.FC<TopupModalProps> = ({
                 value={customAmount ? Number(customAmount).toLocaleString('vi-VN') : ''}
                 onChange={handleCustomChange}
                 placeholder={tWallet('topupPlaceholder')}
-                className="input-field w-full py-2.5 px-3 pr-10 text-sm font-mono text-text-ink placeholder:text-text-muted/60"
+                className={`input-field w-full py-2.5 px-3 pr-10 text-sm font-mono text-text-ink placeholder:text-text-muted/60 transition-colors ${
+                  isCustomUnderMin ? 'border-amber-500 focus:ring-2 focus:ring-amber-400' : ''
+                }`}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-text-muted">
                 ₫
               </span>
             </div>
+            {isCustomUnderMin && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1 font-medium">
+                <span className="material-symbols-outlined text-sm">info</span>
+                <span>{tWallet('topupMinError')}</span>
+              </p>
+            )}
           </div>
 
           {/* Total Display */}
@@ -187,13 +272,18 @@ export const TopupModal: React.FC<TopupModalProps> = ({
             </button>
             <button
               type="submit"
-              disabled={isLoading || effectiveAmount < 1000}
-              className="flex-1 btn-primary py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              disabled={isLoading || effectiveAmount < 10000}
+              className="flex-1 btn-primary py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <span>{tWallet('topupLoading')}</span>
               ) : (
-                <span>{paymentMethod === 'VNPAY' ? 'Thanh toán qua VNPay' : tWallet('topupConfirm')}</span>
+                <span>
+                  {paymentMethod === 'MOMO' && 'Thanh toán qua MoMo'}
+                  {paymentMethod === 'VNPAY' && 'Thanh toán qua VNPAY'}
+                  {paymentMethod === 'PAYPAL' && 'Thanh toán qua PayPal'}
+                  {paymentMethod === 'DIRECT' && 'Nạp tiền ngay (Thử nghiệm)'}
+                </span>
               )}
             </button>
           </div>

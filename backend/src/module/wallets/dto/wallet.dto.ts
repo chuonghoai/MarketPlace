@@ -2,13 +2,13 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator
 
 export class TopupWalletDto {
   @IsNumber()
-  @Min(1000, { message: 'Số tiền nạp tối thiểu là 1.000 ₫' })
+  @Min(10000, { message: 'Số tiền nạp tối thiểu là 10.000 ₫' })
   @IsNotEmpty({ message: 'Vui lòng nhập số tiền nạp' })
   amount: number;
 
   @IsOptional()
   @IsString()
-  paymentMethod?: 'DIRECT' | 'VNPAY';
+  paymentMethod?: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL';
 }
 
 export class CreateWithdrawalDto {

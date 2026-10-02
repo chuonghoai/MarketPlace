@@ -68,10 +68,10 @@ export const WalletHeroCard: React.FC<WalletHeroCardProps> = ({
           <button
             type="button"
             onClick={onOpenWithdraw}
-            disabled={isLocked || isLoading || balance <= 0}
-            className="py-3 px-5 rounded-xl font-semibold text-sm flex items-center gap-2 border border-border-medium text-text-ink hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLocked || isLoading}
+            className="py-3 px-5 rounded-xl font-semibold text-sm flex items-center gap-2 border border-border-medium bg-surface-card hover:bg-surface-container text-text-ink transition-colors shadow-2xs disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="material-symbols-outlined text-lg">payments</span>
+            <span className="material-symbols-outlined text-lg text-emerald-600 dark:text-emerald-400">payments</span>
             <span>{tWallet('withdrawBtn')}</span>
           </button>
           <button
