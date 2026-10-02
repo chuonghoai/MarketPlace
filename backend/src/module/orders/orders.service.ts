@@ -241,9 +241,7 @@ export class OrdersService {
         for (const item of order.items) {
           await this.productRepository.increment({ id: item.productId }, 'stock', item.quantity);
         }
-        if (Number(order.walletDeductionAmount) > 0) {
-          await this.walletsService.refundBalance(order.userId, Number(order.walletDeductionAmount), order.id);
-        }
+        await this.walletsService.refundOrder(order);
       }
     }
 
@@ -481,9 +479,7 @@ export class OrdersService {
         for (const item of order.items) {
           await this.productRepository.increment({ id: item.productId }, 'stock', item.quantity);
         }
-        if (Number(order.walletDeductionAmount) > 0) {
-          await this.walletsService.refundBalance(order.userId, Number(order.walletDeductionAmount), order.id);
-        }
+        await this.walletsService.refundOrder(order);
       }
     }
 

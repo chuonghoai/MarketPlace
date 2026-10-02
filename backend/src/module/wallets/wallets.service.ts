@@ -208,6 +208,37 @@ export class WalletsService {
     }
   }
 
+  async refundOrder(
+    order: { id: string; userId: string; walletDeductionAmount?: number },
+    queryRunner?: QueryRunner,
+  ): Promise<boolean> {
+    const manager = queryRunner ? queryRunner.manager : this.dataSource.manager;
+
+    const existingRefund = await manager.findOne(WalletTransaction, {
+      where: { orderId: order.id, type: EWalletTransactionType.REFUND },
+    });
+    if (existingRefund) {
+      return false;
+    }
+
+    let refundAmount = Number(order.walletDeductionAmount || 0);
+    if (refundAmount <= 0) {
+      const paymentTx = await manager.findOne(WalletTransaction, {
+        where: { orderId: order.id, type: EWalletTransactionType.PAYMENT },
+      });
+      if (paymentTx) {
+        refundAmount = Math.abs(Number(paymentTx.amount));
+      }
+    }
+
+    if (refundAmount > 0) {
+      await this.refundBalance(order.userId, refundAmount, order.id, queryRunner);
+      return true;
+    }
+
+    return false;
+  }
+
   async getTransactions(userId: string, page = 1, limit = 20) {
     const wallet = await this.getOrCreateWallet(userId);
     const [items, total] = await this.transactionRepository.findAndCount({
