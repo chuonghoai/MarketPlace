@@ -10,9 +10,10 @@ import { User } from '../users/entities/user.entity';
 import { Product } from '../products/entities/product.entity';
 
 import { CheckoutModule } from '../checkout/checkout.module';
+import { WalletsModule } from '../wallets/wallets.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem, User, Product]), MailModule, CheckoutModule],
+  imports: [TypeOrmModule.forFeature([Order, OrderItem, User, Product]), MailModule, CheckoutModule, WalletsModule],
   controllers: [OrdersController, OrderTrackingController],
   providers: [OrdersService],
 })

@@ -45,6 +45,9 @@ export class Order {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   shippingDiscountAmount: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  walletDeductionAmount: number;
+
   @Column({ type: 'json', nullable: true })
   snapshotAddress: object;  
 

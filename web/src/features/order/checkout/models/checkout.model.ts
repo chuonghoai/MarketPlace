@@ -75,6 +75,11 @@ export interface PrepareCheckoutModel {
     totalAmount: number;    // = subTotal + shippingFee - discountAmount - shippingDiscountAmount
 
     invalidItems: InvalidItem[];    // Các sản phẩm không khả dụng
+    walletInfo?: {
+        balance: number;
+        status: string;
+        isUsable: boolean;
+    };
 }
 
 export interface DraftOrderModel {

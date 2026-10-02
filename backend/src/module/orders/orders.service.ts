@@ -11,6 +11,7 @@ import { EPaymentMethod } from '../checkout/enums/EPaymentMethod.enum';
 import { EPaymentStatus } from '../checkout/enums/EPaymentStatus.enum';
 import { CheckoutService } from '../checkout/checkout.service';
 import { Product } from '../products/entities/product.entity';
+import { WalletsService } from '../wallets/wallets.service';
 
 @Injectable()
 export class OrdersService {
@@ -25,6 +26,7 @@ export class OrdersService {
     private readonly checkoutService: CheckoutService,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
+    private readonly walletsService: WalletsService,
   ) { }
 
   async getOrdersByStatus(filterDto: GetOrdersFilterDto): Promise<OrderListItemDto[]> {
@@ -238,6 +240,9 @@ export class OrdersService {
       if (oldStatus !== EOrderStatus.CANCELLED && oldStatus !== EOrderStatus.RETURNED) {
         for (const item of order.items) {
           await this.productRepository.increment({ id: item.productId }, 'stock', item.quantity);
+        }
+        if (Number(order.walletDeductionAmount) > 0) {
+          await this.walletsService.refundBalance(order.userId, Number(order.walletDeductionAmount), order.id);
         }
       }
     }
@@ -475,6 +480,9 @@ export class OrdersService {
       if (oldStatus !== EOrderStatus.CANCELLED && oldStatus !== EOrderStatus.RETURNED) {
         for (const item of order.items) {
           await this.productRepository.increment({ id: item.productId }, 'stock', item.quantity);
+        }
+        if (Number(order.walletDeductionAmount) > 0) {
+          await this.walletsService.refundBalance(order.userId, Number(order.walletDeductionAmount), order.id);
         }
       }
     }

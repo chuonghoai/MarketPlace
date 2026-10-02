@@ -18,6 +18,7 @@ import { OrderTrackingList } from "../pages/profile/order-tracking/OrderTracking
 import { OrderTrackingDetail } from "../pages/profile/order-tracking-detail/OrderTrackingDetail";
 import AddressManagementPage from "../pages/profile/addresses/AddressManagementPage";
 import { OrderEvaluatePage } from "../pages/profile/order-evaluate/OrderEvaluatePage";
+import WalletPage from "../pages/profile/wallet/WalletPage";
 import CartPage from "../pages/cart/CartPage";
 import AuthGuard from "../core/auth/auth.guard";
 import { AdminLayout } from "../admin/layout/AdminLayout";
@@ -77,6 +78,7 @@ function AppRoutes() {
                         <Route index element={<Navigate to="/profile/dashboard" replace />} />
                         <Route path="dashboard" element={<ProfileDashboardPage />} />
                         <Route path="addresses" element={<AddressManagementPage />} />
+                        <Route path="wallet" element={<WalletPage />} />
                         <Route path="order/tracking">
                             <Route index element={<OrderTrackingList />} />
                             <Route path=":orderId" element={<OrderTrackingDetail />} />

@@ -23,6 +23,8 @@ export interface CheckoutRequestDto {
     paymentMethod: EPaymentMethod;
 
     voucherCodes?: string[];
+
+    useWallet?: boolean;
 }
 
 /**
