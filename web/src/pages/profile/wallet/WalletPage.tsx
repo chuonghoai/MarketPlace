@@ -3,6 +3,7 @@ import { useWalletController } from './wallet.controller';
 import { WalletHeroCard } from './components/WalletHeroCard';
 import { WalletTransactionHistory } from './components/WalletTransactionHistory';
 import { TopupModal } from './components/TopupModal';
+import { WithdrawModal } from './components/WithdrawModal';
 import { tWallet } from '../../../features/wallet/constants/walletL10n';
 
 export const WalletPage: React.FC = () => {
@@ -13,10 +14,15 @@ export const WalletPage: React.FC = () => {
     page,
     loading,
     topupLoading,
+    withdrawLoading,
     isTopupModalOpen,
+    isWithdrawModalOpen,
     handleOpenTopup,
     handleCloseTopup,
     handleConfirmTopup,
+    handleOpenWithdraw,
+    handleCloseWithdraw,
+    handleConfirmWithdraw,
     changePage,
   } = useWalletController();
 
@@ -36,6 +42,7 @@ export const WalletPage: React.FC = () => {
       <WalletHeroCard
         wallet={wallet}
         onOpenTopup={handleOpenTopup}
+        onOpenWithdraw={handleOpenWithdraw}
         isLoading={loading}
       />
 
@@ -53,6 +60,15 @@ export const WalletPage: React.FC = () => {
         onClose={handleCloseTopup}
         onConfirm={handleConfirmTopup}
         isLoading={topupLoading}
+      />
+
+      {/* Withdraw Modal */}
+      <WithdrawModal
+        isOpen={isWithdrawModalOpen}
+        onClose={handleCloseWithdraw}
+        availableBalance={wallet ? Number(wallet.balance) : 0}
+        onSubmit={handleConfirmWithdraw}
+        isLoading={withdrawLoading}
       />
     </div>
   );

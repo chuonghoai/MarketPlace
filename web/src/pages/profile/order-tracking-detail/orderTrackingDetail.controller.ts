@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { useOrderTrackingDetailStore } from "./orderTrackingDetail.store";
+import { orderService } from "../../../features/order/tracking/services/order.service";
 import { useToast } from "../../../components/toast/toast";
 
 export const useOrderTrackingDetailController = () => {
@@ -28,15 +29,25 @@ export const useOrderTrackingDetailController = () => {
         }
     }, [orderId, store.cancelOrder, toast]);
 
-    const handleReturnOrder = useCallback(async (note: string) => {
+    const handleReturnOrder = useCallback(async (data: any) => {
         if (!orderId) return;
-        const result = await store.returnOrder(orderId, note);
-        if (result.success) {
-            toast("Yêu cầu trả hàng thành công!", "success");
+        if (typeof data === 'object') {
+            const result = await orderService.createReturnRequest(orderId, data);
+            if (result.success) {
+                toast("Gửi yêu cầu xử lý đổi trả/hoàn tiền thành công!", "success");
+                store.fetchOrderDetail(orderId);
+            } else {
+                toast(result.message || "Không thể gửi yêu cầu đổi trả.", "error");
+            }
         } else {
-            toast(result.message || "Không thể yêu cầu trả hàng.", "error");
+            const result = await store.returnOrder(orderId, String(data));
+            if (result.success) {
+                toast("Yêu cầu trả hàng thành công!", "success");
+            } else {
+                toast(result.message || "Không thể yêu cầu trả hàng.", "error");
+            }
         }
-    }, [orderId, store.returnOrder, toast]);
+    }, [orderId, store, toast]);
 
     return {
         order: store.order,

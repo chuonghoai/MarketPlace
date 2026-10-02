@@ -4,7 +4,7 @@ import { tWallet } from '../../../../features/wallet/constants/walletL10n';
 interface TopupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (amount: number) => Promise<void>;
+  onConfirm: (amount: number, method: 'DIRECT' | 'VNPAY') => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -18,6 +18,7 @@ export const TopupModal: React.FC<TopupModalProps> = ({
 }) => {
   const [selectedAmount, setSelectedAmount] = useState<number>(100000);
   const [customAmount, setCustomAmount] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<'DIRECT' | 'VNPAY'>('DIRECT');
 
   if (!isOpen) return null;
 
@@ -39,7 +40,7 @@ export const TopupModal: React.FC<TopupModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (effectiveAmount >= 1000) {
-      onConfirm(effectiveAmount);
+      onConfirm(effectiveAmount, paymentMethod);
     }
   };
 
@@ -73,7 +74,54 @@ export const TopupModal: React.FC<TopupModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          {/* Payment Method Selector */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
+              {tWallet('topupMethod')}
+            </label>
+            <div className="space-y-2">
+              <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                paymentMethod === 'DIRECT'
+                  ? 'border-primary-container bg-surface-container shadow-xs'
+                  : 'border-border-subtle hover:bg-surface-container'
+              }`}>
+                <input
+                  type="radio"
+                  name="topupMethod"
+                  value="DIRECT"
+                  checked={paymentMethod === 'DIRECT'}
+                  onChange={() => setPaymentMethod('DIRECT')}
+                  className="text-primary-container"
+                />
+                <div className="flex-1">
+                  <p className="text-xs font-semibold text-text-ink">{tWallet('topupDirect')}</p>
+                </div>
+              </label>
+
+              <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                paymentMethod === 'VNPAY'
+                  ? 'border-primary-container bg-surface-container shadow-xs'
+                  : 'border-border-subtle hover:bg-surface-container'
+              }`}>
+                <input
+                  type="radio"
+                  name="topupMethod"
+                  value="VNPAY"
+                  checked={paymentMethod === 'VNPAY'}
+                  onChange={() => setPaymentMethod('VNPAY')}
+                  className="text-primary-container"
+                />
+                <div className="flex-1 flex items-center justify-between">
+                  <p className="text-xs font-semibold text-text-ink">{tWallet('topupVnpay')}</p>
+                  <span className="text-[10px] font-bold text-blue-600 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-full border border-blue-200">
+                    VNPAY QR
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+
           {/* Quick Amounts */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-text-muted mb-2.5">
@@ -145,7 +193,7 @@ export const TopupModal: React.FC<TopupModalProps> = ({
               {isLoading ? (
                 <span>{tWallet('topupLoading')}</span>
               ) : (
-                <span>{tWallet('topupConfirm')}</span>
+                <span>{paymentMethod === 'VNPAY' ? 'Thanh toán qua VNPay' : tWallet('topupConfirm')}</span>
               )}
             </button>
           </div>

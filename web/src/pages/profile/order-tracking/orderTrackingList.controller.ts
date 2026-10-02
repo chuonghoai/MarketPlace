@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useOrderTrackingListStore } from "./orderTrackingList.store";
 import { useToast } from "../../../components/toast/toast";
 import { EOrderStatus } from "../../../features/order/enums/orderStatus.enum";
+import { orderService } from "../../../features/order/tracking/services/order.service";
 
 export type TabKey = "all" | "pending" | "preparing" | "shipping" | "success" | "cancelled" | "returned";
 
@@ -95,23 +96,27 @@ export const useOrderTrackingListController = () => {
         }
     }, [store.cancelOrder, store.fetchOrders, store.fetchOrdersCount, activeTab, toast]);
 
-    const handleReturnOrder = useCallback(async (orderId: string, note: string) => {
-        const result = await store.returnOrder(orderId, note);
-        if (result.success) {
-            toast("Yêu cầu trả hàng thành công!", "success");
-            store.fetchOrdersCount();
-            store.fetchOrders(activeTab === "all" ? undefined : (
-                activeTab === "pending" ? EOrderStatus.PENDING :
-                    activeTab === "preparing" ? EOrderStatus.PREPARING :
-                        activeTab === "shipping" ? EOrderStatus.SHIPPING :
-                            activeTab === "success" ? EOrderStatus.SUCCESS :
-                                activeTab === "cancelled" ? EOrderStatus.CANCELLED :
-                                    activeTab === "returned" ? EOrderStatus.RETURNED : undefined
-            ));
+    const handleReturnOrder = useCallback(async (orderId: string, data: any) => {
+        if (typeof data === 'object') {
+            const result = await orderService.createReturnRequest(orderId, data);
+            if (result.success) {
+                toast("Gửi yêu cầu xử lý đổi trả/hoàn tiền thành công!", "success");
+                store.fetchOrdersCount();
+                store.fetchOrders();
+            } else {
+                toast(result.message || "Không thể gửi yêu cầu đổi trả.", "error");
+            }
         } else {
-            toast(result.message || "Không thể yêu cầu trả hàng.", "error");
+            const result = await store.returnOrder(orderId, String(data));
+            if (result.success) {
+                toast("Yêu cầu trả hàng thành công!", "success");
+                store.fetchOrdersCount();
+                store.fetchOrders();
+            } else {
+                toast(result.message || "Không thể yêu cầu trả hàng.", "error");
+            }
         }
-    }, [store.returnOrder, store.fetchOrders, store.fetchOrdersCount, activeTab, toast]);
+    }, [store, toast]);
 
     return {
         loading: store.loading,

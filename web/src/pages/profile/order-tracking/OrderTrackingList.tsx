@@ -132,8 +132,8 @@ export const OrderTrackingList: React.FC = () => {
                     open={true}
                     order={actionState.order}
                     onClose={() => setActionState({ type: null, order: null })}
-                    onSubmit={async (note) => {
-                        await controller.handleReturnOrder(actionState.order!.id, note);
+                    onSubmit={async (data) => {
+                        await controller.handleReturnOrder(actionState.order!.id, data);
                         setActionState({ type: null, order: null });
                     }}
                 />

@@ -12,6 +12,9 @@ import { EPaymentStatus } from '../checkout/enums/EPaymentStatus.enum';
 import { CheckoutService } from '../checkout/checkout.service';
 import { Product } from '../products/entities/product.entity';
 import { WalletsService } from '../wallets/wallets.service';
+import { OrderReturnRequest } from './entities/order-return-request.entity';
+import { EOrderReturnType, EOrderReturnStatus } from './enums/order-return.enum';
+import { CreateOrderReturnDto, AdminProcessReturnDto, AdminProcessExchangeDto } from './dto/order-return.dto';
 
 @Injectable()
 export class OrdersService {
@@ -27,6 +30,8 @@ export class OrdersService {
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
     private readonly walletsService: WalletsService,
+    @InjectRepository(OrderReturnRequest)
+    private readonly returnRepository: Repository<OrderReturnRequest>,
   ) { }
 
   async getOrdersByStatus(filterDto: GetOrdersFilterDto): Promise<OrderListItemDto[]> {
@@ -487,5 +492,230 @@ export class OrdersService {
     this.sendStatusUpdateEmail(saved, newStatusStr, updateDto.newStatus === EOrderStatus.CANCELLED ? updateDto.note : undefined);
 
     return this.mapToOrderDetailDto(saved);
+  }
+
+  // --- XỬ LÝ HOÀN TRẢ / ĐỔI HÀNG (UC23) ---
+
+  async createReturnRequest(userId: string, orderId: string, dto: CreateOrderReturnDto) {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId, userId },
+      relations: ['items'],
+    });
+
+    if (!order) throw new NotFoundException('Không tìm thấy đơn hàng');
+
+    if (order.status !== EOrderStatus.SUCCESS) {
+      throw new BadRequestException('Chỉ có thể yêu cầu trả hàng/đổi hàng đối với đơn hàng đã hoàn tất (SUCCESS)');
+    }
+
+    // Ràng buộc UC23: trong vòng 7 ngày kể từ khi đơn kết thúc
+    const successEvent = (order.statusHistory || []).slice().reverse().find((h) => h.status === EOrderStatus.SUCCESS);
+    const completedDate = successEvent ? new Date(successEvent.timestamp) : new Date(order.createdAt);
+    const diffDays = (Date.now() - completedDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffDays > 7) {
+      throw new BadRequestException('Đã quá thời hạn 7 ngày kể từ khi nhận hàng để gửi yêu cầu đổi trả');
+    }
+
+    // Check existing pending return request
+    const existing = await this.returnRepository.findOne({
+      where: {
+        orderId,
+        status: In([EOrderReturnStatus.PENDING, EOrderReturnStatus.PICKING_UP, EOrderReturnStatus.RECEIVED]),
+      },
+    });
+    if (existing) {
+      throw new BadRequestException('Đơn hàng này đang có một yêu cầu đổi trả đang được xử lý');
+    }
+
+    const returnRequest = this.returnRepository.create({
+      orderId,
+      userId,
+      type: dto.type,
+      title: dto.title,
+      reason: dto.reason,
+      proofImages: dto.proofImages || [],
+      status: EOrderReturnStatus.PENDING,
+    });
+    const saved = await this.returnRepository.save(returnRequest);
+
+    // Append to statusHistory
+    const history = order.statusHistory || [];
+    history.push({
+      status: order.status,
+      timestamp: new Date().toISOString(),
+      note: `Khách hàng gửi yêu cầu ${dto.type === EOrderReturnType.EXCHANGE ? 'Đổi món hàng mới' : 'Trả hàng hoàn tiền'}: ${dto.title}`,
+    });
+    order.statusHistory = history;
+    await this.orderRepository.save(order);
+
+    return saved;
+  }
+
+  async getReturnRequestByOrderId(orderId: string, userId: string) {
+    const item = await this.returnRepository.findOne({
+      where: { orderId, userId },
+      order: { createdAt: 'DESC' },
+    });
+    return item;
+  }
+
+  async getAdminReturnRequests(page = 1, limit = 20, status?: EOrderReturnStatus) {
+    const qb = this.returnRepository
+      .createQueryBuilder('ret')
+      .leftJoinAndSelect('ret.order', 'order')
+      .leftJoinAndSelect('order.items', 'items');
+
+    if (status) {
+      qb.where('ret.status = :status', { status });
+    }
+
+    const [items, total] = await qb
+      .orderBy('ret.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // Trường hợp 1: Đổi lấy món hàng mới (UC23 - 1.1)
+  async adminProcessExchange(returnId: string, processedBy: string, dto: AdminProcessExchangeDto) {
+    const returnReq = await this.returnRepository.findOne({
+      where: { id: returnId },
+      relations: ['order', 'order.items'],
+    });
+    if (!returnReq) throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+    if (returnReq.status !== EOrderReturnStatus.PENDING) {
+      throw new BadRequestException('Yêu cầu đổi trả này đã được xử lý');
+    }
+
+    const oldOrder = returnReq.order;
+    if (!oldOrder) throw new NotFoundException('Không tìm thấy đơn hàng gốc');
+
+    // Tạo đơn hàng mới theo quy định 1.1
+    const snapshotObj = dto.shippingAddress
+      ? { fullAddress: dto.shippingAddress, recipientName: dto.recipientName, phone: dto.phone }
+      : (typeof oldOrder.snapshotAddress === 'object' ? oldOrder.snapshotAddress : {});
+
+    const newOrderEntity = this.orderRepository.create({
+      userId: oldOrder.userId,
+      totalAmount: 0,
+      subTotal: 0,
+      shippingFee: 0,
+      discountAmount: 0,
+      shippingDiscountAmount: 0,
+      walletDeductionAmount: 0,
+      status: EOrderStatus.PREPARING,
+      paymentStatus: EPaymentStatus.PAID,
+      paymentMethod: oldOrder.paymentMethod,
+      addressId: oldOrder.addressId,
+      snapshotAddress: snapshotObj,
+      note: `Đơn hàng đổi mới từ yêu cầu #${returnReq.id} (Đơn cũ #${oldOrder.id}). ${dto.adminNote || ''}`,
+      statusHistory: [
+        {
+          status: EOrderStatus.PREPARING,
+          timestamp: new Date().toISOString(),
+          note: `Tạo đơn đổi mới từ yêu cầu hỗ trợ #${returnReq.id}`,
+        },
+      ],
+    } as any) as unknown as Order;
+    const savedNewOrder: Order = await this.orderRepository.save(newOrderEntity);
+
+    // Clone order items
+    if (oldOrder.items && oldOrder.items.length > 0) {
+      const newItems = oldOrder.items.map((it) =>
+        this.orderItemRepository.create({
+          orderId: savedNewOrder.id,
+          productId: it.productId,
+          quantity: it.quantity,
+          price: 0,
+          productName: it.productName,
+          productImageUrl: it.productImageUrl,
+          originalPrice: 0,
+          discountPercentage: 0,
+        }),
+      );
+      await this.orderItemRepository.save(newItems);
+    }
+
+    returnReq.status = EOrderReturnStatus.COMPLETED;
+    returnReq.newOrderId = savedNewOrder.id;
+    returnReq.adminNote = dto.adminNote || 'Đã xác nhận đổi món mới và tạo đơn hàng thay thế';
+    returnReq.processedBy = processedBy;
+    await this.returnRepository.save(returnReq);
+
+    return {
+      returnRequest: returnReq,
+      newOrderId: savedNewOrder.id,
+    };
+  }
+
+  // Trường hợp 2: Trả hàng hoàn tiền - Bước lấy hàng (UC23 - 1.2)
+  async adminProcessPickupStep(
+    returnId: string,
+    step: 'PICKING_UP' | 'RECEIVED',
+    processedBy: string,
+    note?: string,
+  ) {
+    const returnReq = await this.returnRepository.findOne({ where: { id: returnId } });
+    if (!returnReq) throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+
+    if (step === 'PICKING_UP') {
+      returnReq.status = EOrderReturnStatus.PICKING_UP;
+      returnReq.adminNote = note || 'Shipper đang liên hệ lấy lại hàng';
+    } else if (step === 'RECEIVED') {
+      returnReq.status = EOrderReturnStatus.RECEIVED;
+      returnReq.adminNote = note || 'Đã nhận lại hàng về kho, sẵn sàng hoàn tiền';
+    }
+    returnReq.processedBy = processedBy;
+    const saved = await this.returnRepository.save(returnReq);
+    return saved;
+  }
+
+  // Trường hợp 2: Trả hàng hoàn tiền - Bước bấm hoàn tiền vào ví (UC23 - 1.2)
+  async adminProcessRefund(returnId: string, processedBy: string, note?: string) {
+    const returnReq = await this.returnRepository.findOne({
+      where: { id: returnId },
+      relations: ['order'],
+    });
+    if (!returnReq) throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+
+    const order = returnReq.order;
+    if (!order) throw new NotFoundException('Không tìm thấy đơn hàng tương ứng');
+
+    const refundAmount = Number(order.totalAmount);
+    // Hoàn toàn bộ số tiền đơn hàng vào Ví điện tử của khách hàng
+    await this.walletsService.refundBalance(
+      order.userId,
+      refundAmount,
+      order.id,
+    );
+
+    // Cập nhật trạng thái đơn hàng sang RETURNED
+    order.status = EOrderStatus.RETURNED;
+    const history = order.statusHistory || [];
+    history.push({
+      status: EOrderStatus.RETURNED,
+      timestamp: new Date().toISOString(),
+      note: `Hoàn tiền ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử cho khách hàng`,
+    });
+    order.statusHistory = history;
+    await this.orderRepository.save(order);
+
+    returnReq.status = EOrderReturnStatus.COMPLETED;
+    returnReq.adminNote = note || `Đã hoàn tất hoàn trả và cộng ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`;
+    returnReq.processedBy = processedBy;
+    const saved = await this.returnRepository.save(returnReq);
+
+    return {
+      returnRequest: saved,
+      refundedAmount: refundAmount,
+    };
   }
 }

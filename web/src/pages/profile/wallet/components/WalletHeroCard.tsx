@@ -5,12 +5,14 @@ import { tWallet } from '../../../../features/wallet/constants/walletL10n';
 interface WalletHeroCardProps {
   wallet: WalletInfo | null;
   onOpenTopup: () => void;
+  onOpenWithdraw: () => void;
   isLoading?: boolean;
 }
 
 export const WalletHeroCard: React.FC<WalletHeroCardProps> = ({
   wallet,
   onOpenTopup,
+  onOpenWithdraw,
   isLoading = false,
 }) => {
   const isLocked = wallet?.status === 'LOCKED';
@@ -63,6 +65,15 @@ export const WalletHeroCard: React.FC<WalletHeroCardProps> = ({
 
         {/* Right: Actions */}
         <div className="shrink-0 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onOpenWithdraw}
+            disabled={isLocked || isLoading || balance <= 0}
+            className="py-3 px-5 rounded-xl font-semibold text-sm flex items-center gap-2 border border-border-medium text-text-ink hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined text-lg">payments</span>
+            <span>{tWallet('withdrawBtn')}</span>
+          </button>
           <button
             type="button"
             onClick={onOpenTopup}

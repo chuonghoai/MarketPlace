@@ -2,6 +2,7 @@ import React from 'react';
 import type { OrderDetail } from '../../../features/order/model/orderDetail.model';
 import { useOrderActionsController } from '../cpnControllers/order-actions.controller';
 import { CancelOrderModal } from './CancelOrderModal';
+import { ReturnProcessModal } from './ReturnProcessModal';
 import { EOrderStatus } from '../../../../features/order/enums/orderStatus.enum';
 
 interface OrderActionsProps {
@@ -113,6 +114,12 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 onClose={orderActionController.handleCloseCancelModal}
                 onConfirm={orderActionController.handleConfirmCancel}
                 isLoading={orderActionController.isLoading}
+            />
+            <ReturnProcessModal
+                isOpen={orderActionController.isReturnModalOpen}
+                onClose={orderActionController.handleCloseReturnModal}
+                order={order}
+                onSuccess={orderActionController.handleReturnSuccess}
             />
         </>
     );

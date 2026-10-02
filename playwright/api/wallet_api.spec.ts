@@ -199,4 +199,137 @@ test.describe('API - Ví điện tử của web (UC20, QĐ4)', () => {
     expect(latestTx.type).toBe('REFUND');
     expect(latestTx.amount).toBe(deducted);
   });
+
+  test.describe('UC18 - Rút tiền từ ví & Duyệt rút tiền', () => {
+    let adminToken: string;
+
+    test.beforeAll(async ({ request }) => {
+      const { TEST_USERS } = await import('../helpers/auth.helper');
+      adminToken = await getAuthToken(request, TEST_USERS.admin);
+    });
+
+    test('Từ chối rút tiền nếu số tiền vượt quá số dư ví', async ({ request }) => {
+      const walletRes = await request.get('/wallets/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const balance = (await walletRes.json()).data.balance;
+
+      const withdrawRes = await request.post('/wallets/withdraw', {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          amount: balance + 10000000,
+          bankName: 'Vietcombank',
+          accountNumber: '9999999999',
+          accountHolder: 'NGUYEN VAN TEST',
+        },
+      });
+
+      expect(withdrawRes.status()).toBe(400);
+    });
+
+    test('Tạo yêu cầu rút tiền thành công, khấu trừ số dư và Admin xem tổng tiền cần chuẩn bị', async ({ request }) => {
+      // 1. Đảm bảo ví có tiền
+      await request.post('/wallets/topup', {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { amount: 100000 },
+      });
+
+      const beforeRes = await request.get('/wallets/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const balanceBefore = (await beforeRes.json()).data.balance;
+
+      const withdrawAmount = 50000;
+      // 2. Gửi yêu cầu rút tiền
+      const withdrawRes = await request.post('/wallets/withdraw', {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          amount: withdrawAmount,
+          bankName: 'Techcombank',
+          accountNumber: '19036789123',
+          accountHolder: 'TRAN VAN TEST',
+        },
+      });
+
+      expect(withdrawRes.status()).toBe(201);
+      const withdrawBody = await withdrawRes.json();
+      expect(withdrawBody.success).toBe(true);
+      const withdrawalId = withdrawBody.data.id;
+      expect(withdrawalId).toBeDefined();
+
+      // 3. Kiểm tra số dư đã bị trừ ngay lập tức
+      const afterRes = await request.get('/wallets/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const balanceAfter = (await afterRes.json()).data.balance;
+      expect(balanceAfter).toBe(balanceBefore - withdrawAmount);
+
+      // 4. Admin xem danh sách: có chứa tổng tiền cần chuẩn bị totalPendingAmount (UC18)
+      const adminListRes = await request.get('/wallets/admin/withdrawals', {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      expect(adminListRes.status()).toBe(200);
+      const adminList = await adminListRes.json();
+      expect(adminList.success).toBe(true);
+      expect(adminList.data).toHaveProperty('totalPendingAmount');
+      expect(adminList.data.totalPendingAmount).toBeGreaterThanOrEqual(withdrawAmount);
+
+      // 5. Admin hoàn tất yêu cầu kèm billProofUrl
+      const completeRes = await request.patch(`/wallets/admin/withdrawals/${withdrawalId}/complete`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: {
+          billProofUrl: 'https://example.com/proof-bill.jpg',
+          adminNote: 'Đã chuyển khoản qua Techcombank',
+        },
+      });
+      expect(completeRes.status()).toBe(200);
+      const completeBody = await completeRes.json();
+      expect(completeBody.success).toBe(true);
+      expect(completeBody.data.status).toBe('COMPLETED');
+      expect(completeBody.data.billProofUrl).toBe('https://example.com/proof-bill.jpg');
+    });
+
+    test('Admin từ chối yêu cầu rút tiền và tự động hoàn trả số dư vào ví', async ({ request }) => {
+      // 1. Nạp tiền
+      await request.post('/wallets/topup', {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { amount: 100000 },
+      });
+
+      const beforeRes = await request.get('/wallets/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const balanceBefore = (await beforeRes.json()).data.balance;
+
+      const withdrawAmount = 30000;
+      // 2. Tạo yêu cầu rút
+      const withdrawRes = await request.post('/wallets/withdraw', {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          amount: withdrawAmount,
+          bankName: 'MB Bank',
+          accountNumber: '00012345678',
+          accountHolder: 'LE VAN TEST',
+        },
+      });
+      const withdrawalId = (await withdrawRes.json()).data.id;
+
+      // 3. Admin từ chối yêu cầu
+      const rejectRes = await request.patch(`/wallets/admin/withdrawals/${withdrawalId}/reject`, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+        data: {
+          reason: 'Số tài khoản không tồn tại trên hệ thống ngân hàng thụ hưởng',
+        },
+      });
+      expect(rejectRes.status()).toBe(200);
+
+      // 4. Số dư ví được hoàn trả lại nguyên vẹn
+      const afterRejectRes = await request.get('/wallets/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const balanceAfterReject = (await afterRejectRes.json()).data.balance;
+      expect(balanceAfterReject).toBe(balanceBefore);
+    });
+  });
 });
+

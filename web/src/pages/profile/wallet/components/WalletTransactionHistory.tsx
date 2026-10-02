@@ -31,6 +31,20 @@ export const WalletTransactionHistory: React.FC<WalletTransactionHistoryProps> =
             {tWallet('typeRefund')}
           </span>
         );
+      case 'WITHDRAWAL':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
+            <span className="material-symbols-outlined text-sm">payments</span>
+            {tWallet('typeWithdrawal')}
+          </span>
+        );
+      case 'WITHDRAWAL_REFUND':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+            <span className="material-symbols-outlined text-sm">replay</span>
+            {tWallet('typeWithdrawalRefund')}
+          </span>
+        );
       case 'PAYMENT':
       default:
         return (

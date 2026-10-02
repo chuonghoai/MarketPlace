@@ -45,16 +45,22 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
         setIsCancelModalOpen(false);
     };
 
+    const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
+    const handleOpenReturnModal = () => setIsReturnModalOpen(true);
+    const handleCloseReturnModal = () => setIsReturnModalOpen(false);
+    const handleReturnSuccess = () => {
+        setIsReturnModalOpen(false);
+        // Refresh order
+        orderService.getOrderDetail(order.id).then((res) => {
+            if (res.success && res.data) onUpdateSuccess(res.data);
+        });
+    };
+
     /**
-     * UI action return order (chưa phát triển)
+     * UI action return order (UC23)
      */
     const handleProcessReturn = () => {
-        // TODO
-        setIsLoading(true);
-        setTimeout(() => {
-            alert("Đã xử lý hoàn trả đơn hàng");
-            setIsLoading(false);
-        }, 1000);
+        handleOpenReturnModal();
     };
 
     /**
@@ -78,6 +84,9 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
         handleCloseCancelModal,
         handleConfirmCancel,
         handleProcessReturn,
-        handleOpenGoogleMaps
+        handleOpenGoogleMaps,
+        isReturnModalOpen,
+        handleCloseReturnModal,
+        handleReturnSuccess,
     };
 };
