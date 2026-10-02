@@ -134,6 +134,10 @@ export class CreateProductDto {
     @IsOptional()
     @IsString()
     careInstructions?: string;
+
+    @IsOptional()
+    @IsString()
+    artisanId?: string;
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}
