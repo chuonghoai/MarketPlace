@@ -38,7 +38,7 @@ export class OrderTrackingController {
     return new ApiResponse(true, 'Cập nhật trạng thái đơn hàng thành công', data);
   }
 
-  // --- YÊU CẦU ĐỔI TRẢ / HOÀN TIỀN (UC23) ---
+  // Đổi trả, hoàn tiền (UC23)
 
   @Post(':id/return-request')
   async createReturnRequest(

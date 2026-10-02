@@ -262,9 +262,7 @@ export class OrdersService {
     }
     this.sendStatusUpdateEmail(saved, newStatusStr, updateDto.status === EOrderStatus.CANCELLED ? updateDto.note : undefined);
 
-    /**
-     * Send billing if order is COD and delivery success
-     */
+    // Gửi email hóa đơn nếu COD và giao hàng thành công
     if (updateDto.status === EOrderStatus.SUCCESS && saved.paymentMethod === EPaymentMethod.COD) {
       console.log('Send billing email to user');
       this.sendBillingEmail(saved);
@@ -273,9 +271,7 @@ export class OrdersService {
     return this.mapToOrderDetailDto(saved);
   }
 
-  /**
-   * Send email when update order status
-   */
+  // Gửi email cập nhật trạng thái đơn hàng
   private async sendStatusUpdateEmail(order: Order, newStatusStr: string, cancelReason?: string) {
     const user = await this.userRepository.findOne({ where: { id: order.userId } });
     if (!user) return;
@@ -336,7 +332,7 @@ export class OrdersService {
     });
   }
 
-  // --- USER TRACKING METHODS ---
+  // Tra cứu đơn hàng (User)
 
   async getTrackingOrders(userId: string, status?: EOrderStatus): Promise<OrderListItemDto[]> {
     const query = this.orderRepository.createQueryBuilder('order')
@@ -494,7 +490,7 @@ export class OrdersService {
     return this.mapToOrderDetailDto(saved);
   }
 
-  // --- XỬ LÝ HOÀN TRẢ / ĐỔI HÀNG (UC23) ---
+  // Xử lý đổi trả, hoàn tiền (UC23)
 
   async createReturnRequest(userId: string, orderId: string, dto: CreateOrderReturnDto) {
     const order = await this.orderRepository.findOne({

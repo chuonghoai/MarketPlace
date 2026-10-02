@@ -27,7 +27,7 @@ export class OrdersController {
     return new ApiResponse(true, 'Lấy thống kê trạng thái đơn hàng thành công', data);
   }
 
-  // --- QUẢN LÝ XỬ LÝ HOÀN TRẢ / ĐỔI HÀNG (UC23) ---
+  // Quản lý hoàn trả, đổi hàng (UC23)
 
   @Get('return-requests')
   async getReturnRequests(

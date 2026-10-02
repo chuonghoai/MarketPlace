@@ -105,7 +105,7 @@ export class WalletsController {
     };
   }
 
-  // --- RÚT TIỀN PHÍA KHÁCH HÀNG (UC18) ---
+  // Rút tiền người dùng (UC18)
 
   @Post('withdraw')
   async createWithdrawal(@Req() req: any, @Body() dto: CreateWithdrawalDto) {
@@ -123,7 +123,7 @@ export class WalletsController {
     };
   }
 
-  // --- QUẢN TRỊ DUYỆT RÚT TIỀN (ADMIN / STAFF - UC18) ---
+  // Quản trị duyệt rút tiền (UC18)
 
   @Get('admin/withdrawals')
   @UseGuards(RolesGuard)

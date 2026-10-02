@@ -29,7 +29,7 @@ export class WalletService {
     return apiClient.get<ApiResponse<WalletTransactionListResponse>>(`/wallets/transactions?page=${page}&limit=${limit}`);
   }
 
-  // --- RÚT TIỀN (USER) ---
+  // Rút tiền (User)
   async createWithdrawal(data: CreateWithdrawalRequest): Promise<ApiResponse<any>> {
     return apiClient.post("/wallets/withdraw", data);
   }
@@ -38,7 +38,7 @@ export class WalletService {
     return apiClient.get<ApiResponse<WalletWithdrawal[]>>("/wallets/withdrawals/me");
   }
 
-  // --- QUẢN LÝ RÚT TIỀN (ADMIN / STAFF) ---
+  // Quản trị rút tiền
   async adminGetWithdrawals(page = 1, limit = 20, status?: string): Promise<ApiResponse<AdminWithdrawalsResponse>> {
     const query = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (status) query.append("status", status);

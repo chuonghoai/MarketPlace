@@ -338,7 +338,7 @@ export class WalletsService {
     return false;
   }
 
-  // --- RÚT TIỀN (WITHDRAWALS - UC18) ---
+  // Rút tiền (UC18)
 
   async createWithdrawal(userId: string, dto: CreateWithdrawalDto) {
     if (dto.amount < 10000) {

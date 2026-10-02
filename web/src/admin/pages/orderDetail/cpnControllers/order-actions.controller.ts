@@ -7,9 +7,7 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
     const [isLoading, setIsLoading] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-    /**
-     * Call service update status
-     */
+    // Gọi service cập nhật trạng thái
     const updateStatus = async (status: EOrderStatus, note: string) => {
         setIsLoading(true);
         try {
@@ -28,16 +26,12 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
         }
     };
 
-    /**
-     * UI action update status (not cancel)
-     */
+    // Cập nhật trạng thái đơn hàng
     const handleConfirmOrder = () => updateStatus(EOrderStatus.PREPARING, "Đơn hàng đã được xác nhận");
     const handleHandOver = () => updateStatus(EOrderStatus.SHIPPING, "Đơn hàng đang được giao");
     const handleComplete = () => updateStatus(EOrderStatus.SUCCESS, "Đơn hàng đã hoàn tất");
 
-    /**
-     * UI action cancel order
-     */
+    // Hủy đơn hàng
     const handleOpenCancelModal = () => setIsCancelModalOpen(true);
     const handleCloseCancelModal = () => setIsCancelModalOpen(false);
     const handleConfirmCancel = async (reason: string) => {
@@ -56,16 +50,12 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
         });
     };
 
-    /**
-     * UI action return order (UC23)
-     */
+    // Xử lý đổi trả (UC23)
     const handleProcessReturn = () => {
         handleOpenReturnModal();
     };
 
-    /**
-     * UI action open google map to shipping location
-     */
+    // Mở Google Maps chỉ đường
     const handleOpenGoogleMaps = () => {
         if (order.latitude !== undefined && order.longitude !== undefined) {
             window.open(`https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}`, '_blank');

@@ -29,17 +29,13 @@ export class OrderService {
         return this.orderRepository.getOrderDetailById(orderId);
     }
 
-    /**
-     * Hủy đơn hàng
-     */
+    // Hủy đơn hàng
     async cancelOrder(orderId: string, note: string): Promise<ApiResponse<OrderTrackingDetail>> {
         const newStatus = EOrderStatus.CANCELLED;
         return this.orderRepository.changeOrderStatus({ orderId, newStatus, note });
     }
 
-    /**
-     * Yêu cầu trả hàng / đổi hàng (UC23)
-     */
+    // Yêu cầu đổi trả (UC23)
     async returnOrder(orderId: string, note: string): Promise<ApiResponse<OrderTrackingDetail>> {
         const newStatus = EOrderStatus.RETURNED;
         return this.orderRepository.changeOrderStatus({ orderId, newStatus, note });

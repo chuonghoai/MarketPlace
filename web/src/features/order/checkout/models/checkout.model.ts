@@ -1,8 +1,6 @@
 import type { ProductItem } from "../../../products/models/product.model";
 
-/**
- * Các sản phẩm được chọn để chuẩn bị tạo đơn hàng
- */
+// Sản phẩm chuẩn bị tạo đơn
 type CheckoutItem = {
     product: {
         id: ProductItem["id"];
@@ -16,10 +14,7 @@ type CheckoutItem = {
     amount: number;     // = quantity * amount
 }
 
-/**
- * Địa chỉ mặc định của người dùng
- * Nếu user chưa có địa chỉ, trả về null
- */
+// Địa chỉ giao hàng
 export type Address = {
     id: number;
 
@@ -45,11 +40,7 @@ export type Address = {
     isDefault?: boolean;    // true nếu đây là địa chỉ mặc định
 }
 
-/**
- * Sản phẩm không khả dụng
- * Ví dụ: Sản phẩm hết hàng, sản phẩm không tồn tại...
- * Có thể trả về null nếu toàn bộ đều hợp lệ
- */
+// Sản phẩm không khả dụng (hết hàng, không tồn tại...)
 type InvalidItem = {
     productId: string;
     reason: string;

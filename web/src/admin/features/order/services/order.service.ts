@@ -33,7 +33,7 @@ export class OrderService {
         return this.orderRepository.updateOrderStatus(request);
     }
 
-    // --- XỬ LÝ HOÀN TRẢ / ĐỔI HÀNG (UC23) ---
+    // Xử lý đổi trả, hoàn tiền (UC23)
 
     getReturnRequests(page = 1, limit = 20, status?: string): Promise<ApiResponse<any>> {
         const query = new URLSearchParams({ page: String(page), limit: String(limit) });
