@@ -7,4 +7,4 @@ dist-ssr/
 .idea
 .vscode/*
 !.vscode/extensions.json
-docs/
+docs/white_box_testing
