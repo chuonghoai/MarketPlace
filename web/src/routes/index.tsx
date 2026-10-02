@@ -33,6 +33,8 @@ import OrderPage from "../admin/pages/order/orderPage";
 import OrderDetailPage from "../admin/pages/orderDetail/orderDetailPage";
 import { VouchersPage } from "../admin/pages/voucher/VouchersPage";
 import { VoucherStatsPage } from "../admin/pages/voucher/VoucherStatsPage";
+import { ArtisanPage } from "../admin/pages/artisans/ArtisanPage";
+import { ArtisanDetailPage } from "../admin/pages/artisans/ArtisanDetailPage";
 
 function AppRoutes() {
     return (
@@ -101,6 +103,9 @@ function AppRoutes() {
                     <Route path="orders/:id" element={<OrderDetailPage />} />
                     <Route path="vouchers" element={<VouchersPage />} />
                     <Route path="vouchers/stats" element={<VoucherStatsPage />} />
+                    <Route path="artisans" element={<ArtisanPage />} />
+                    <Route path="artisans/create" element={<ArtisanDetailPage />} />
+                    <Route path="artisans/:id" element={<ArtisanDetailPage />} />
                 </Route>
 
                 {/* AUTH */}
