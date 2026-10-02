@@ -2,6 +2,7 @@
 - Người phụ trách: 
 - Chức năng liên quan: Quản lý sản phẩm
 - Actor: Admin, nhân viên
+- Trạng thái: DONE
 ---
 
 ## 1. Mô tả chức năng
