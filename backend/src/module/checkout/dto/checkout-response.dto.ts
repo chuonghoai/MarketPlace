@@ -29,6 +29,11 @@ export class InvalidItemResponseDto {
     productId: string;
     reason: string;
 }
+export class WalletInfoResponseDto {
+    balance: number;
+    status: string;
+    isUsable: boolean;
+}
 export class PrepareCheckoutResponseDto {
     prepareTempId: string;
     address: AddressResponseDto | null;
@@ -40,4 +45,5 @@ export class PrepareCheckoutResponseDto {
     appliedVouchers: { voucherCode: string; voucherType: string; discountValue: number }[];
     totalAmount: number;
     invalidItems: InvalidItemResponseDto[];
+    walletInfo?: WalletInfoResponseDto;
 }

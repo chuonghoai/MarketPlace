@@ -7,6 +7,7 @@ import type { OrderRepository } from "../repositories/order.repository";
 import { OrderApiRepository } from "../repositories/orderApi.repository";
 import { OrderMockRepository } from "../repositories/orderMock.repository";
 import { USE_MOCK } from "../../../../core/config/useMock.config";
+import { apiClient } from "../../../../core/api/apiClient";
 
 export class OrderService {
     private readonly orderRepository: OrderRepository;
@@ -28,20 +29,25 @@ export class OrderService {
         return this.orderRepository.getOrderDetailById(orderId);
     }
 
-    /**
-     * Hủy đơn hàng
-     */
+    // Hủy đơn hàng
     async cancelOrder(orderId: string, note: string): Promise<ApiResponse<OrderTrackingDetail>> {
         const newStatus = EOrderStatus.CANCELLED;
         return this.orderRepository.changeOrderStatus({ orderId, newStatus, note });
     }
 
-    /**
-     * Yêu cầu trả hàng
-     */
+    // Yêu cầu đổi trả (UC23)
     async returnOrder(orderId: string, note: string): Promise<ApiResponse<OrderTrackingDetail>> {
         const newStatus = EOrderStatus.RETURNED;
         return this.orderRepository.changeOrderStatus({ orderId, newStatus, note });
+    }
+
+    async createReturnRequest(orderId: string, data: {
+        type: 'EXCHANGE' | 'RETURN_REFUND';
+        title: string;
+        reason: string;
+        proofImages?: string[];
+    }): Promise<ApiResponse<any>> {
+        return apiClient.post(`/orders/tracking/${orderId}/return-request`, data);
     }
 }
 

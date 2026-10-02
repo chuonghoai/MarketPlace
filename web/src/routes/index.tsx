@@ -18,6 +18,7 @@ import { OrderTrackingList } from "../pages/profile/order-tracking/OrderTracking
 import { OrderTrackingDetail } from "../pages/profile/order-tracking-detail/OrderTrackingDetail";
 import AddressManagementPage from "../pages/profile/addresses/AddressManagementPage";
 import { OrderEvaluatePage } from "../pages/profile/order-evaluate/OrderEvaluatePage";
+import WalletPage from "../pages/profile/wallet/WalletPage";
 import CartPage from "../pages/cart/CartPage";
 import AuthGuard from "../core/auth/auth.guard";
 import { AdminLayout } from "../admin/layout/AdminLayout";
@@ -35,6 +36,7 @@ import { VouchersPage } from "../admin/pages/voucher/VouchersPage";
 import { VoucherStatsPage } from "../admin/pages/voucher/VoucherStatsPage";
 import { ArtisanPage } from "../admin/pages/artisans/ArtisanPage";
 import { ArtisanDetailPage } from "../admin/pages/artisans/ArtisanDetailPage";
+import { AdminWithdrawalsPage } from "../admin/pages/wallets/AdminWithdrawalsPage";
 
 function AppRoutes() {
     return (
@@ -79,6 +81,7 @@ function AppRoutes() {
                         <Route index element={<Navigate to="/profile/dashboard" replace />} />
                         <Route path="dashboard" element={<ProfileDashboardPage />} />
                         <Route path="addresses" element={<AddressManagementPage />} />
+                        <Route path="wallet" element={<WalletPage />} />
                         <Route path="order/tracking">
                             <Route index element={<OrderTrackingList />} />
                             <Route path=":orderId" element={<OrderTrackingDetail />} />
@@ -106,6 +109,7 @@ function AppRoutes() {
                     <Route path="artisans" element={<ArtisanPage />} />
                     <Route path="artisans/create" element={<ArtisanDetailPage />} />
                     <Route path="artisans/:id" element={<ArtisanDetailPage />} />
+                    <Route path="wallets/withdrawals" element={<AdminWithdrawalsPage />} />
                 </Route>
 
                 {/* AUTH */}

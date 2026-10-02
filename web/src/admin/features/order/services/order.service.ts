@@ -8,6 +8,7 @@ import { USE_MOCK } from "../../../../core/config/useMock.config";
 import type { OrderStatusCount } from "../model/orderStatusCount.model";
 import type { OrderDetail } from "../model/orderDetail.model";
 import type { UpdateOrderStatusRequest } from "../dto/updateOrderStatus.request";
+import { apiClient } from "../../../../core/api/apiClient";
 
 export class OrderService {
     private readonly orderRepository: OrderRepository;
@@ -30,6 +31,26 @@ export class OrderService {
 
     updateOrderStatus(request: UpdateOrderStatusRequest): Promise<ApiResponse<OrderDetail>> {
         return this.orderRepository.updateOrderStatus(request);
+    }
+
+    // Xử lý đổi trả, hoàn tiền (UC23)
+
+    getReturnRequests(page = 1, limit = 20, status?: string): Promise<ApiResponse<any>> {
+        const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (status) query.append('status', status);
+        return apiClient.get(`/admin/order/return-requests?${query.toString()}`);
+    }
+
+    processExchange(id: string, data: { shippingAddress?: string; adminNote?: string }): Promise<ApiResponse<any>> {
+        return apiClient.patch(`/admin/order/return-requests/${id}/exchange`, data);
+    }
+
+    processPickup(id: string, step: 'PICKING_UP' | 'RECEIVED', note?: string): Promise<ApiResponse<any>> {
+        return apiClient.patch(`/admin/order/return-requests/${id}/pickup`, { step, note });
+    }
+
+    processRefund(id: string, note?: string): Promise<ApiResponse<any>> {
+        return apiClient.patch(`/admin/order/return-requests/${id}/refund`, { note });
     }
 }
 

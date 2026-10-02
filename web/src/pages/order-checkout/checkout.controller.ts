@@ -22,6 +22,7 @@ export const useCheckoutController = ({ initialRequest, tempId }: { initialReque
     const [voucherCodes, setVoucherCodes] = useState<string[]>([]);
     const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
     const [isAddNewAddressModalOpen, setIsAddNewAddressModalOpen] = useState(false);
+    const [useWallet, setUseWallet] = useState(false);
 
     // Init data
     useEffect(() => {
@@ -152,6 +153,7 @@ export const useCheckoutController = ({ initialRequest, tempId }: { initialReque
             addressId: store.data.address.id,
             paymentMethod: selectedPaymentMethod,
             voucherCodes: voucherCodes,
+            useWallet: useWallet,
         };
 
         // Gọi API
@@ -169,7 +171,7 @@ export const useCheckoutController = ({ initialRequest, tempId }: { initialReque
         } else if (store.error) {
             toast(store.error || "Có lỗi xảy ra, vui lòng thử lại", "error");
         }
-    }, [store, selectedPaymentMethod, navigate, toast, voucherCodes, loadCart]);
+    }, [store, selectedPaymentMethod, navigate, toast, voucherCodes, loadCart, useWallet]);
 
     return {
         data: store.data,
@@ -187,6 +189,9 @@ export const useCheckoutController = ({ initialRequest, tempId }: { initialReque
         setIsPaymentModalOpen,
         selectedPaymentMethod,
         setSelectedPaymentMethod,
+
+        useWallet,
+        setUseWallet,
 
         isAddressModalOpen,
         setIsAddressModalOpen,

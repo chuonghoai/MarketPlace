@@ -35,6 +35,9 @@ function CheckoutPage() {
         selectedPaymentMethod,
         setSelectedPaymentMethod,
 
+        useWallet,
+        setUseWallet,
+
         voucherCodes,
         handleApplyVouchers,
         handleSelectAddress,
@@ -126,6 +129,9 @@ function CheckoutPage() {
                             appliedVouchers={data.appliedVouchers}
                             totalAmount={data.totalAmount}
                             selectedPaymentMethod={selectedPaymentMethod}
+                            walletInfo={data.walletInfo}
+                            useWallet={useWallet}
+                            onToggleWallet={setUseWallet}
                             onOpenPaymentModal={() => setIsPaymentModalOpen(true)}
                             onOpenVoucherModal={() => setIsVoucherModalOpen(true)}
                             onOrderSubmit={handleOrderSubmit}
