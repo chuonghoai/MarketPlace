@@ -22,6 +22,7 @@ import AddressManagementPage from "../pages/profile/addresses/AddressManagementP
 import { OrderEvaluatePage } from "../pages/profile/order-evaluate/OrderEvaluatePage";
 import WalletPage from "../pages/profile/wallet/WalletPage";
 import CartPage from "../pages/cart/CartPage";
+import DeviceManagementPage from "../pages/profile/devices/DeviceManagementPage";
 import AuthGuard from "../core/auth/auth.guard";
 import { AdminLayout } from "../admin/layout/AdminLayout";
 import { DashboardPage } from "../admin/pages/overview/DashboardPage";
@@ -100,6 +101,7 @@ function AppRoutes() {
                             <Route path=":orderId" element={<OrderTrackingDetail />} />
                             <Route path=":orderId/evaluate" element={<OrderEvaluatePage />} />
                         </Route>
+                        <Route path="devices" element={<DeviceManagementPage />} />
                     </Route>
                 </Route>
 
