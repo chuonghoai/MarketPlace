@@ -21,17 +21,13 @@ export const useOrderController = () => {
         store.fetchOrdersCount();
     }, [store.fetchOrdersCount]);
 
-    /**
-     * Chuyển tab trạng thái đơn hàng
-     */
+    // Chuyển tab trạng thái đơn hàng
     const handleTabChange = useCallback((tab: TabValue) => {
         searchParams.set('status', tab);
         setSearchParams(searchParams);
     }, [searchParams, setSearchParams]);
 
-    /**
-     * Lọc đơn hàng theo mã đơn hàng, tên hoặc số điện thoại người mua
-     */
+    // Lọc đơn hàng theo mã, tên hoặc số điện thoại
     const filteredOrders = useMemo(() => {
         if (!searchQuery.trim()) return store.orders;
         const lowerQuery = searchQuery.toLowerCase();

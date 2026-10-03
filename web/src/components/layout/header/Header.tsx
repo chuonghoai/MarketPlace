@@ -92,6 +92,11 @@ export const Header = () => {
     navigate(navPath);
   };
 
+  const handleNavigateWallet = () => {
+    if (!user) return;
+    navigate("/profile/wallet");
+  };
+
   return (
     <header className="bg-white border-b border-border-subtle sticky top-0 z-50">
       <div className="max-w-400 mx-auto px-4 md:px-8 h-18 flex items-center justify-between">
@@ -220,6 +225,10 @@ export const Header = () => {
                     <Link to="/auctions" className="cursor-pointer flex items-center h-12 px-4 text-[14px] font-medium text-text-ink hover:bg-market-background transition-colors border-t border-border-subtle">
                       Đấu giá
                     </Link>
+                    {/* Button wallet */}
+                    <button onClick={handleNavigateWallet} className="cursor-pointer flex items-center h-12 px-4 text-[14px] font-medium text-text-ink hover:bg-market-background transition-colors border-t border-border-subtle">
+                      Ví điện tử
+                    </button>
 
                     {/* Button setting */}
                     <Link to="/settings" className="cursor-pointer flex items-center h-12 px-4 text-[14px] font-medium text-text-ink hover:bg-market-background transition-colors border-t border-border-subtle">

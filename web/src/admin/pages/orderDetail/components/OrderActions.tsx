@@ -2,6 +2,7 @@ import React from 'react';
 import type { OrderDetail } from '../../../features/order/model/orderDetail.model';
 import { useOrderActionsController } from '../cpnControllers/order-actions.controller';
 import { CancelOrderModal } from './CancelOrderModal';
+import { ReturnProcessModal } from './ReturnProcessModal';
 import { EOrderStatus } from '../../../../features/order/enums/orderStatus.enum';
 
 interface OrderActionsProps {
@@ -21,10 +22,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
 
     let actions = null;
 
-    /**
-     * Nếu đơn hàng = pending
-     * Hiện 2 nút "Hủy đơn hàng" và "Xác nhận đơn hàng"
-     */
+    // Đơn pending: Hủy hoặc Xác nhận đơn
     if (order.orderStatus === EOrderStatus.PENDING) {
         actions = (
             <div className="flex items-center gap-2">
@@ -45,10 +43,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 </button>
             </div>
         );
-        /**
-         * Nếu đơn hàng = preparing
-         * Hiện nút "Giao cho ĐVVC"
-         */
+        // Đơn preparing: Giao cho ĐVVC
     } else if (order.orderStatus === EOrderStatus.PREPARING) {
         actions = (
             <button
@@ -60,10 +55,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 Giao Cho ĐVVC
             </button>
         );
-        /**
-         * Nếu đơn hàng = shipping
-         * Hiện 2 nút "Mở điều hướng" và "Hoàn tất đơn hàng"
-         */
+        // Đơn shipping: Mở điều hướng hoặc Hoàn tất đơn
     } else if (order.orderStatus === EOrderStatus.SHIPPING) {
         actions = (
             <div className="flex items-center gap-2">
@@ -88,10 +80,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 </button>
             </div>
         );
-        /**
-         * Nếu đơn hàng = returned
-         * Hiện nút "Xử lý hoàn trả"
-         */
+        // Đơn returned: Xử lý hoàn trả
     } else if (order.orderStatus === EOrderStatus.RETURNED) {
         actions = (
             <button
@@ -113,6 +102,12 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 onClose={orderActionController.handleCloseCancelModal}
                 onConfirm={orderActionController.handleConfirmCancel}
                 isLoading={orderActionController.isLoading}
+            />
+            <ReturnProcessModal
+                isOpen={orderActionController.isReturnModalOpen}
+                onClose={orderActionController.handleCloseReturnModal}
+                order={order}
+                onSuccess={orderActionController.handleReturnSuccess}
             />
         </>
     );
