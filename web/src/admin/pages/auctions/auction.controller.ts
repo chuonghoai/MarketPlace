@@ -20,6 +20,14 @@ export const useAuctionController = () => {
         return await store.startItem(itemId);
     }, []);
 
+    const handleCreateAuction = useCallback(async (data: any) => {
+        const success = await store.createAuction(data);
+        if (success) {
+            store.setIsCreateModalOpen(false);
+        }
+        return success;
+    }, []);
+
     return {
         auctions: store.auctions,
         loading: store.loading,
@@ -29,5 +37,6 @@ export const useAuctionController = () => {
         handleOpenCreateModal,
         handleCloseCreateModal,
         handleStartItem,
+        handleCreateAuction,
     };
 };

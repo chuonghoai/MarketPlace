@@ -9,6 +9,8 @@ import { AuthApiRepository } from "../repositories/authApi.repository";
 import { AuthMockRepository } from "../repositories/authMock.repository";
 import { USE_MOCK } from "../../../core/config/useMock.config";
 
+import { tokenService } from "../../../core/auth/token.service";
+
 export class AuthService {
     private readonly authRepository: AuthRepository;
 
@@ -21,6 +23,9 @@ export class AuthService {
 
         if (result.success && result.data) {
             userStorageService.setUser(result.data.user);
+            if (result.data.accessToken) {
+                tokenService.saveAccessToken(result.data.accessToken);
+            }
         }
 
         return result;
@@ -34,12 +39,16 @@ export class AuthService {
         const result = await this.authRepository.register(data);
         if (result.success && result.data) {
             userStorageService.setUser(result.data.user);
+            if (result.data.accessToken) {
+                tokenService.saveAccessToken(result.data.accessToken);
+            }
         }
         return result;
     }
 
     async logout(): Promise<ApiResponse<null>> {
         userStorageService.removeUser();
+        tokenService.removeAccessToken();
         const result = this.authRepository.logout();
         return result;
     }

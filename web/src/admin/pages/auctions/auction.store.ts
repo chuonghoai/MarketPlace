@@ -10,6 +10,7 @@ interface AuctionState {
     
     fetchAuctions: () => Promise<void>;
     startItem: (itemId: string) => Promise<boolean>;
+    createAuction: (data: any) => Promise<boolean>;
     setIsCreateModalOpen: (isOpen: boolean) => void;
 }
 
@@ -37,6 +38,17 @@ export const useAuctionStore = create<AuctionState>((set, get) => ({
             return true;
         } catch (error: any) {
             set({ error: error.message || 'Không thể bắt đầu đấu giá món này' });
+            return false;
+        }
+    },
+
+    createAuction: async (data: any) => {
+        try {
+            await auctionService.createAuction(data);
+            await get().fetchAuctions();
+            return true;
+        } catch (error: any) {
+            set({ error: error.response?.data?.message || error.message || 'Lỗi khi tạo phiên đấu giá' });
             return false;
         }
     },
