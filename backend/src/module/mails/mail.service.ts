@@ -11,16 +11,19 @@ export class MailService {
   async sendOtpEmail(email: string, data: OtpMailData): Promise<void> {
     const subject = data.isRegister ? 'Mã OTP đăng ký - MarketNest' : 'Mã OTP quên mật khẩu - MarketNest';
     
-    this.mailerService.sendMail({
-      to: email,
-      subject: subject,
-      template: './otp',
-      context: {
-        otp: data.generatedOtp
-      },
-    }).catch(e => {
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: subject,
+        template: './otp',
+        context: {
+          otp: data.generatedOtp
+        },
+      });
+    } catch (e) {
       this.logger.error(`Lỗi gửi mail OTP tới ${email}: ${e.message}`, e.stack);
-    });
+      throw e;
+    }
   }
 
   async sendOrderStatusUpdateEmail(email: string, data: OrderStatusMailData): Promise<void> {
