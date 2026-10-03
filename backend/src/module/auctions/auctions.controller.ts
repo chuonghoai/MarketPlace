@@ -19,10 +19,18 @@ export class AuctionsController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(EUserRole.ADMIN, EUserRole.STAFF)
   findAll() {
     return this.auctionsService.findAllAuctions();
+  }
+
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.auctionsService.findOneAuction(id);
+  }
+
+  @Get('items/:itemId/state')
+  getItemState(@Param('itemId') itemId: string) {
+    return this.auctionsService.getAuctionItemState(itemId);
   }
 
   @Patch(':itemId/start')
