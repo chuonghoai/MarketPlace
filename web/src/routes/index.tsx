@@ -12,6 +12,8 @@ import { MainLayout } from "../components/layout/MainLayout";
 import MarketplacePage from "../pages/marketplace/marketplacePage";
 import ProductPage from "../pages/product/productPage";
 import CheckoutPage from "../pages/order-checkout/checkoutPage";
+import AuctionsCustomerPage from "../pages/auctions/AuctionsCustomerPage";
+import AuctionBiddingRoomPage from "../pages/auctions/AuctionBiddingRoomPage";
 import { ProfileLayout } from "../pages/profile/layouts/ProfileLayout";
 import ProfileDashboardPage from "../pages/profile/dashboard/ProfileDashboardPage";
 import { OrderTrackingList } from "../pages/profile/order-tracking/OrderTrackingList";
@@ -34,6 +36,7 @@ import OrderPage from "../admin/pages/order/orderPage";
 import OrderDetailPage from "../admin/pages/orderDetail/orderDetailPage";
 import { VouchersPage } from "../admin/pages/voucher/VouchersPage";
 import { VoucherStatsPage } from "../admin/pages/voucher/VoucherStatsPage";
+import { AuctionsPage } from "../admin/pages/auctions/AuctionsPage";
 import { ArtisanPage } from "../admin/pages/artisans/ArtisanPage";
 import { ArtisanDetailPage } from "../admin/pages/artisans/ArtisanDetailPage";
 import { AdminWithdrawalsPage } from "../admin/pages/wallets/AdminWithdrawalsPage";
@@ -52,6 +55,14 @@ function AppRoutes() {
                     <Route path="product/:id" element={<ProductPage />} />
                     <Route path="product/:slug/:id" element={<ProductPage />} />
                     <Route path=":productSlug" element={<ProductPage />} />
+
+                    {/* AUCTIONS */}
+                    <Route path="auctions" element={<AuctionsCustomerPage />} />
+                    <Route path="auctions/:id" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.USER, EUserRole.ADMIN, EUserRole.STAFF]}>
+                            <AuctionBiddingRoomPage />
+                        </AuthGuard>
+                    } />
 
                     {/* CART */}
                     <Route path="cart" element={
@@ -104,6 +115,7 @@ function AppRoutes() {
                     <Route path="products/:id/edit" element={<EditProductPage />} />
                     <Route path="orders" element={<OrderPage />} />
                     <Route path="orders/:id" element={<OrderDetailPage />} />
+                    <Route path="auctions" element={<AuctionsPage />} />
                     <Route path="vouchers" element={<VouchersPage />} />
                     <Route path="vouchers/stats" element={<VoucherStatsPage />} />
                     <Route path="artisans" element={<ArtisanPage />} />

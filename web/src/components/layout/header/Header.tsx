@@ -221,6 +221,10 @@ export const Header = () => {
                       Đơn hàng
                     </button>
 
+                    {/* Button auction */}
+                    <Link to="/auctions" className="cursor-pointer flex items-center h-12 px-4 text-[14px] font-medium text-text-ink hover:bg-market-background transition-colors border-t border-border-subtle">
+                      Đấu giá
+                    </Link>
                     {/* Button wallet */}
                     <button onClick={handleNavigateWallet} className="cursor-pointer flex items-center h-12 px-4 text-[14px] font-medium text-text-ink hover:bg-market-background transition-colors border-t border-border-subtle">
                       Ví điện tử

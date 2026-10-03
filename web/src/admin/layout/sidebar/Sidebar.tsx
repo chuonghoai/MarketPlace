@@ -50,6 +50,7 @@ export const Sidebar = () => {
         { path: "/admin", icon: "dashboard", label: "Tổng quan" },
         { path: "/admin/orders", icon: "shopping_cart", label: "Đơn hàng" },
         { path: "/admin/products", icon: "inventory_2", label: "Sản phẩm" },
+        { path: "/admin/auctions", icon: "gavel", label: "Đấu giá" },
         { path: "/admin/artisans", icon: "palette", label: "Nghệ danh" },
         { path: "/admin/vouchers", icon: "confirmation_number", label: "Voucher" },
         { path: "/admin/wallets/withdrawals", icon: "account_balance", label: "Rút tiền ví" },
