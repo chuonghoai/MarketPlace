@@ -1,6 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Order } from '../../checkout/entities/order.entity';
-import { EOrderReturnType, EOrderReturnStatus } from '../enums/order-return.enum';
+import {
+  EOrderReturnType,
+  EOrderReturnStatus,
+} from '../enums/order-return.enum';
 
 @Entity('order_returns')
 export class OrderReturnRequest {
@@ -29,7 +40,11 @@ export class OrderReturnRequest {
   @Column({ type: 'simple-array', nullable: true })
   proofImages: string[];
 
-  @Column({ type: 'enum', enum: EOrderReturnStatus, default: EOrderReturnStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: EOrderReturnStatus,
+    default: EOrderReturnStatus.PENDING,
+  })
   status: EOrderReturnStatus;
 
   @Column({ nullable: true })

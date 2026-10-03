@@ -17,7 +17,7 @@ export class RedisService implements OnModuleDestroy {
       throw new Error('REDIS_URI is not defined in environment variables');
     }
     this.redis = new Redis(redisUri);
-    
+
     this.redis.on('connect', () => {
       this.logger.log('Connected to Redis/Valkey successfully.');
     });
@@ -56,15 +56,20 @@ export class RedisService implements OnModuleDestroy {
         return 0
       end
     `;
-    
-    const result = await this.redis.eval(script, 1, `product_stock:${productId}`, quantity);
+
+    const result = await this.redis.eval(
+      script,
+      1,
+      `product_stock:${productId}`,
+      quantity,
+    );
     return result as number;
   }
 
   // Hoàn tồn kho khi giao dịch thất bại
   async restoreStock(items: { productId: string; quantity: number }[]) {
     if (!items || items.length === 0) return;
-    
+
     const pipeline = this.redis.pipeline();
     for (const item of items) {
       pipeline.incrby(`product_stock:${item.productId}`, item.quantity);

@@ -14,9 +14,9 @@ import { Product } from '../products/entities/product.entity';
   imports: [
     TypeOrmModule.forFeature([Auction, AuctionItem, Product]),
     RedisModule,
-    ProductsModule
+    ProductsModule,
   ],
   controllers: [AuctionsController],
-  providers: [AuctionsService, AuctionsGateway]
+  providers: [AuctionsService, AuctionsGateway],
 })
 export class AuctionsModule {}

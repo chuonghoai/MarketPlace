@@ -11,7 +11,7 @@ export class SellersService {
     private readonly sellerRepository: Repository<Seller>,
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
-  ) { }
+  ) {}
 
   async updateSellerStats(sellerId: string): Promise<void> {
     const products = await this.productRepository.find({
@@ -20,11 +20,20 @@ export class SellersService {
     });
 
     const totalProducts = products.length;
-    const averageRating = totalProducts > 0
-      ? Number((products.reduce((sum, p) => sum + (p.rating || 0), 0) / totalProducts).toFixed(1))
-      : 0;
+    const averageRating =
+      totalProducts > 0
+        ? Number(
+            (
+              products.reduce((sum, p) => sum + (p.rating || 0), 0) /
+              totalProducts
+            ).toFixed(1),
+          )
+        : 0;
 
-    await this.sellerRepository.update(sellerId, { totalProducts, averageRating });
+    await this.sellerRepository.update(sellerId, {
+      totalProducts,
+      averageRating,
+    });
   }
 
   async updateAllSellerStats(): Promise<void> {

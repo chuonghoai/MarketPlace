@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryRunner, EntityManager } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -6,8 +11,16 @@ import * as crypto from 'crypto';
 import { Wallet } from './entities/wallet.entity';
 import { WalletTransaction } from './entities/wallet-transaction.entity';
 import { WalletWithdrawal } from './entities/wallet-withdrawal.entity';
-import { EWalletStatus, EWalletTransactionType, EWalletWithdrawalStatus } from './enums/wallet.enum';
-import { CreateWithdrawalDto, CompleteWithdrawalDto, RejectWithdrawalDto } from './dto/wallet.dto';
+import {
+  EWalletStatus,
+  EWalletTransactionType,
+  EWalletWithdrawalStatus,
+} from './enums/wallet.enum';
+import {
+  CreateWithdrawalDto,
+  CompleteWithdrawalDto,
+  RejectWithdrawalDto,
+} from './dto/wallet.dto';
 import { ENV_VARS } from '../../constants/env.constants';
 
 @Injectable()
@@ -29,8 +42,13 @@ export class WalletsService {
     return value;
   }
 
-  async getOrCreateWallet(userId: string, manager?: EntityManager): Promise<Wallet> {
-    const repo = manager ? manager.getRepository(Wallet) : this.walletRepository;
+  async getOrCreateWallet(
+    userId: string,
+    manager?: EntityManager,
+  ): Promise<Wallet> {
+    const repo = manager
+      ? manager.getRepository(Wallet)
+      : this.walletRepository;
     let wallet = await repo.findOne({ where: { userId } });
 
     if (wallet) return wallet;
@@ -55,7 +73,8 @@ export class WalletsService {
       id: wallet.id,
       balance: Number(wallet.balance),
       status: wallet.status,
-      isUsable: wallet.status === EWalletStatus.ACTIVE && Number(wallet.balance) > 0,
+      isUsable:
+        wallet.status === EWalletStatus.ACTIVE && Number(wallet.balance) > 0,
     };
   }
 
@@ -153,7 +172,11 @@ export class WalletsService {
     }
   }
 
-  buildVnpayPaymentUrl(txRef: string, totalAmount: number, ipAddr: string): string {
+  buildVnpayPaymentUrl(
+    txRef: string,
+    totalAmount: number,
+    ipAddr: string,
+  ): string {
     const tmnCode = this.getRequiredEnv(ENV_VARS.VNP_TMN_CODE);
     const secretKey = this.getRequiredEnv(ENV_VARS.VNP_HASH_SECRET);
     const vnpUrl = this.getRequiredEnv(ENV_VARS.VNP_URL);
@@ -227,7 +250,10 @@ export class WalletsService {
     return signed === secureHash;
   }
 
-  async buildMomoPaymentUrl(txRef: string, totalAmount: number): Promise<string> {
+  async buildMomoPaymentUrl(
+    txRef: string,
+    totalAmount: number,
+  ): Promise<string> {
     const partnerCode = this.getRequiredEnv(ENV_VARS.MOMO_PARTNER_CODE);
     const accessKey = this.getRequiredEnv(ENV_VARS.MOMO_ACCESS_KEY);
     const secretKey = this.getRequiredEnv(ENV_VARS.MOMO_SECRET_KEY);
@@ -244,7 +270,10 @@ export class WalletsService {
     const requestType = 'payWithMethod';
 
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${txRef}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
-    const signature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
+    const signature = crypto
+      .createHmac('sha256', secretKey)
+      .update(rawSignature)
+      .digest('hex');
 
     const requestBody = {
       partnerCode,
@@ -270,7 +299,9 @@ export class WalletsService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(JSON.stringify(requestBody)).toString(),
+          'Content-Length': Buffer.byteLength(
+            JSON.stringify(requestBody),
+          ).toString(),
         },
         body: JSON.stringify(requestBody),
         signal: controller.signal,
@@ -278,47 +309,66 @@ export class WalletsService {
       clearTimeout(timer);
       const data = await response.json();
       if (data.resultCode !== 0 || !data.payUrl) {
-        throw new InternalServerErrorException(data.message || 'Loi ket noi cong thanh toan MoMo');
+        throw new InternalServerErrorException(
+          data.message || 'Loi ket noi cong thanh toan MoMo',
+        );
       }
       return data.payUrl;
     } catch (err: any) {
       if (err instanceof InternalServerErrorException) throw err;
-      throw new InternalServerErrorException('Loi ket noi cong thanh toan MoMo');
+      throw new InternalServerErrorException(
+        'Loi ket noi cong thanh toan MoMo',
+      );
     }
   }
 
-  async buildPaypalPaymentUrl(txRef: string, totalAmount: number): Promise<string> {
+  async buildPaypalPaymentUrl(
+    txRef: string,
+    totalAmount: number,
+  ): Promise<string> {
     const appUrl = this.getRequiredEnv(ENV_VARS.APP_PUBLIC_URL);
     const clientId = this.getRequiredEnv(ENV_VARS.PAYPAL_CLIENT_ID);
     const clientSecret = this.getRequiredEnv(ENV_VARS.PAYPAL_CLIENT_SECRET);
     const environment = this.getRequiredEnv(ENV_VARS.PAYPAL_ENVIRONMENT);
-    const baseUrl = environment === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
+    const baseUrl =
+      environment === 'live'
+        ? 'https://api-m.paypal.com'
+        : 'https://api-m.sandbox.paypal.com';
 
     try {
-      const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+      const auth = Buffer.from(`${clientId}:${clientSecret}`).toString(
+        'base64',
+      );
       const tokenRes = await fetch(`${baseUrl}/v1/oauth2/token`, {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${auth}`,
+          Authorization: `Basic ${auth}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: 'grant_type=client_credentials',
       });
       const tokenData = await tokenRes.json();
       if (!tokenData.access_token) {
-        throw new InternalServerErrorException('Loi xac thuc cong thanh toan PayPal');
+        throw new InternalServerErrorException(
+          'Loi xac thuc cong thanh toan PayPal',
+        );
       }
 
       const amountUSD = (totalAmount / 25000).toFixed(2);
       const orderRes = await fetch(`${baseUrl}/v2/checkout/orders`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${tokenData.access_token}`,
+          Authorization: `Bearer ${tokenData.access_token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           intent: 'CAPTURE',
-          purchase_units: [{ reference_id: txRef, amount: { currency_code: 'USD', value: amountUSD } }],
+          purchase_units: [
+            {
+              reference_id: txRef,
+              amount: { currency_code: 'USD', value: amountUSD },
+            },
+          ],
           application_context: {
             return_url: `${appUrl}/profile/wallet?topup=paypal&status=success&txRef=${txRef}&amount=${totalAmount}`,
             cancel_url: `${appUrl}/profile/wallet?topup=paypal&status=cancel`,
@@ -326,14 +376,20 @@ export class WalletsService {
         }),
       });
       const orderData = await orderRes.json();
-      const approveLink = orderData.links?.find((l: any) => l.rel === 'payer-action');
+      const approveLink = orderData.links?.find(
+        (l: any) => l.rel === 'payer-action',
+      );
       if (!approveLink?.href) {
-        throw new InternalServerErrorException('Khong lay duoc lien ket thanh toan PayPal');
+        throw new InternalServerErrorException(
+          'Khong lay duoc lien ket thanh toan PayPal',
+        );
       }
       return approveLink.href;
     } catch (err: any) {
       if (err instanceof InternalServerErrorException) throw err;
-      throw new InternalServerErrorException('Loi ket noi cong thanh toan PayPal');
+      throw new InternalServerErrorException(
+        'Loi ket noi cong thanh toan PayPal',
+      );
     }
   }
 
@@ -377,7 +433,9 @@ export class WalletsService {
       type: EWalletTransactionType.PAYMENT,
       balanceBefore,
       balanceAfter,
-      description: orderId ? `Thanh toán cho đơn hàng #${orderId}` : 'Thanh toán đơn hàng',
+      description: orderId
+        ? `Thanh toán cho đơn hàng #${orderId}`
+        : 'Thanh toán đơn hàng',
     });
     await manager.save(tx);
 
@@ -428,7 +486,9 @@ export class WalletsService {
         type: EWalletTransactionType.REFUND,
         balanceBefore,
         balanceAfter,
-        description: orderId ? `Hoàn tiền từ đơn hàng #${orderId}` : 'Hoàn tiền đơn hàng',
+        description: orderId
+          ? `Hoàn tiền từ đơn hàng #${orderId}`
+          : 'Hoàn tiền đơn hàng',
       });
       await manager.save(tx);
 
@@ -473,7 +533,12 @@ export class WalletsService {
     }
 
     if (refundAmount > 0) {
-      await this.refundBalance(order.userId, refundAmount, order.id, queryRunner);
+      await this.refundBalance(
+        order.userId,
+        refundAmount,
+        order.id,
+        queryRunner,
+      );
       return true;
     }
 
@@ -509,7 +574,9 @@ export class WalletsService {
 
       if (!wallet) throw new NotFoundException('Không tìm thấy thông tin ví');
       if (wallet.status === EWalletStatus.LOCKED) {
-        throw new BadRequestException('Ví của bạn đang bị khóa, không thể rút tiền');
+        throw new BadRequestException(
+          'Ví của bạn đang bị khóa, không thể rút tiền',
+        );
       }
 
       const balanceBefore = Number(wallet.balance);
@@ -550,7 +617,8 @@ export class WalletsService {
 
       return {
         success: true,
-        message: 'Gửi yêu cầu rút tiền thành công, vui lòng chờ bộ phận kế toán xử lý',
+        message:
+          'Gửi yêu cầu rút tiền thành công, vui lòng chờ bộ phận kế toán xử lý',
         data: savedWithdrawal,
       };
     } catch (err) {
@@ -569,8 +637,14 @@ export class WalletsService {
     return items;
   }
 
-  async getAdminWithdrawals(page = 1, limit = 20, status?: EWalletWithdrawalStatus) {
-    const qb = this.withdrawalRepository.createQueryBuilder('w').leftJoinAndSelect('w.wallet', 'wallet');
+  async getAdminWithdrawals(
+    page = 1,
+    limit = 20,
+    status?: EWalletWithdrawalStatus,
+  ) {
+    const qb = this.withdrawalRepository
+      .createQueryBuilder('w')
+      .leftJoinAndSelect('w.wallet', 'wallet');
 
     if (status) {
       qb.where('w.status = :status', { status });
@@ -601,12 +675,21 @@ export class WalletsService {
     };
   }
 
-  async completeWithdrawal(id: string, processedBy: string, dto: CompleteWithdrawalDto) {
-    const withdrawal = await this.withdrawalRepository.findOne({ where: { id } });
-    if (!withdrawal) throw new NotFoundException('Không tìm thấy yêu cầu rút tiền');
+  async completeWithdrawal(
+    id: string,
+    processedBy: string,
+    dto: CompleteWithdrawalDto,
+  ) {
+    const withdrawal = await this.withdrawalRepository.findOne({
+      where: { id },
+    });
+    if (!withdrawal)
+      throw new NotFoundException('Không tìm thấy yêu cầu rút tiền');
 
     if (withdrawal.status !== EWalletWithdrawalStatus.PENDING) {
-      throw new BadRequestException('Yêu cầu rút tiền này đã được xử lý trước đó');
+      throw new BadRequestException(
+        'Yêu cầu rút tiền này đã được xử lý trước đó',
+      );
     }
 
     withdrawal.status = EWalletWithdrawalStatus.COMPLETED;
@@ -618,12 +701,21 @@ export class WalletsService {
     return saved;
   }
 
-  async rejectWithdrawal(id: string, processedBy: string, dto: RejectWithdrawalDto) {
-    const withdrawal = await this.withdrawalRepository.findOne({ where: { id } });
-    if (!withdrawal) throw new NotFoundException('Không tìm thấy yêu cầu rút tiền');
+  async rejectWithdrawal(
+    id: string,
+    processedBy: string,
+    dto: RejectWithdrawalDto,
+  ) {
+    const withdrawal = await this.withdrawalRepository.findOne({
+      where: { id },
+    });
+    if (!withdrawal)
+      throw new NotFoundException('Không tìm thấy yêu cầu rút tiền');
 
     if (withdrawal.status !== EWalletWithdrawalStatus.PENDING) {
-      throw new BadRequestException('Yêu cầu rút tiền này đã được xử lý trước đó');
+      throw new BadRequestException(
+        'Yêu cầu rút tiền này đã được xử lý trước đó',
+      );
     }
 
     const queryRunner = this.dataSource.createQueryRunner();

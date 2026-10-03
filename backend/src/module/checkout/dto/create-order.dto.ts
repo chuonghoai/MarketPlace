@@ -1,28 +1,37 @@
-import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, ValidateNested, IsString, IsBoolean } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  ValidateNested,
+  IsString,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { PrepareCheckoutItemDto } from "./prepare-checkout.dto";
+import { PrepareCheckoutItemDto } from './prepare-checkout.dto';
 import { EPaymentMethod } from '../enums/EPaymentMethod.enum';
 
 export class CreateOrderDto {
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => PrepareCheckoutItemDto)
-    items: PrepareCheckoutItemDto[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PrepareCheckoutItemDto)
+  items: PrepareCheckoutItemDto[];
 
-    @IsNumber()
-    @IsNotEmpty()
-    addressId: number;
+  @IsNumber()
+  @IsNotEmpty()
+  addressId: number;
 
-    @IsEnum(EPaymentMethod)
-    @IsNotEmpty()
-    paymentMethod: EPaymentMethod;
+  @IsEnum(EPaymentMethod)
+  @IsNotEmpty()
+  paymentMethod: EPaymentMethod;
 
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    voucherCodes?: string[];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  voucherCodes?: string[];
 
-    @IsOptional()
-    @IsBoolean()
-    useWallet?: boolean;
+  @IsOptional()
+  @IsBoolean()
+  useWallet?: boolean;
 }

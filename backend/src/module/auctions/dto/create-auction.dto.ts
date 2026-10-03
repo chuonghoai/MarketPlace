@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsDateString, IsInt, IsNotEmpty, IsNumber, IsString, Min, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsDateString,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 
 export class AuctionItemDto {
   @IsString()

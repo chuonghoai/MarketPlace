@@ -1,4 +1,17 @@
-import { Controller, Post, Body, Req, Res, UseGuards, HttpCode, HttpStatus, Get, Param, Query, InternalServerErrorException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  Res,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Get,
+  Param,
+  Query,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { CheckoutService } from './checkout.service';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
@@ -13,25 +26,24 @@ export class CheckoutController {
   constructor(
     private readonly checkoutService: CheckoutService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @UseGuards(JwtAuthGuard)
   @Post('orders/prepare')
-  async prepareCheckout(
-    @Body() dto: PrepareCheckoutDto,
-    @Req() req: any,
-  ) {
+  async prepareCheckout(@Body() dto: PrepareCheckoutDto, @Req() req: any) {
     const data = await this.checkoutService.prepareCheckout(dto, req.user.id);
     return { success: true, message: 'Tính toán đơn hàng thành công', data };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('orders/temp/prepare')
-  async getPreparingOrders(
-    @Req() req: any,
-  ) {
+  async getPreparingOrders(@Req() req: any) {
     const data = await this.checkoutService.getPreparingOrders(req.user.id);
-    return { success: true, message: 'Lấy danh sách đơn hàng đang chuẩn bị thành công', data };
+    return {
+      success: true,
+      message: 'Lấy danh sách đơn hàng đang chuẩn bị thành công',
+      data,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -40,33 +52,48 @@ export class CheckoutController {
     @Body() dto: PrepareCartCheckoutDto,
     @Req() req: any,
   ) {
-    const data = await this.checkoutService.prepareCheckoutAndSaveCart(dto, req.user.id);
-    return { success: true, message: 'Tính toán và lưu giỏ hàng thành công', data };
+    const data = await this.checkoutService.prepareCheckoutAndSaveCart(
+      dto,
+      req.user.id,
+    );
+    return {
+      success: true,
+      message: 'Tính toán và lưu giỏ hàng thành công',
+      data,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('orders/checkout')
   @Throttle({ default: { limit: 1, ttl: 1000 } })
-  async checkoutOrder(
-    @Body() dto: CreateOrderDto,
-    @Req() req: any,
-  ) {
-    const ipAddr = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
-    const result = await this.checkoutService.checkoutOrder(dto, req.user.id, ipAddr);
-    
+  async checkoutOrder(@Body() dto: CreateOrderDto, @Req() req: any) {
+    const ipAddr =
+      req.headers['x-forwarded-for'] ||
+      req.socket?.remoteAddress ||
+      req.ip ||
+      '127.0.0.1';
+    const result = await this.checkoutService.checkoutOrder(
+      dto,
+      req.user.id,
+      ipAddr,
+    );
+
     let message = 'Đặt hàng thành công';
     if (result.paymentRequired) {
-      if (dto.paymentMethod === 'MOMO') message = 'Tạo link thanh toán MoMo thành công';
-      else if (dto.paymentMethod === 'VNPAY') message = 'Tạo link thanh toán VNPay thành công';
-      else if (dto.paymentMethod === 'PAYPAL') message = 'Tạo link thanh toán PayPal thành công';
+      if (dto.paymentMethod === 'MOMO')
+        message = 'Tạo link thanh toán MoMo thành công';
+      else if (dto.paymentMethod === 'VNPAY')
+        message = 'Tạo link thanh toán VNPay thành công';
+      else if (dto.paymentMethod === 'PAYPAL')
+        message = 'Tạo link thanh toán PayPal thành công';
     } else if (dto.useWallet) {
       message = 'Thanh toán qua Ví điện tử thành công';
     }
 
-    return { 
-      success: true, 
-      message, 
-      data: result 
+    return {
+      success: true,
+      message,
+      data: result,
     };
   }
 
@@ -83,14 +110,22 @@ export class CheckoutController {
   }
 
   @Get('checkout/paypal/capture')
-  async handlePayPalCapture(@Query('token') token: string, @Query('orderId') orderId: string, @Res() res: any) {
+  async handlePayPalCapture(
+    @Query('token') token: string,
+    @Query('orderId') orderId: string,
+    @Res() res: any,
+  ) {
     await this.checkoutService.capturePayPalOrder(token, orderId);
-    
+
     const frontendUrl = this.configService.get<string>(ENV_VARS.APP_PUBLIC_URL);
     if (!frontendUrl) {
-      throw new InternalServerErrorException('APP_PUBLIC_URL is not configured in environment');
+      throw new InternalServerErrorException(
+        'APP_PUBLIC_URL is not configured in environment',
+      );
     }
-    return res.redirect(`${frontendUrl}/order/checkout/result?orderId=${orderId}`);
+    return res.redirect(
+      `${frontendUrl}/order/checkout/result?orderId=${orderId}`,
+    );
   }
 
   @Get('checkout/paypal/cancel')
@@ -99,15 +134,22 @@ export class CheckoutController {
 
     const frontendUrl = this.configService.get<string>(ENV_VARS.APP_PUBLIC_URL);
     if (!frontendUrl) {
-      throw new InternalServerErrorException('APP_PUBLIC_URL is not configured in environment');
+      throw new InternalServerErrorException(
+        'APP_PUBLIC_URL is not configured in environment',
+      );
     }
-    return res.redirect(`${frontendUrl}/order/checkout/result?orderId=${orderId}`);
+    return res.redirect(
+      `${frontendUrl}/order/checkout/result?orderId=${orderId}`,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('checkout/orders/:id/payment-status')
   async getPaymentStatus(@Param('id') orderId: string, @Req() req: any) {
-    const status = await this.checkoutService.getPaymentStatus(orderId, req.user.id);
+    const status = await this.checkoutService.getPaymentStatus(
+      orderId,
+      req.user.id,
+    );
     if (!status) {
       return { success: false, message: 'Không tìm thấy đơn hàng' };
     }
@@ -117,10 +159,17 @@ export class CheckoutController {
   @UseGuards(JwtAuthGuard)
   @Get('orders/checkout/result')
   async getOrderResult(@Query('orderId') orderId: string, @Req() req: any) {
-    const data = await this.checkoutService.getPaymentStatus(orderId, req.user.id);
+    const data = await this.checkoutService.getPaymentStatus(
+      orderId,
+      req.user.id,
+    );
     if (!data) {
       return { success: false, message: 'Không tìm thấy đơn hàng' };
     }
-    return { success: true, message: 'Lấy kết quả thanh toán thành công', data };
+    return {
+      success: true,
+      message: 'Lấy kết quả thanh toán thành công',
+      data,
+    };
   }
 }

@@ -48,6 +48,9 @@ export const Sidebar = () => {
 
     const navItems = [
         { path: "/admin", icon: "dashboard", label: "Tổng quan" },
+        { path: "/admin/kpi", icon: "monitoring", label: "KPI Nhân viên", role: EUserRole.ADMIN },
+        { path: "/admin/kpi/me", icon: "monitoring", label: "KPI của tôi", role: EUserRole.STAFF },
+        { path: "/admin/support", icon: "support_agent", label: "Yêu cầu hỗ trợ" },
         { path: "/admin/orders", icon: "shopping_cart", label: "Đơn hàng" },
         { path: "/admin/products", icon: "inventory_2", label: "Sản phẩm" },
         { path: "/admin/auctions", icon: "gavel", label: "Đấu giá" },
@@ -58,6 +61,8 @@ export const Sidebar = () => {
         { path: "/admin/inventory", icon: "warehouse", label: "Kho hàng" },
         { path: "/admin/settings", icon: "settings", label: "Cài đặt" },
     ].filter(item => {
+        if (item.path === "/admin/kpi" && user?.role !== EUserRole.ADMIN) return false;
+        if (item.path === "/admin/kpi/me" && user?.role !== EUserRole.STAFF) return false;
         if (item.path === "/admin/staff" && user?.role !== EUserRole.ADMIN) return false;
         if (item.path === "/admin" && user?.role !== EUserRole.ADMIN) return false;
         return true;

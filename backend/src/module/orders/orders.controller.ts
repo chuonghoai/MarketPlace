@@ -1,7 +1,19 @@
-import { Controller, Get, Param, Patch, Body, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { GetOrdersFilterDto, UpdateOrderStatusDto } from './dto/orders.dto';
-import { AdminProcessExchangeDto, AdminProcessReturnDto } from './dto/order-return.dto';
+import {
+  AdminProcessExchangeDto,
+  AdminProcessReturnDto,
+} from './dto/order-return.dto';
 import { EOrderReturnStatus } from './enums/order-return.enum';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
 import { RolesGuard } from '../../core/security/roles/roles.guard';
@@ -24,7 +36,11 @@ export class OrdersController {
   @Get('status-count')
   async getOrderStatusCounts() {
     const data = await this.ordersService.getOrderStatusCounts();
-    return new ApiResponse(true, 'Lấy thống kê trạng thái đơn hàng thành công', data);
+    return new ApiResponse(
+      true,
+      'Lấy thống kê trạng thái đơn hàng thành công',
+      data,
+    );
   }
 
   // Quản lý hoàn trả, đổi hàng (UC23)
@@ -35,8 +51,16 @@ export class OrdersController {
     @Query('limit') limit = 20,
     @Query('status') status?: EOrderReturnStatus,
   ) {
-    const data = await this.ordersService.getAdminReturnRequests(Number(page) || 1, Number(limit) || 20, status);
-    return new ApiResponse(true, 'Lấy danh sách yêu cầu đổi trả thành công', data);
+    const data = await this.ordersService.getAdminReturnRequests(
+      Number(page) || 1,
+      Number(limit) || 20,
+      status,
+    );
+    return new ApiResponse(
+      true,
+      'Lấy danh sách yêu cầu đổi trả thành công',
+      data,
+    );
   }
 
   @Patch('return-requests/:id/exchange')
@@ -45,7 +69,11 @@ export class OrdersController {
     @Req() req: any,
     @Body() dto: AdminProcessExchangeDto,
   ) {
-    const data = await this.ordersService.adminProcessExchange(id, req.user.id, dto);
+    const data = await this.ordersService.adminProcessExchange(
+      id,
+      req.user.id,
+      dto,
+    );
     return new ApiResponse(true, 'Xử lý đổi đơn hàng mới thành công', data);
   }
 
@@ -55,8 +83,17 @@ export class OrdersController {
     @Req() req: any,
     @Body() body: { step: 'PICKING_UP' | 'RECEIVED'; note?: string },
   ) {
-    const data = await this.ordersService.adminProcessPickupStep(id, body.step, req.user.id, body.note);
-    return new ApiResponse(true, 'Cập nhật tiến trình lấy hàng thành công', data);
+    const data = await this.ordersService.adminProcessPickupStep(
+      id,
+      body.step,
+      req.user.id,
+      body.note,
+    );
+    return new ApiResponse(
+      true,
+      'Cập nhật tiến trình lấy hàng thành công',
+      data,
+    );
   }
 
   @Patch('return-requests/:id/refund')
@@ -65,8 +102,16 @@ export class OrdersController {
     @Req() req: any,
     @Body() body: { note?: string },
   ) {
-    const data = await this.ordersService.adminProcessRefund(id, req.user.id, body?.note);
-    return new ApiResponse(true, 'Hoàn tiền vào ví điện tử của khách hàng thành công', data);
+    const data = await this.ordersService.adminProcessRefund(
+      id,
+      req.user.id,
+      body?.note,
+    );
+    return new ApiResponse(
+      true,
+      'Hoàn tiền vào ví điện tử của khách hàng thành công',
+      data,
+    );
   }
 
   @Get(':id')
@@ -81,6 +126,10 @@ export class OrdersController {
     @Body() updateDto: UpdateOrderStatusDto,
   ) {
     const data = await this.ordersService.updateOrderStatus(id, updateDto);
-    return new ApiResponse(true, 'Cập nhật trạng thái đơn hàng thành công', data);
+    return new ApiResponse(
+      true,
+      'Cập nhật trạng thái đơn hàng thành công',
+      data,
+    );
   }
 }
