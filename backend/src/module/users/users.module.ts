@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { User } from "./entities/user.entity";
+import { UserDevice } from "./entities/user-device.entity";
 import { Address } from "./entities/address-users.entity";
 import { UsersService } from "./users.service";
 import { JwtModule } from "@nestjs/jwt";
@@ -11,7 +12,7 @@ import { Favorite } from "../products/entities/favorite.entity";
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([User, Favorite, Address]),
+        TypeOrmModule.forFeature([User, UserDevice, Favorite, Address]),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

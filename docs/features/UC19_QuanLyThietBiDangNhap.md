@@ -2,6 +2,7 @@
 - Người phụ trách: 
 - Chức năng liên quan: Đăng nhập, đăng ký
 - Actor: Admin, nhân viên, khách hàng
+- Trạng thái: DONE
 ---
 
 ## 1. Mô tả chức năng

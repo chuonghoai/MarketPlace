@@ -9,11 +9,12 @@ import { ConfigService } from '@nestjs/config';
 import { ENV_VARS } from 'src/constants/env.constants';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
+import { UserDevice } from '../users/entities/user-device.entity';
 import { MailModule } from '../mails/mail.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserDevice]),
     PassportModule,
     MailModule,
     CacheModule.register(),

@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
+import { UserDevice } from '../users/entities/user-device.entity';
 import { LoginDto } from './dto/login.dto';
 import { SendOtpDto } from './dto/otp.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -24,11 +25,12 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(UserDevice) private userDeviceRepo: Repository<UserDevice>,
     private readonly mailService: MailService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
-  async login(loginDto: LoginDto): Promise<ApiResponse<any>> {
+  async login(loginDto: LoginDto, deviceId?: string, userAgent?: string): Promise<ApiResponse<any>> {
     const { email, password } = loginDto;
     const user = await this.userRepository.findOne({
       where: { email },
@@ -39,9 +41,29 @@ export class AuthService {
       throw new CustomException(HttpStatus.UNAUTHORIZED, 'AUTH_FAILED', 'Tài khoản hoặc mật khẩu không đúng');
     }
 
+    let activeDeviceId = deviceId || 'unknown-device';
+    if (deviceId) {
+      const device = await this.userDeviceRepo.findOne({ where: { deviceId, user: { id: user.id } } });
+      if (device) {
+        device.isActive = true;
+        device.lastLoginAt = new Date();
+        device.deviceName = userAgent || device.deviceName;
+        await this.userDeviceRepo.save(device);
+      } else {
+        await this.userDeviceRepo.save({
+          user,
+          deviceId,
+          deviceName: userAgent || 'Unknown Device',
+          isActive: true,
+          lastLoginAt: new Date(),
+        });
+      }
+    }
+
     const payload = {
       userId: user.id,
-      version: user.tokenVersion
+      version: user.tokenVersion,
+      deviceId: activeDeviceId
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -58,7 +80,7 @@ export class AuthService {
     });
   }
 
-  async register(registerDto: RegisterDto): Promise<ApiResponse<any>> {
+  async register(registerDto: RegisterDto, deviceId?: string, userAgent?: string): Promise<ApiResponse<any>> {
     const { email, password, confirmPassword, otp } = registerDto;
 
     if (password !== confirmPassword) {
@@ -97,9 +119,21 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(newUser);
 
+    let activeDeviceId = deviceId || 'unknown-device';
+    if (deviceId) {
+      await this.userDeviceRepo.save({
+        user: savedUser,
+        deviceId,
+        deviceName: userAgent || 'Unknown Device',
+        isActive: true,
+        lastLoginAt: new Date(),
+      });
+    }
+
     const payload = {
       userId: savedUser.id,
-      version: savedUser.tokenVersion
+      version: savedUser.tokenVersion,
+      deviceId: activeDeviceId
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -185,4 +219,24 @@ export class AuthService {
     await this.userRepository.increment({ id: userId }, 'tokenVersion', 1);
     return new ApiResponse(true, 'Đăng xuất thành công', null);
   }
-}
+
+  async getDevices(userId: string): Promise<ApiResponse<UserDevice[]>> {
+    const devices = await this.userDeviceRepo.find({
+      where: { user: { id: userId } },
+      order: { lastLoginAt: 'DESC' }
+    });
+    return new ApiResponse(true, 'Lấy danh sách thiết bị thành công', devices);
+  }
+
+  async revokeDevice(userId: string, deviceId: string): Promise<ApiResponse<null>> {
+    const device = await this.userDeviceRepo.findOne({
+      where: { deviceId, user: { id: userId } }
+    });
+    if (!device) {
+      throw new CustomException(HttpStatus.NOT_FOUND, 'DEVICE_NOT_FOUND', 'Không tìm thấy thiết bị');
+    }
+    device.isActive = false;
+    await this.userDeviceRepo.save(device);
+    return new ApiResponse(true, 'Đã đăng xuất thiết bị', null);
+  }
+}

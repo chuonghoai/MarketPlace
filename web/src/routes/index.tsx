@@ -40,6 +40,8 @@ import { AuctionsPage } from "../admin/pages/auctions/AuctionsPage";
 import { ArtisanPage } from "../admin/pages/artisans/ArtisanPage";
 import { ArtisanDetailPage } from "../admin/pages/artisans/ArtisanDetailPage";
 import { AdminWithdrawalsPage } from "../admin/pages/wallets/AdminWithdrawalsPage";
+import { StaffPage } from "../admin/pages/staff/StaffPage";
+import { SettingsPage } from "../admin/pages/settings/SettingsPage";
 
 function AppRoutes() {
     return (
@@ -108,7 +110,11 @@ function AppRoutes() {
                     </AuthGuard>
                 }>
                     <Route index element={<Navigate to="/admin/overview" replace />} />
-                    <Route path="overview" element={<DashboardPage />} />
+                    <Route path="overview" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.ADMIN]}>
+                            <DashboardPage />
+                        </AuthGuard>
+                    } />
                     <Route path="products" element={<ProductsPage />} />
                     <Route path="products/create" element={<CreateProductPage />} />
                     <Route path="products/:id" element={<ProductDetailPage />} />
@@ -122,6 +128,12 @@ function AppRoutes() {
                     <Route path="artisans/create" element={<ArtisanDetailPage />} />
                     <Route path="artisans/:id" element={<ArtisanDetailPage />} />
                     <Route path="wallets/withdrawals" element={<AdminWithdrawalsPage />} />
+                    <Route path="staff" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.ADMIN]}>
+                            <StaffPage />
+                        </AuthGuard>
+                    } />
+                    <Route path="settings" element={<SettingsPage />} />
                 </Route>
 
                 {/* AUTH */}

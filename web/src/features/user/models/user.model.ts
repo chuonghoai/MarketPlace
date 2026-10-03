@@ -11,4 +11,5 @@ export interface User {
     fullName: string;
     role: UserRole;
     avatarUrl?: string;
+    phone?: string;
 }

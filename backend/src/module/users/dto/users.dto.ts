@@ -55,3 +55,17 @@ export class UpdateProfileRequest {
     @IsOptional()
     dateOfBirth: string;
 }
+
+export class ChangePasswordRequest {
+    @IsString()
+    @IsNotEmpty()
+    currentPassword: string;
+
+    @IsString()
+    @IsNotEmpty()
+    newPassword: string;
+
+    @IsString()
+    @IsNotEmpty()
+    confirmPassword: string;
+}

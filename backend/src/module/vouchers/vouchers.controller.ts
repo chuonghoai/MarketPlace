@@ -9,7 +9,6 @@ import { CreateVoucherRequestDto, GetVouchersQueryDto, UpdateVoucherRequestDto, 
 
 @Controller('api/v1/admin/vouchers')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(EUserRole.ADMIN)
 export class VouchersController {
   constructor(private readonly vouchersService: VouchersService) {}
 

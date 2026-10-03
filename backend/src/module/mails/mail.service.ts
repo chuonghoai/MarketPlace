@@ -47,4 +47,15 @@ export class MailService {
       this.logger.error(`Lỗi gửi mail hóa đơn tới ${email}: ${e.message}`, e.stack);
     });
   }
+
+  async sendStaffAccountMail(data: any): Promise<void> {
+    this.mailerService.sendMail({
+      to: data.email,
+      subject: `Thông tin tài khoản nhân viên - MarketNest`,
+      template: './staff-account',
+      context: data,
+    }).catch(e => {
+      this.logger.error(`Lỗi gửi mail tài khoản nhân viên tới ${data.email}: ${e.message}`, e.stack);
+    });
+  }
 }

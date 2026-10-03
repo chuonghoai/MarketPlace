@@ -1,6 +1,7 @@
 # UseCase: UC16 - Quản lý nhân viên
 - Người phụ trách: 
 - Actor: quản trị viên
+- Trạng thái: DONE
 ---
 
 ## 1. Mô tả chức năng

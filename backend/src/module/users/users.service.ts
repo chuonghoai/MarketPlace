@@ -4,7 +4,8 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { CustomException } from "src/core/exceptions/custom.exception";
 import { ApiResponse } from "src/core/dto/ApiResponse.dto";
-import { UpdateProfileRequest } from "./dto/users.dto";
+import { UpdateProfileRequest, ChangePasswordRequest } from "./dto/users.dto";
+import * as bcrypt from 'bcrypt';
 import { WishlistResponse } from "./dto/wishlist.dto";
 import { Favorite } from "../products/entities/favorite.entity";
 import { Address } from "./entities/address-users.entity";
@@ -42,6 +43,35 @@ export class UsersService {
 
         await this.userRepository.save(user);
         return new ApiResponse(true, 'Cập nhật thông tin thành công', null);
+    }
+
+    async changePassword(userId: string, data: ChangePasswordRequest): Promise<ApiResponse<null>> {
+        const { currentPassword, newPassword, confirmPassword } = data;
+        
+        if (newPassword !== confirmPassword) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, 'PASSWORD_MISMATCH', 'Mật khẩu xác nhận không khớp');
+        }
+
+        const user = await this.userRepository.findOne({ 
+            where: { id: userId },
+            select: ['id', 'password', 'tokenVersion']
+        });
+
+        if (!user) {
+            throw new CustomException(HttpStatus.NOT_FOUND, 'USER_NOT_FOUND', 'Người dùng không tồn tại');
+        }
+
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, 'WRONG_PASSWORD', 'Mật khẩu hiện tại không đúng');
+        }
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.tokenVersion += 1;
+        
+        await this.userRepository.save(user);
+        
+        return new ApiResponse(true, 'Đổi mật khẩu thành công', null);
     }
 
     async getWishlist(userId: string, page: number, pageSize: number): Promise<ApiResponse<WishlistResponse>> {
