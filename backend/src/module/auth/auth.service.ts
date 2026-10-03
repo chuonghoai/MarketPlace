@@ -136,7 +136,7 @@ export class AuthService {
     }
 
     try {
-      this.mailService.sendOtpEmail(email, {
+      await this.mailService.sendOtpEmail(email, {
         generatedOtp,
         isRegister: dto.purpose === OtpPurpose.REGISTER
       });
