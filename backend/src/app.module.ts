@@ -21,7 +21,9 @@ import { OrdersModule } from './module/orders/orders.module';
 import { VouchersModule } from './module/vouchers/vouchers.module';
 import { OpensearchModule } from './module/opensearch/opensearch.module';
 import { RedisModule } from './module/redis/redis.module';
+import { WalletsModule } from './module/wallets/wallets.module';
 import { ENV_VARS } from './constants/env.constants';
+import { ArtisansModule } from './module/artisans/artisans.module';
 import * as path from 'path';
 
 const activeEnv = process.env.APP_ENV;
@@ -97,6 +99,8 @@ const resolvedEnvPaths = [
     VouchersModule,
     OpensearchModule,
     RedisModule,
+    WalletsModule,
+    ArtisansModule,
   ],
   controllers: [],
   providers: [

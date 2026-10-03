@@ -10,7 +10,17 @@ interface ShippingInfoCardProps {
 
 export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCancelClick, onReturnClick }) => {
     const canCancel = order.orderStatus === EOrderStatus.PENDING;
-    const canReturn = order.orderStatus === EOrderStatus.SUCCESS;
+
+    // Ràng buộc UC23: trong vòng 7 ngày kể từ khi đơn kết thúc
+    const isWithin7Days = (() => {
+        if (order.orderStatus !== EOrderStatus.SUCCESS) return false;
+        const successHistory = order.statusHistory?.slice().reverse().find(h => h.status === EOrderStatus.SUCCESS);
+        const deliveredDate = successHistory ? new Date(successHistory.timestamp) : new Date(order.createdAt);
+        const diffDays = (Date.now() - deliveredDate.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+    })();
+
+    const canReturn = isWithin7Days;
 
     return (
         <div className="flex flex-col gap-6">
@@ -121,8 +131,13 @@ export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCan
                                 onClick={onReturnClick}
                                 className="w-full min-h-11 flex items-center justify-center font-medium text-white bg-market-warning hover:bg-amber-600 rounded-xl transition-colors shadow-sm"
                             >
-                                Yêu cầu trả hàng
+                                Yêu cầu đổi trả / Hoàn tiền
                             </button>
+                        )}
+                        {order.orderStatus === EOrderStatus.SUCCESS && !isWithin7Days && (
+                            <div className="p-3 text-xs text-stone-500 bg-stone-50 rounded-xl border border-stone-200 text-center">
+                                Đã hết hạn yêu cầu đổi trả (quá 7 ngày)
+                            </div>
                         )}
                     </div>
                 )}

@@ -1,0 +1,12 @@
+export enum EOrderReturnType {
+  EXCHANGE = 'EXCHANGE',
+  RETURN_REFUND = 'RETURN_REFUND',
+}
+
+export enum EOrderReturnStatus {
+  PENDING = 'PENDING',
+  PICKING_UP = 'PICKING_UP',
+  RECEIVED = 'RECEIVED',
+  COMPLETED = 'COMPLETED',
+  REJECTED = 'REJECTED',
+}

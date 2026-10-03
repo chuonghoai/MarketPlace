@@ -33,6 +33,8 @@ import { OrderVoucher } from './entities/order-voucher.entity';
 import { CheckoutPrepare } from './entities/checkout-prepare.entity';
 import { ECheckoutPrepareStatus } from './enums/ECheckoutPrepareStatus.enum';
 import { RedisService } from '../redis/redis.service';
+import { WalletsService } from '../wallets/wallets.service';
+import { EPaymentMethod } from './enums/EPaymentMethod.enum';
 
 @Injectable()
 export class CheckoutService {
@@ -59,6 +61,7 @@ export class CheckoutService {
     private checkoutPrepareRepository: Repository<CheckoutPrepare>,
     private dataSource: DataSource,
     private redisService: RedisService,
+    private walletsService: WalletsService,
   ) { }
 
   private mapAddressToDto(address: Address): AddressResponseDto {
@@ -347,6 +350,8 @@ export class CheckoutService {
        });
     }
 
+    const walletInfo = await this.walletsService.getWalletInfo(userId);
+
     return {
       prepareTempId,
       address: address ? this.mapAddressToDto(address) : null,
@@ -358,6 +363,7 @@ export class CheckoutService {
       appliedVouchers,
       totalAmount: subTotal - discountAmount + shippingFee - shippingDiscountAmount,
       invalidItems,
+      walletInfo,
     };
   }
 
@@ -538,13 +544,36 @@ export class CheckoutService {
       }
     }
 
+    let walletDeductionAmount = 0;
+    let remainingAmount = totalAmount;
+
+    if (dto.useWallet) {
+      const walletInfo = await this.walletsService.getWalletInfo(userId);
+      if (walletInfo.status === 'LOCKED') {
+        throw new BadRequestException('Ví của bạn đang bị tạm khóa');
+      }
+      if (walletInfo.balance <= 0) {
+        throw new BadRequestException('Số dư không đủ, vui lòng tải lại trang');
+      }
+      walletDeductionAmount = Math.min(walletInfo.balance, totalAmount);
+      remainingAmount = totalAmount - walletDeductionAmount;
+
+      if (remainingAmount > 0 && dto.paymentMethod === EPaymentMethod.WALLET) {
+        throw new BadRequestException('Số dư ví không đủ để thanh toán toàn bộ đơn hàng, vui lòng chọn phương thức thanh toán phụ');
+      }
+    }
+
+    const isFullyPaidByWallet = dto.useWallet && remainingAmount === 0;
+    const finalPaymentMethod = isFullyPaidByWallet ? EPaymentMethod.WALLET : dto.paymentMethod;
+    const finalPaymentStatus = isFullyPaidByWallet ? EPaymentStatus.PAID : EPaymentStatus.PENDING;
+
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     let orderId: string;
     try {
-      if (dto.paymentMethod === 'COD') {
+      if (finalPaymentMethod === 'COD' || isFullyPaidByWallet) {
         for (const v of validVouchers) {
           const lockedVoucher = await queryRunner.manager.createQueryBuilder(Voucher, 'voucher')
             .setLock('pessimistic_write')
@@ -569,18 +598,23 @@ export class CheckoutService {
         discountAmount,
         shippingDiscountAmount,
         totalAmount,
+        walletDeductionAmount,
         status: EOrderStatus.PENDING,
-        paymentStatus: EPaymentStatus.PENDING,
-        paymentMethod: dto.paymentMethod,
+        paymentStatus: finalPaymentStatus,
+        paymentMethod: finalPaymentMethod,
         snapshotAddress: this.mapAddressToDto(address),
         statusHistory: [{
           status: EOrderStatus.PENDING,
           timestamp: new Date(),
-          note: 'Đơn hàng đã được tạo'
+          note: isFullyPaidByWallet ? 'Đơn hàng đã được thanh toán qua Ví điện tử' : 'Đơn hàng đã được tạo'
         }]
       });
       order = await queryRunner.manager.save(order);
       orderId = order.id;
+
+      if (dto.useWallet && walletDeductionAmount > 0) {
+        await this.walletsService.deductBalance(userId, walletDeductionAmount, orderId, queryRunner);
+      }
 
       const orderItems = validOrderItems.map((item) =>
         queryRunner.manager.create(OrderItem, {
@@ -644,18 +678,33 @@ export class CheckoutService {
       await queryRunner.release();
     }
 
+    if (isFullyPaidByWallet) {
+      await this.clearPurchasedItemsFromCart(userId, productIds);
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (user) {
+        this.mailService.sendOrderStatusUpdateEmail(user.email, {
+          orderCode: orderId,
+          customerName: address.fullName,
+          newStatus: 'Đơn hàng đã được thanh toán qua Ví điện tử và đang chờ được xử lý',
+          updatedAt: new Date().toLocaleString('vi-VN'),
+          orderItems: validOrderItems
+        });
+      }
+      return { orderId, payUrl: null, paymentRequired: false };
+    }
+
     if (dto.paymentMethod === 'MOMO') {
-      const payUrl = await this.momoService.buildMoMoPaymentUrl(orderId, totalAmount);
+      const payUrl = await this.momoService.buildMoMoPaymentUrl(orderId, remainingAmount);
       return { orderId, payUrl, paymentRequired: true };
     }
 
     if (dto.paymentMethod === 'VNPAY') {
-      const payUrl = this.vnpayService.buildVnpayPaymentUrl(orderId, totalAmount, ipAddr);
+      const payUrl = this.vnpayService.buildVnpayPaymentUrl(orderId, remainingAmount, ipAddr);
       return { orderId, payUrl, paymentRequired: true };
     }
 
     if (dto.paymentMethod === 'PAYPAL') {
-      const payUrl = await this.paypalService.buildPayPalPaymentUrl(orderId, totalAmount);
+      const payUrl = await this.paypalService.buildPayPalPaymentUrl(orderId, remainingAmount);
       return { orderId, payUrl, paymentRequired: true };
     }
 

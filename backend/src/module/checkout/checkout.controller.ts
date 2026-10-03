@@ -55,9 +55,13 @@ export class CheckoutController {
     const result = await this.checkoutService.checkoutOrder(dto, req.user.id, ipAddr);
     
     let message = 'Đặt hàng thành công';
-    if (dto.paymentMethod === 'MOMO') message = 'Tạo link thanh toán MoMo thành công';
-    else if (dto.paymentMethod === 'VNPAY') message = 'Tạo link thanh toán VNPay thành công';
-    else if (dto.paymentMethod === 'PAYPAL') message = 'Tạo link thanh toán PayPal thành công';
+    if (result.paymentRequired) {
+      if (dto.paymentMethod === 'MOMO') message = 'Tạo link thanh toán MoMo thành công';
+      else if (dto.paymentMethod === 'VNPAY') message = 'Tạo link thanh toán VNPay thành công';
+      else if (dto.paymentMethod === 'PAYPAL') message = 'Tạo link thanh toán PayPal thành công';
+    } else if (dto.useWallet) {
+      message = 'Thanh toán qua Ví điện tử thành công';
+    }
 
     return { 
       success: true, 

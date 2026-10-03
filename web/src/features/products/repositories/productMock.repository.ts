@@ -183,12 +183,10 @@ export class ProductMockRepository implements ProductRepository {
             weight: "500g",
             careInstructions: "Chỉ rửa bằng tay, không dùng máy rửa bát",
             isFavorite: false,
-            sellerInfo: {
+            artisanInfo: {
                 id: "1",
                 name: "Tần Thủy Hoàng",
                 avatarUrl: "https://images.unsplash.com/photo-1610701596007-11502861dcfa?q=80&w=800&auto=format&fit=crop",
-                totalProducts: 10,
-                averageRating: 4.8,
             }
         };
 
