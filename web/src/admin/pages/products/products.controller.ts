@@ -149,6 +149,7 @@ export const useProductController = () => {
                 dimensions: formData.dimensions ? [formData.dimensions.length, formData.dimensions.width, formData.dimensions.height] : undefined,
                 weight: formData.weight,
                 careInstructions: formData.careInstructions,
+                artisanId: formData.artisanId,
             };
 
             const success = await productService.saveProduct(productData, editingProductId);

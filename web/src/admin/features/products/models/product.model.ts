@@ -23,6 +23,11 @@ export interface Product {
     dimensions?: number[];
     weight?: number;
     careInstructions?: string;
+    artisanInfo?: {
+        id: string;
+        name: string;
+        avatarUrl?: string;
+    } | null;
 }
 
 export const EFilterState = {
@@ -73,6 +78,7 @@ export interface CreateProductRequest {
     dimensions?: number[];
     weight?: number;
     careInstructions?: string;
+    artisanId?: string;
 }
 
 export type UpdateProductRequest = Partial<CreateProductRequest>;
@@ -93,4 +99,5 @@ export interface ProductFormData {
     detailImageFiles?: File[];
     imageUrl?: string;
     images?: string[];
+    artisanId?: string;
 }
