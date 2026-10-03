@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { VouchersService } from './vouchers.service';
 import { OptionalJwtAuthGuard } from '../../core/security/jwt/optional-jwt-auth.guard';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
@@ -20,12 +29,20 @@ export class ClientVouchersController {
   @Get('lookup')
   @UseGuards(OptionalJwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async lookupVoucherByCode(@Query('code') code: string, @Req() req: any, @Query('subTotal') subTotal?: number) {
+  async lookupVoucherByCode(
+    @Query('code') code: string,
+    @Req() req: any,
+    @Query('subTotal') subTotal?: number,
+  ) {
     if (!code) {
-        return new ApiResponse(false, 'Vui lòng cung cấp mã code', null);
+      return new ApiResponse(false, 'Vui lòng cung cấp mã code', null);
     }
     const userId = req.user?.id;
-    const data = await this.vouchersService.lookupVoucherForClient(code.toUpperCase(), userId, subTotal);
+    const data = await this.vouchersService.lookupVoucherForClient(
+      code.toUpperCase(),
+      userId,
+      subTotal,
+    );
     return new ApiResponse(true, 'Chi tiết voucher', data);
   }
 }

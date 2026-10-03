@@ -9,6 +9,10 @@ export const TEST_USERS = {
     email: 'admin@example.com',
     password: 'password123',
   },
+  staff: {
+    email: 'staff1@marketnest.vn',
+    password: 'Staff@123',
+  },
 };
 
 const tokenCache = new Map<string, string>();

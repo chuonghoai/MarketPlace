@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, JoinColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  JoinColumn,
+} from 'typeorm';
 import { Category } from '../../categories/entities/category.entity';
 import { Seller } from '../../sellers/entities/seller.entity';
 import { Artisan } from '../../artisans/entities/artisan.entity';
@@ -53,7 +61,9 @@ export class Product {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => Category, (category) => category.products, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Category, (category) => category.products, {
+    onDelete: 'SET NULL',
+  })
   category: Category;
 
   @ManyToOne(() => Seller, { onDelete: 'CASCADE' })
@@ -62,7 +72,10 @@ export class Product {
   @Column({ type: 'varchar', length: 36, nullable: true })
   artisanId: string | null;
 
-  @ManyToOne(() => Artisan, (artisan) => artisan.products, { onDelete: 'SET NULL', nullable: true })
+  @ManyToOne(() => Artisan, (artisan) => artisan.products, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
   @JoinColumn({ name: 'artisanId' })
   artisan: Artisan;
 }

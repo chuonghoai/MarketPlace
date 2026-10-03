@@ -25,25 +25,44 @@ export class AuthService {
   constructor(
     private jwtService: JwtService,
     @InjectRepository(User) private userRepository: Repository<User>,
-    @InjectRepository(UserDevice) private userDeviceRepo: Repository<UserDevice>,
+    @InjectRepository(UserDevice)
+    private userDeviceRepo: Repository<UserDevice>,
     private readonly mailService: MailService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-  ) { }
+  ) {}
 
-  async login(loginDto: LoginDto, deviceId?: string, userAgent?: string): Promise<ApiResponse<any>> {
+  async login(
+    loginDto: LoginDto,
+    deviceId?: string,
+    userAgent?: string,
+  ): Promise<ApiResponse<any>> {
     const { email, password } = loginDto;
     const user = await this.userRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'password', 'role', 'fullName', 'avatarUrl', 'tokenVersion']
+      select: [
+        'id',
+        'email',
+        'password',
+        'role',
+        'fullName',
+        'avatarUrl',
+        'tokenVersion',
+      ],
     });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new CustomException(HttpStatus.UNAUTHORIZED, 'AUTH_FAILED', 'Tài khoản hoặc mật khẩu không đúng');
+      throw new CustomException(
+        HttpStatus.UNAUTHORIZED,
+        'AUTH_FAILED',
+        'Tài khoản hoặc mật khẩu không đúng',
+      );
     }
 
-    let activeDeviceId = deviceId || 'unknown-device';
+    const activeDeviceId = deviceId || 'unknown-device';
     if (deviceId) {
-      const device = await this.userDeviceRepo.findOne({ where: { deviceId, user: { id: user.id } } });
+      const device = await this.userDeviceRepo.findOne({
+        where: { deviceId, user: { id: user.id } },
+      });
       if (device) {
         device.isActive = true;
         device.lastLoginAt = new Date();
@@ -63,7 +82,7 @@ export class AuthService {
     const payload = {
       userId: user.id,
       version: user.tokenVersion,
-      deviceId: activeDeviceId
+      deviceId: activeDeviceId,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -75,37 +94,71 @@ export class AuthService {
         email: user.email,
         fullName: user.fullName || '',
         role: user.role,
-        avatarUrl: user.avatarUrl || 'https://ui-avatars.com/api/?name=User'
-      }
+        avatarUrl: user.avatarUrl || 'https://ui-avatars.com/api/?name=User',
+      },
     });
   }
 
-  async register(registerDto: RegisterDto, deviceId?: string, userAgent?: string): Promise<ApiResponse<any>> {
+  async register(
+    registerDto: RegisterDto,
+    deviceId?: string,
+    userAgent?: string,
+  ): Promise<ApiResponse<any>> {
     const { email, password, confirmPassword, otp } = registerDto;
 
     if (password !== confirmPassword) {
-      throw new CustomException(HttpStatus.BAD_REQUEST, 'VALIDATION_FAILED', 'Mật khẩu xác nhận không khớp');
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'VALIDATION_FAILED',
+        'Mật khẩu xác nhận không khớp',
+      );
     }
 
-    const record = await this.cacheManager.get<{ otp: string; expiresAt: number; purpose: OtpPurpose }>(email);
+    const record = await this.cacheManager.get<{
+      otp: string;
+      expiresAt: number;
+      purpose: OtpPurpose;
+    }>(email);
     if (!record) {
-      throw new CustomException(HttpStatus.BAD_REQUEST, 'OTP_NOT_FOUND', 'Mã OTP không tồn tại hoặc chưa được gửi');
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'OTP_NOT_FOUND',
+        'Mã OTP không tồn tại hoặc chưa được gửi',
+      );
     }
     if (Date.now() > record.expiresAt) {
       await this.cacheManager.del(email);
-      throw new CustomException(HttpStatus.BAD_REQUEST, 'OTP_EXPIRED', 'Mã OTP đã hết hạn');
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'OTP_EXPIRED',
+        'Mã OTP đã hết hạn',
+      );
     }
     if (record.otp !== otp) {
-      throw new CustomException(HttpStatus.BAD_REQUEST, 'OTP_INVALID', 'Mã OTP không chính xác');
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'OTP_INVALID',
+        'Mã OTP không chính xác',
+      );
     }
     if (record.purpose !== OtpPurpose.REGISTER) {
-      throw new CustomException(HttpStatus.BAD_REQUEST, 'OTP_INVALID_PURPOSE', 'Mã OTP không hợp lệ cho thao tác đăng ký');
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'OTP_INVALID_PURPOSE',
+        'Mã OTP không hợp lệ cho thao tác đăng ký',
+      );
     }
     await this.cacheManager.del(email);
 
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
-      throw new CustomException(HttpStatus.BAD_REQUEST, 'USER_EXISTS', 'Email đã được sử dụng');
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'USER_EXISTS',
+        'Email đã được sử dụng',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -119,7 +172,7 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(newUser);
 
-    let activeDeviceId = deviceId || 'unknown-device';
+    const activeDeviceId = deviceId || 'unknown-device';
     if (deviceId) {
       await this.userDeviceRepo.save({
         user: savedUser,
@@ -133,7 +186,7 @@ export class AuthService {
     const payload = {
       userId: savedUser.id,
       version: savedUser.tokenVersion,
-      deviceId: activeDeviceId
+      deviceId: activeDeviceId,
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -145,8 +198,9 @@ export class AuthService {
         email: savedUser.email,
         fullName: savedUser.fullName || '',
         role: savedUser.role,
-        avatarUrl: savedUser.avatarUrl || 'https://ui-avatars.com/api/?name=User'
-      }
+        avatarUrl:
+          savedUser.avatarUrl || 'https://ui-avatars.com/api/?name=User',
+      },
     });
   }
 
@@ -155,15 +209,23 @@ export class AuthService {
     const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + OTP_TTL;
 
-    await this.cacheManager.set(email, { otp: generatedOtp, expiresAt, purpose: dto.purpose }, OTP_TTL + 5 * 60 * 1000);
+    await this.cacheManager.set(
+      email,
+      { otp: generatedOtp, expiresAt, purpose: dto.purpose },
+      OTP_TTL + 5 * 60 * 1000,
+    );
 
     if (dto.purpose === OtpPurpose.REGISTER) {
-      const existingUser = await this.userRepository.findOne({ where: { email } });
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
       if (existingUser) {
         return new ApiResponse(false, 'Email đã được sử dụng', null);
       }
     } else if (dto.purpose === OtpPurpose.FORGOT_PASSWORD) {
-      const existingUser = await this.userRepository.findOne({ where: { email } });
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
       if (!existingUser) {
         return new ApiResponse(false, 'Email không tồn tại', null);
       }
@@ -172,11 +234,15 @@ export class AuthService {
     try {
       await this.mailService.sendOtpEmail(email, {
         generatedOtp,
-        isRegister: dto.purpose === OtpPurpose.REGISTER
+        isRegister: dto.purpose === OtpPurpose.REGISTER,
       });
     } catch (error) {
       console.error('Mail send error:', error);
-      return new ApiResponse(false, 'Không thể gửi email OTP, vui lòng thử lại sau.', null);
+      return new ApiResponse(
+        false,
+        'Không thể gửi email OTP, vui lòng thử lại sau.',
+        null,
+      );
     }
 
     return new ApiResponse(true, 'Gửi OTP thành công', null);
@@ -184,9 +250,17 @@ export class AuthService {
 
   async verifyOtp(dto: ResetPasswordDto): Promise<ApiResponse<null>> {
     const { email, otp } = dto;
-    const record = await this.cacheManager.get<{ otp: string; expiresAt: number; purpose: OtpPurpose }>(email);
+    const record = await this.cacheManager.get<{
+      otp: string;
+      expiresAt: number;
+      purpose: OtpPurpose;
+    }>(email);
     if (!record) {
-      return new ApiResponse(false, 'Mã OTP không tồn tại hoặc chưa được gửi', null);
+      return new ApiResponse(
+        false,
+        'Mã OTP không tồn tại hoặc chưa được gửi',
+        null,
+      );
     }
     if (Date.now() > record.expiresAt) {
       await this.cacheManager.del(email);
@@ -196,16 +270,33 @@ export class AuthService {
       return new ApiResponse(false, 'Mã OTP không chính xác', null);
     }
     if (record.purpose !== OtpPurpose.FORGOT_PASSWORD) {
-      return new ApiResponse(false, 'Mã OTP không hợp lệ cho thao tác lấy lại mật khẩu', null);
+      return new ApiResponse(
+        false,
+        'Mã OTP không hợp lệ cho thao tác lấy lại mật khẩu',
+        null,
+      );
     }
     return new ApiResponse(true, 'Xác thực OTP hợp lệ', null);
   }
 
   async forgotPassword(dto: ResetPasswordDto): Promise<ApiResponse<null>> {
     const { email, otp, confirmPassword } = dto;
-    const record = await this.cacheManager.get<{ otp: string; expiresAt: number; purpose: OtpPurpose }>(email);
-    if (!record || record.otp !== otp || record.purpose !== OtpPurpose.FORGOT_PASSWORD || Date.now() > record.expiresAt) {
-      return new ApiResponse(false, 'Mã OTP không hợp lệ hoặc đã hết hạn', null);
+    const record = await this.cacheManager.get<{
+      otp: string;
+      expiresAt: number;
+      purpose: OtpPurpose;
+    }>(email);
+    if (
+      !record ||
+      record.otp !== otp ||
+      record.purpose !== OtpPurpose.FORGOT_PASSWORD ||
+      Date.now() > record.expiresAt
+    ) {
+      return new ApiResponse(
+        false,
+        'Mã OTP không hợp lệ hoặc đã hết hạn',
+        null,
+      );
     }
 
     await this.cacheManager.del(email);
@@ -223,20 +314,27 @@ export class AuthService {
   async getDevices(userId: string): Promise<ApiResponse<UserDevice[]>> {
     const devices = await this.userDeviceRepo.find({
       where: { user: { id: userId } },
-      order: { lastLoginAt: 'DESC' }
+      order: { lastLoginAt: 'DESC' },
     });
     return new ApiResponse(true, 'Lấy danh sách thiết bị thành công', devices);
   }
 
-  async revokeDevice(userId: string, deviceId: string): Promise<ApiResponse<null>> {
+  async revokeDevice(
+    userId: string,
+    deviceId: string,
+  ): Promise<ApiResponse<null>> {
     const device = await this.userDeviceRepo.findOne({
-      where: { deviceId, user: { id: userId } }
+      where: { deviceId, user: { id: userId } },
     });
     if (!device) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'DEVICE_NOT_FOUND', 'Không tìm thấy thiết bị');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'DEVICE_NOT_FOUND',
+        'Không tìm thấy thiết bị',
+      );
     }
     device.isActive = false;
     await this.userDeviceRepo.save(device);
     return new ApiResponse(true, 'Đã đăng xuất thiết bị', null);
   }
-}
+}

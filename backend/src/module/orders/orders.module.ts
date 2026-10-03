@@ -14,7 +14,13 @@ import { WalletsModule } from '../wallets/wallets.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, OrderItem, User, Product, OrderReturnRequest]),
+    TypeOrmModule.forFeature([
+      Order,
+      OrderItem,
+      User,
+      Product,
+      OrderReturnRequest,
+    ]),
     MailModule,
     CheckoutModule,
     WalletsModule,

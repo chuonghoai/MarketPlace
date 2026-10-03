@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Param, Patch, Body, Query, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Patch,
+  Body,
+  Query,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { GetOrdersFilterDto, UserUpdateOrderStatusDto } from './dto/orders.dto';
 import { CreateOrderReturnDto } from './dto/order-return.dto';
@@ -11,20 +21,33 @@ export class OrderTrackingController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Get()
-  async getTrackingOrders(@Query() filterDto: GetOrdersFilterDto, @Req() req: any) {
-    const data = await this.ordersService.getTrackingOrders(req.user.id, filterDto.status);
+  async getTrackingOrders(
+    @Query() filterDto: GetOrdersFilterDto,
+    @Req() req: any,
+  ) {
+    const data = await this.ordersService.getTrackingOrders(
+      req.user.id,
+      filterDto.status,
+    );
     return new ApiResponse(true, 'Lấy danh sách đơn hàng thành công', data);
   }
 
   @Get('count')
   async getTrackingStatusCount(@Req() req: any) {
     const data = await this.ordersService.getTrackingStatusCount(req.user.id);
-    return new ApiResponse(true, 'Lấy thống kê trạng thái đơn hàng thành công', data);
+    return new ApiResponse(
+      true,
+      'Lấy thống kê trạng thái đơn hàng thành công',
+      data,
+    );
   }
 
   @Get(':id')
   async getTrackingOrderDetail(@Param('id') id: string, @Req() req: any) {
-    const data = await this.ordersService.getTrackingOrderDetail(req.user.id, id);
+    const data = await this.ordersService.getTrackingOrderDetail(
+      req.user.id,
+      id,
+    );
     return new ApiResponse(true, 'Lấy chi tiết đơn hàng thành công', data);
   }
 
@@ -34,8 +57,16 @@ export class OrderTrackingController {
     @Body() updateDto: UserUpdateOrderStatusDto,
     @Req() req: any,
   ) {
-    const data = await this.ordersService.updateTrackingOrderStatus(req.user.id, id, updateDto);
-    return new ApiResponse(true, 'Cập nhật trạng thái đơn hàng thành công', data);
+    const data = await this.ordersService.updateTrackingOrderStatus(
+      req.user.id,
+      id,
+      updateDto,
+    );
+    return new ApiResponse(
+      true,
+      'Cập nhật trạng thái đơn hàng thành công',
+      data,
+    );
   }
 
   // Đổi trả, hoàn tiền (UC23)
@@ -46,13 +77,28 @@ export class OrderTrackingController {
     @Body() dto: CreateOrderReturnDto,
     @Req() req: any,
   ) {
-    const data = await this.ordersService.createReturnRequest(req.user.id, id, dto);
-    return new ApiResponse(true, 'Gửi yêu cầu xử lý đổi trả/hoàn tiền thành công', data);
+    const data = await this.ordersService.createReturnRequest(
+      req.user.id,
+      id,
+      dto,
+    );
+    return new ApiResponse(
+      true,
+      'Gửi yêu cầu xử lý đổi trả/hoàn tiền thành công',
+      data,
+    );
   }
 
   @Get(':id/return-request')
   async getReturnRequest(@Param('id') id: string, @Req() req: any) {
-    const data = await this.ordersService.getReturnRequestByOrderId(id, req.user.id);
-    return new ApiResponse(true, 'Lấy thông tin yêu cầu đổi trả thành công', data);
+    const data = await this.ordersService.getReturnRequestByOrderId(
+      id,
+      req.user.id,
+    );
+    return new ApiResponse(
+      true,
+      'Lấy thông tin yêu cầu đổi trả thành công',
+      data,
+    );
   }
 }

@@ -1,9 +1,21 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { Order } from '../checkout/entities/order.entity';
 import { OrderItem } from '../checkout/entities/order-item.entity';
-import { OrderListItemDto, GetOrdersFilterDto, UpdateOrderStatusDto, OrderDetailDto, OrderDetailProductItemDto, OrderStatusHistoryDto, UserUpdateOrderStatusDto } from './dto/orders.dto';
+import {
+  OrderListItemDto,
+  GetOrdersFilterDto,
+  UpdateOrderStatusDto,
+  OrderDetailDto,
+  OrderDetailProductItemDto,
+  OrderStatusHistoryDto,
+  UserUpdateOrderStatusDto,
+} from './dto/orders.dto';
 import { EOrderStatus } from '../checkout/enums/EOrderStatus.enum';
 import { MailService } from '../mails/mail.service';
 import { User } from '../users/entities/user.entity';
@@ -13,8 +25,15 @@ import { CheckoutService } from '../checkout/checkout.service';
 import { Product } from '../products/entities/product.entity';
 import { WalletsService } from '../wallets/wallets.service';
 import { OrderReturnRequest } from './entities/order-return-request.entity';
-import { EOrderReturnType, EOrderReturnStatus } from './enums/order-return.enum';
-import { CreateOrderReturnDto, AdminProcessReturnDto, AdminProcessExchangeDto } from './dto/order-return.dto';
+import {
+  EOrderReturnType,
+  EOrderReturnStatus,
+} from './enums/order-return.enum';
+import {
+  CreateOrderReturnDto,
+  AdminProcessReturnDto,
+  AdminProcessExchangeDto,
+} from './dto/order-return.dto';
 
 @Injectable()
 export class OrdersService {
@@ -32,41 +51,49 @@ export class OrdersService {
     private readonly walletsService: WalletsService,
     @InjectRepository(OrderReturnRequest)
     private readonly returnRepository: Repository<OrderReturnRequest>,
-  ) { }
+  ) {}
 
-  async getOrdersByStatus(filterDto: GetOrdersFilterDto): Promise<OrderListItemDto[]> {
+  async getOrdersByStatus(
+    filterDto: GetOrdersFilterDto,
+  ): Promise<OrderListItemDto[]> {
     const { status } = filterDto;
-    const query = this.orderRepository.createQueryBuilder('order')
+    const query = this.orderRepository
+      .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items');
 
     if (status) {
       query.andWhere('order.status = :status', { status });
       query.orderBy('order.createdAt', 'DESC');
     } else {
-      
       query.andWhere('order.status IN (:...statuses)', {
-        statuses: [EOrderStatus.PENDING, EOrderStatus.PREPARING, EOrderStatus.SHIPPING]
+        statuses: [
+          EOrderStatus.PENDING,
+          EOrderStatus.PREPARING,
+          EOrderStatus.SHIPPING,
+        ],
       });
-      
+
       query.orderBy(
         `FIELD(order.status, '${EOrderStatus.PENDING}', '${EOrderStatus.PREPARING}', '${EOrderStatus.SHIPPING}')`,
-        'ASC'
+        'ASC',
       );
       query.addOrderBy('order.createdAt', 'DESC');
     }
 
     const orders = await query.getMany();
 
-    return orders.map(order => {
+    return orders.map((order) => {
       let totalProductQuantity = 0;
       let firstProductImageUrl = '';
 
       if (order.items && order.items.length > 0) {
-        totalProductQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+        totalProductQuantity = order.items.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        );
         firstProductImageUrl = order.items[0].productImageUrl || '';
       }
 
-      
       const snapshot: any = order.snapshotAddress || {};
 
       return {
@@ -76,7 +103,10 @@ export class OrdersService {
         totalAmount: Number(order.totalAmount),
         totalProductQuantity,
         firstProductImageUrl,
-        firstProductName: order.items && order.items.length > 0 ? order.items[0].productName : '',
+        firstProductName:
+          order.items && order.items.length > 0
+            ? order.items[0].productName
+            : '',
         buyerName: snapshot.fullName || '',
         buyerAddress: snapshot.fullAddress || '',
         buyerPhone: snapshot.phoneNumber || '',
@@ -101,10 +131,10 @@ export class OrdersService {
       shipping: 0,
       success: 0,
       cancelled: 0,
-      returned: 0
+      returned: 0,
     };
 
-    statuses.forEach(item => {
+    statuses.forEach((item) => {
       const statusKey = item.status.toLowerCase();
       if (result[statusKey] !== undefined) {
         result[statusKey] = Number(item.count);
@@ -118,28 +148,32 @@ export class OrdersService {
   private mapToOrderDetailDto(order: Order): OrderDetailDto {
     const snapshot: any = order.snapshotAddress || {};
 
-    const statusHistory: OrderStatusHistoryDto[] = Array.isArray(order.statusHistory)
+    const statusHistory: OrderStatusHistoryDto[] = Array.isArray(
+      order.statusHistory,
+    )
       ? order.statusHistory
       : [
-        {
-          status: order.status,
-          timestamp: order.createdAt,
-          note: 'Cập nhật trạng thái tự động'
-        }
-      ];
+          {
+            status: order.status,
+            timestamp: order.createdAt,
+            note: 'Cập nhật trạng thái tự động',
+          },
+        ];
 
-    const items: OrderDetailProductItemDto[] = (order.items || []).map(item => ({
-      orderItemId: item.id,
-      productId: item.productId,
-      productName: item.productName || 'Sản phẩm',
-      productImageUrl: item.productImageUrl || '',
-      price: Number(item.price),
-      originalPrice: Number(item.originalPrice || item.price),
-      discountPercentage: Number(item.discountPercentage || 0),
-      quantity: item.quantity,
-      amount: Number(item.price) * item.quantity,
-      isReviewed: item.isReviewed || false
-    }));
+    const items: OrderDetailProductItemDto[] = (order.items || []).map(
+      (item) => ({
+        orderItemId: item.id,
+        productId: item.productId,
+        productName: item.productName || 'Sản phẩm',
+        productImageUrl: item.productImageUrl || '',
+        price: Number(item.price),
+        originalPrice: Number(item.originalPrice || item.price),
+        discountPercentage: Number(item.discountPercentage || 0),
+        quantity: item.quantity,
+        amount: Number(item.price) * item.quantity,
+        isReviewed: item.isReviewed || false,
+      }),
+    );
 
     return {
       id: order.id,
@@ -156,22 +190,23 @@ export class OrdersService {
       shippingFee: Number(order.shippingFee),
       discountAmount: Number(order.discountAmount) || 0,
       shippingDiscountAmount: Number(order.shippingDiscountAmount) || 0,
-      vouchers: order.vouchers?.map((v: any) => ({
-        voucherCode: v.voucherCode,
-        discountAmount: Number(v.discountAmount),
-        voucherSnapshot: v.voucherSnapshot
-      })) || [],
+      vouchers:
+        order.vouchers?.map((v: any) => ({
+          voucherCode: v.voucherCode,
+          discountAmount: Number(v.discountAmount),
+          voucherSnapshot: v.voucherSnapshot,
+        })) || [],
       totalAmount: Number(order.totalAmount),
       paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
-      cancelReason: order.cancelReason || order.returnReason || ''
+      cancelReason: order.cancelReason || order.returnReason || '',
     };
   }
 
   async getOrderDetailById(id: string): Promise<OrderDetailDto> {
     const order = await this.orderRepository.findOne({
       where: { id },
-      relations: ['items', 'address', 'vouchers']
+      relations: ['items', 'address', 'vouchers'],
     });
 
     if (!order) {
@@ -181,9 +216,16 @@ export class OrdersService {
     return this.mapToOrderDetailDto(order);
   }
 
-  async updateOrderStatus(id: string, updateDto: UpdateOrderStatusDto): Promise<OrderDetailDto> {
-    const order = await this.orderRepository.findOne({ where: { id }, relations: ['items', 'address'] });
-    if (!order) throw new NotFoundException(`Không tìm thấy đơn hàng với ID ${id}`);
+  async updateOrderStatus(
+    id: string,
+    updateDto: UpdateOrderStatusDto,
+  ): Promise<OrderDetailDto> {
+    const order = await this.orderRepository.findOne({
+      where: { id },
+      relations: ['items', 'address'],
+    });
+    if (!order)
+      throw new NotFoundException(`Không tìm thấy đơn hàng với ID ${id}`);
 
     const oldStatus = order.status;
     order.status = updateDto.status;
@@ -192,13 +234,15 @@ export class OrdersService {
       order.note = updateDto.note;
     }
 
-    const history = Array.isArray(order.statusHistory) ? order.statusHistory : [
-      {
-        status: EOrderStatus.PENDING,
-        timestamp: order.createdAt,
-        note: 'Đơn hàng đã được tạo'
-      }
-    ];
+    const history = Array.isArray(order.statusHistory)
+      ? order.statusHistory
+      : [
+          {
+            status: EOrderStatus.PENDING,
+            timestamp: order.createdAt,
+            note: 'Đơn hàng đã được tạo',
+          },
+        ];
 
     let defaultNote = 'Admin cập nhật trạng thái';
     switch (updateDto.status) {
@@ -225,7 +269,7 @@ export class OrdersService {
     history.push({
       status: updateDto.status,
       timestamp: new Date(),
-      note: updateDto.note || defaultNote
+      note: updateDto.note || defaultNote,
     });
 
     order.statusHistory = history;
@@ -234,17 +278,34 @@ export class OrdersService {
     }
     const saved = await this.orderRepository.save(order);
 
-    if (updateDto.status === EOrderStatus.SUCCESS && oldStatus !== EOrderStatus.SUCCESS) {
+    if (
+      updateDto.status === EOrderStatus.SUCCESS &&
+      oldStatus !== EOrderStatus.SUCCESS
+    ) {
       for (const item of order.items) {
-        await this.productRepository.increment({ id: item.productId }, 'soldCount', item.quantity);
+        await this.productRepository.increment(
+          { id: item.productId },
+          'soldCount',
+          item.quantity,
+        );
       }
     }
 
-    if (updateDto.status === EOrderStatus.CANCELLED || updateDto.status === EOrderStatus.RETURNED) {
+    if (
+      updateDto.status === EOrderStatus.CANCELLED ||
+      updateDto.status === EOrderStatus.RETURNED
+    ) {
       await this.checkoutService.rollbackVouchersForOrder(order.id);
-      if (oldStatus !== EOrderStatus.CANCELLED && oldStatus !== EOrderStatus.RETURNED) {
+      if (
+        oldStatus !== EOrderStatus.CANCELLED &&
+        oldStatus !== EOrderStatus.RETURNED
+      ) {
         for (const item of order.items) {
-          await this.productRepository.increment({ id: item.productId }, 'stock', item.quantity);
+          await this.productRepository.increment(
+            { id: item.productId },
+            'stock',
+            item.quantity,
+          );
         }
         await this.walletsService.refundOrder(order);
       }
@@ -252,18 +313,39 @@ export class OrdersService {
 
     let newStatusStr = '';
     switch (updateDto.status) {
-      case EOrderStatus.PREPARING: newStatusStr = 'Đơn hàng đang được chuẩn bị'; break;
-      case EOrderStatus.SHIPPING: newStatusStr = 'Đơn hàng đang được giao, vui lòng chú ý điện thoại'; break;
-      case EOrderStatus.DELIVERED: newStatusStr = 'Giao hàng thành công'; break;
-      case EOrderStatus.SUCCESS: newStatusStr = 'Đơn hàng đã hoàn tất'; break;
-      case EOrderStatus.CANCELLED: newStatusStr = 'Đơn hàng của bạn đã bị hủy'; break;
-      case EOrderStatus.RETURNED: newStatusStr = 'Yêu cầu trả hàng/hoàn tiền'; break;
-      default: newStatusStr = 'Đã cập nhật'; break;
+      case EOrderStatus.PREPARING:
+        newStatusStr = 'Đơn hàng đang được chuẩn bị';
+        break;
+      case EOrderStatus.SHIPPING:
+        newStatusStr = 'Đơn hàng đang được giao, vui lòng chú ý điện thoại';
+        break;
+      case EOrderStatus.DELIVERED:
+        newStatusStr = 'Giao hàng thành công';
+        break;
+      case EOrderStatus.SUCCESS:
+        newStatusStr = 'Đơn hàng đã hoàn tất';
+        break;
+      case EOrderStatus.CANCELLED:
+        newStatusStr = 'Đơn hàng của bạn đã bị hủy';
+        break;
+      case EOrderStatus.RETURNED:
+        newStatusStr = 'Yêu cầu trả hàng/hoàn tiền';
+        break;
+      default:
+        newStatusStr = 'Đã cập nhật';
+        break;
     }
-    this.sendStatusUpdateEmail(saved, newStatusStr, updateDto.status === EOrderStatus.CANCELLED ? updateDto.note : undefined);
+    this.sendStatusUpdateEmail(
+      saved,
+      newStatusStr,
+      updateDto.status === EOrderStatus.CANCELLED ? updateDto.note : undefined,
+    );
 
     // Gửi email hóa đơn nếu COD và giao hàng thành công
-    if (updateDto.status === EOrderStatus.SUCCESS && saved.paymentMethod === EPaymentMethod.COD) {
+    if (
+      updateDto.status === EOrderStatus.SUCCESS &&
+      saved.paymentMethod === EPaymentMethod.COD
+    ) {
       console.log('Send billing email to user');
       this.sendBillingEmail(saved);
     }
@@ -272,21 +354,30 @@ export class OrdersService {
   }
 
   // Gửi email cập nhật trạng thái đơn hàng
-  private async sendStatusUpdateEmail(order: Order, newStatusStr: string, cancelReason?: string) {
-    const user = await this.userRepository.findOne({ where: { id: order.userId } });
+  private async sendStatusUpdateEmail(
+    order: Order,
+    newStatusStr: string,
+    cancelReason?: string,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { id: order.userId },
+    });
     if (!user) return;
 
     let snapshotAddress: any = order.snapshotAddress;
     if (typeof snapshotAddress === 'string') {
-      try { snapshotAddress = JSON.parse(snapshotAddress); } catch (e) { }
+      try {
+        snapshotAddress = JSON.parse(snapshotAddress);
+      } catch (e) {}
     }
 
-    const orderItems = order.items?.map(item => ({
-      productName: item.productName,
-      productImageUrl: item.productImageUrl,
-      price: item.price,
-      quantity: item.quantity
-    })) || [];
+    const orderItems =
+      order.items?.map((item) => ({
+        productName: item.productName,
+        productImageUrl: item.productImageUrl,
+        price: item.price,
+        quantity: item.quantity,
+      })) || [];
 
     this.mailService.sendOrderStatusUpdateEmail(user.email, {
       orderCode: order.id,
@@ -294,28 +385,33 @@ export class OrdersService {
       newStatus: newStatusStr,
       cancelReason,
       updatedAt: new Date().toLocaleString('vi-VN'),
-      orderItems
+      orderItems,
     });
   }
 
   private async sendBillingEmail(order: Order) {
-    const user = await this.userRepository.findOne({ where: { id: order.userId } });
+    const user = await this.userRepository.findOne({
+      where: { id: order.userId },
+    });
     if (!user) return;
 
     let snapshotAddress: any = order.snapshotAddress;
     if (typeof snapshotAddress === 'string') {
-      try { snapshotAddress = JSON.parse(snapshotAddress); } catch (e) { }
+      try {
+        snapshotAddress = JSON.parse(snapshotAddress);
+      } catch (e) {}
     }
 
-    const orderItems = order.items?.map(item => ({
-      productName: item.productName,
-      productImageUrl: item.productImageUrl,
-      price: item.price,
-      quantity: item.quantity,
-      originalPrice: item.originalPrice,
-      discountPercentage: item.discountPercentage,
-      totalAmount: item.price * item.quantity
-    })) || [];
+    const orderItems =
+      order.items?.map((item) => ({
+        productName: item.productName,
+        productImageUrl: item.productImageUrl,
+        price: item.price,
+        quantity: item.quantity,
+        originalPrice: item.originalPrice,
+        discountPercentage: item.discountPercentage,
+        totalAmount: item.price * item.quantity,
+      })) || [];
 
     this.mailService.sendBillingEmail(user.email, {
       orderCode: order.id,
@@ -328,24 +424,34 @@ export class OrdersService {
       total: order.totalAmount,
       paymentMethod: order.paymentMethod,
       paymentStatus: 'Đã thanh toán (Thu hộ)',
-      createdAt: order.createdAt.toLocaleString('vi-VN')
+      createdAt: order.createdAt.toLocaleString('vi-VN'),
     });
   }
 
   // Tra cứu đơn hàng (User)
 
-  async getTrackingOrders(userId: string, status?: EOrderStatus): Promise<OrderListItemDto[]> {
-    const query = this.orderRepository.createQueryBuilder('order')
+  async getTrackingOrders(
+    userId: string,
+    status?: EOrderStatus,
+  ): Promise<OrderListItemDto[]> {
+    const query = this.orderRepository
+      .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .where('order.userId = :userId', { userId });
 
     if (status) {
       if (status === EOrderStatus.SUCCESS) {
-        query.andWhere('order.status IN (:...statuses)', { statuses: [EOrderStatus.SUCCESS, EOrderStatus.DELIVERED] });
+        query.andWhere('order.status IN (:...statuses)', {
+          statuses: [EOrderStatus.SUCCESS, EOrderStatus.DELIVERED],
+        });
       } else if (status === EOrderStatus.CANCELLED) {
-        query.andWhere('order.status IN (:...statuses)', { statuses: [EOrderStatus.CANCELLED] });
+        query.andWhere('order.status IN (:...statuses)', {
+          statuses: [EOrderStatus.CANCELLED],
+        });
       } else if (status === EOrderStatus.RETURNED) {
-        query.andWhere('order.status IN (:...statuses)', { statuses: [EOrderStatus.RETURNED] });
+        query.andWhere('order.status IN (:...statuses)', {
+          statuses: [EOrderStatus.RETURNED],
+        });
       } else {
         query.andWhere('order.status = :status', { status });
       }
@@ -353,24 +459,31 @@ export class OrdersService {
     } else {
       // Default tracking (active orders)
       query.andWhere('order.status IN (:...statuses)', {
-        statuses: [EOrderStatus.PENDING, EOrderStatus.PREPARING, EOrderStatus.SHIPPING]
+        statuses: [
+          EOrderStatus.PENDING,
+          EOrderStatus.PREPARING,
+          EOrderStatus.SHIPPING,
+        ],
       });
       query.orderBy(
         `FIELD(order.status, '${EOrderStatus.PENDING}', '${EOrderStatus.PREPARING}', '${EOrderStatus.SHIPPING}')`,
-        'ASC'
+        'ASC',
       );
       query.addOrderBy('order.createdAt', 'DESC');
     }
 
     const orders = await query.getMany();
 
-    return orders.map(order => {
+    return orders.map((order) => {
       let totalProductQuantity = 0;
       let firstProductImageUrl = '';
       let firstProductName = '';
 
       if (order.items && order.items.length > 0) {
-        totalProductQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+        totalProductQuantity = order.items.reduce(
+          (sum, item) => sum + item.quantity,
+          0,
+        );
         firstProductImageUrl = order.items[0].productImageUrl || '';
         firstProductName = order.items[0].productName || '';
       }
@@ -412,25 +525,30 @@ export class OrdersService {
       cancelled: 0,
     };
 
-    statuses.forEach(item => {
+    statuses.forEach((item) => {
       const statusKey = item.status.toLowerCase();
       const count = Number(item.count);
 
       if (statusKey === 'pending') result.pending += count;
       if (statusKey === 'preparing') result.preparing += count;
       if (statusKey === 'shipping') result.shipping += count;
-      if (statusKey === 'success' || statusKey === 'delivered') result.success += count;
-      if (statusKey === 'cancelled' || statusKey === 'returned') result.cancelled += count;
+      if (statusKey === 'success' || statusKey === 'delivered')
+        result.success += count;
+      if (statusKey === 'cancelled' || statusKey === 'returned')
+        result.cancelled += count;
     });
 
     result.all = result.pending + result.preparing + result.shipping;
     return result;
   }
 
-  async getTrackingOrderDetail(userId: string, id: string): Promise<OrderDetailDto> {
+  async getTrackingOrderDetail(
+    userId: string,
+    id: string,
+  ): Promise<OrderDetailDto> {
     const order = await this.orderRepository.findOne({
       where: { id, userId },
-      relations: ['items', 'address', 'vouchers']
+      relations: ['items', 'address', 'vouchers'],
     });
 
     if (!order) {
@@ -440,11 +558,21 @@ export class OrdersService {
     return this.mapToOrderDetailDto(order);
   }
 
-  async updateTrackingOrderStatus(userId: string, id: string, updateDto: UserUpdateOrderStatusDto): Promise<OrderDetailDto> {
-    const order = await this.orderRepository.findOne({ where: { id, userId }, relations: ['items', 'address'] });
+  async updateTrackingOrderStatus(
+    userId: string,
+    id: string,
+    updateDto: UserUpdateOrderStatusDto,
+  ): Promise<OrderDetailDto> {
+    const order = await this.orderRepository.findOne({
+      where: { id, userId },
+      relations: ['items', 'address'],
+    });
     if (!order) throw new NotFoundException(`Không tìm thấy đơn hàng`);
 
-    if (updateDto.newStatus !== EOrderStatus.CANCELLED && updateDto.newStatus !== EOrderStatus.RETURNED) {
+    if (
+      updateDto.newStatus !== EOrderStatus.CANCELLED &&
+      updateDto.newStatus !== EOrderStatus.RETURNED
+    ) {
       throw new BadRequestException(`Trạng thái không hợp lệ`);
     }
 
@@ -457,42 +585,67 @@ export class OrdersService {
       order.returnReason = updateDto.note || '';
     }
 
-    const history = Array.isArray(order.statusHistory) ? order.statusHistory : [
-      {
-        status: EOrderStatus.PENDING,
-        timestamp: order.createdAt,
-        note: 'Đơn hàng đã được tạo'
-      }
-    ];
+    const history = Array.isArray(order.statusHistory)
+      ? order.statusHistory
+      : [
+          {
+            status: EOrderStatus.PENDING,
+            timestamp: order.createdAt,
+            note: 'Đơn hàng đã được tạo',
+          },
+        ];
 
     history.push({
       status: updateDto.newStatus,
       timestamp: new Date(),
-      note: updateDto.note || 'Khách hàng cập nhật'
+      note: updateDto.note || 'Khách hàng cập nhật',
     });
 
     order.statusHistory = history;
     const saved = await this.orderRepository.save(order);
 
-    if (updateDto.newStatus === EOrderStatus.CANCELLED || updateDto.newStatus === EOrderStatus.RETURNED) {
+    if (
+      updateDto.newStatus === EOrderStatus.CANCELLED ||
+      updateDto.newStatus === EOrderStatus.RETURNED
+    ) {
       await this.checkoutService.rollbackVouchersForOrder(order.id);
-      if (oldStatus !== EOrderStatus.CANCELLED && oldStatus !== EOrderStatus.RETURNED) {
+      if (
+        oldStatus !== EOrderStatus.CANCELLED &&
+        oldStatus !== EOrderStatus.RETURNED
+      ) {
         for (const item of order.items) {
-          await this.productRepository.increment({ id: item.productId }, 'stock', item.quantity);
+          await this.productRepository.increment(
+            { id: item.productId },
+            'stock',
+            item.quantity,
+          );
         }
         await this.walletsService.refundOrder(order);
       }
     }
 
-    let newStatusStr = updateDto.newStatus === EOrderStatus.CANCELLED ? 'Đã bị hủy' : 'Yêu cầu trả hàng/hoàn tiền';
-    this.sendStatusUpdateEmail(saved, newStatusStr, updateDto.newStatus === EOrderStatus.CANCELLED ? updateDto.note : undefined);
+    const newStatusStr =
+      updateDto.newStatus === EOrderStatus.CANCELLED
+        ? 'Đã bị hủy'
+        : 'Yêu cầu trả hàng/hoàn tiền';
+    this.sendStatusUpdateEmail(
+      saved,
+      newStatusStr,
+      updateDto.newStatus === EOrderStatus.CANCELLED
+        ? updateDto.note
+        : undefined,
+    );
 
     return this.mapToOrderDetailDto(saved);
   }
 
   // Xử lý đổi trả, hoàn tiền (UC23)
 
-  async createReturnRequest(userId: string, orderId: string, dto: CreateOrderReturnDto) {
+  async createReturnRequest(
+    userId: string,
+    orderId: string,
+    dto: CreateOrderReturnDto,
+  ) {
     const order = await this.orderRepository.findOne({
       where: { id: orderId, userId },
       relations: ['items'],
@@ -501,26 +654,42 @@ export class OrdersService {
     if (!order) throw new NotFoundException('Không tìm thấy đơn hàng');
 
     if (order.status !== EOrderStatus.SUCCESS) {
-      throw new BadRequestException('Chỉ có thể yêu cầu trả hàng/đổi hàng đối với đơn hàng đã hoàn tất (SUCCESS)');
+      throw new BadRequestException(
+        'Chỉ có thể yêu cầu trả hàng/đổi hàng đối với đơn hàng đã hoàn tất (SUCCESS)',
+      );
     }
 
     // Ràng buộc UC23: trong vòng 7 ngày kể từ khi đơn kết thúc
-    const successEvent = (order.statusHistory || []).slice().reverse().find((h) => h.status === EOrderStatus.SUCCESS);
-    const completedDate = successEvent ? new Date(successEvent.timestamp) : new Date(order.createdAt);
-    const diffDays = (Date.now() - completedDate.getTime()) / (1000 * 60 * 60 * 24);
+    const successEvent = (order.statusHistory || [])
+      .slice()
+      .reverse()
+      .find((h) => h.status === EOrderStatus.SUCCESS);
+    const completedDate = successEvent
+      ? new Date(successEvent.timestamp)
+      : new Date(order.createdAt);
+    const diffDays =
+      (Date.now() - completedDate.getTime()) / (1000 * 60 * 60 * 24);
     if (diffDays > 7) {
-      throw new BadRequestException('Đã quá thời hạn 7 ngày kể từ khi nhận hàng để gửi yêu cầu đổi trả');
+      throw new BadRequestException(
+        'Đã quá thời hạn 7 ngày kể từ khi nhận hàng để gửi yêu cầu đổi trả',
+      );
     }
 
     // Check existing pending return request
     const existing = await this.returnRepository.findOne({
       where: {
         orderId,
-        status: In([EOrderReturnStatus.PENDING, EOrderReturnStatus.PICKING_UP, EOrderReturnStatus.RECEIVED]),
+        status: In([
+          EOrderReturnStatus.PENDING,
+          EOrderReturnStatus.PICKING_UP,
+          EOrderReturnStatus.RECEIVED,
+        ]),
       },
     });
     if (existing) {
-      throw new BadRequestException('Đơn hàng này đang có một yêu cầu đổi trả đang được xử lý');
+      throw new BadRequestException(
+        'Đơn hàng này đang có một yêu cầu đổi trả đang được xử lý',
+      );
     }
 
     const returnRequest = this.returnRepository.create({
@@ -555,7 +724,11 @@ export class OrdersService {
     return item;
   }
 
-  async getAdminReturnRequests(page = 1, limit = 20, status?: EOrderReturnStatus) {
+  async getAdminReturnRequests(
+    page = 1,
+    limit = 20,
+    status?: EOrderReturnStatus,
+  ) {
     const qb = this.returnRepository
       .createQueryBuilder('ret')
       .leftJoinAndSelect('ret.order', 'order')
@@ -581,12 +754,17 @@ export class OrdersService {
   }
 
   // Trường hợp 1: Đổi lấy món hàng mới (UC23 - 1.1)
-  async adminProcessExchange(returnId: string, processedBy: string, dto: AdminProcessExchangeDto) {
+  async adminProcessExchange(
+    returnId: string,
+    processedBy: string,
+    dto: AdminProcessExchangeDto,
+  ) {
     const returnReq = await this.returnRepository.findOne({
       where: { id: returnId },
       relations: ['order', 'order.items'],
     });
-    if (!returnReq) throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+    if (!returnReq)
+      throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
     if (returnReq.status !== EOrderReturnStatus.PENDING) {
       throw new BadRequestException('Yêu cầu đổi trả này đã được xử lý');
     }
@@ -596,8 +774,14 @@ export class OrdersService {
 
     // Tạo đơn hàng mới theo quy định 1.1
     const snapshotObj = dto.shippingAddress
-      ? { fullAddress: dto.shippingAddress, recipientName: dto.recipientName, phone: dto.phone }
-      : (typeof oldOrder.snapshotAddress === 'object' ? oldOrder.snapshotAddress : {});
+      ? {
+          fullAddress: dto.shippingAddress,
+          recipientName: dto.recipientName,
+          phone: dto.phone,
+        }
+      : typeof oldOrder.snapshotAddress === 'object'
+        ? oldOrder.snapshotAddress
+        : {};
 
     const newOrderEntity = this.orderRepository.create({
       userId: oldOrder.userId,
@@ -621,7 +805,8 @@ export class OrdersService {
         },
       ],
     } as any) as unknown as Order;
-    const savedNewOrder: Order = await this.orderRepository.save(newOrderEntity);
+    const savedNewOrder: Order =
+      await this.orderRepository.save(newOrderEntity);
 
     // Clone order items
     if (oldOrder.items && oldOrder.items.length > 0) {
@@ -642,7 +827,8 @@ export class OrdersService {
 
     returnReq.status = EOrderReturnStatus.COMPLETED;
     returnReq.newOrderId = savedNewOrder.id;
-    returnReq.adminNote = dto.adminNote || 'Đã xác nhận đổi món mới và tạo đơn hàng thay thế';
+    returnReq.adminNote =
+      dto.adminNote || 'Đã xác nhận đổi món mới và tạo đơn hàng thay thế';
     returnReq.processedBy = processedBy;
     await this.returnRepository.save(returnReq);
 
@@ -659,15 +845,19 @@ export class OrdersService {
     processedBy: string,
     note?: string,
   ) {
-    const returnReq = await this.returnRepository.findOne({ where: { id: returnId } });
-    if (!returnReq) throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+    const returnReq = await this.returnRepository.findOne({
+      where: { id: returnId },
+    });
+    if (!returnReq)
+      throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
 
     if (step === 'PICKING_UP') {
       returnReq.status = EOrderReturnStatus.PICKING_UP;
       returnReq.adminNote = note || 'Shipper đang liên hệ lấy lại hàng';
     } else if (step === 'RECEIVED') {
       returnReq.status = EOrderReturnStatus.RECEIVED;
-      returnReq.adminNote = note || 'Đã nhận lại hàng về kho, sẵn sàng hoàn tiền';
+      returnReq.adminNote =
+        note || 'Đã nhận lại hàng về kho, sẵn sàng hoàn tiền';
     }
     returnReq.processedBy = processedBy;
     const saved = await this.returnRepository.save(returnReq);
@@ -675,15 +865,21 @@ export class OrdersService {
   }
 
   // Trường hợp 2: Trả hàng hoàn tiền - Bước bấm hoàn tiền vào ví (UC23 - 1.2)
-  async adminProcessRefund(returnId: string, processedBy: string, note?: string) {
+  async adminProcessRefund(
+    returnId: string,
+    processedBy: string,
+    note?: string,
+  ) {
     const returnReq = await this.returnRepository.findOne({
       where: { id: returnId },
       relations: ['order'],
     });
-    if (!returnReq) throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+    if (!returnReq)
+      throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
 
     const order = returnReq.order;
-    if (!order) throw new NotFoundException('Không tìm thấy đơn hàng tương ứng');
+    if (!order)
+      throw new NotFoundException('Không tìm thấy đơn hàng tương ứng');
 
     const refundAmount = Number(order.totalAmount);
     // Hoàn toàn bộ số tiền đơn hàng vào Ví điện tử của khách hàng
@@ -705,7 +901,9 @@ export class OrdersService {
     await this.orderRepository.save(order);
 
     returnReq.status = EOrderReturnStatus.COMPLETED;
-    returnReq.adminNote = note || `Đã hoàn tất hoàn trả và cộng ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`;
+    returnReq.adminNote =
+      note ||
+      `Đã hoàn tất hoàn trả và cộng ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`;
     returnReq.processedBy = processedBy;
     const saved = await this.returnRepository.save(returnReq);
 

@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Param, Patch, UseGuards, Req, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Patch,
+  UseGuards,
+  Req,
+  Get,
+} from '@nestjs/common';
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { SetAutoBidDto } from './dto/set-auto-bid.dto';
@@ -36,6 +45,11 @@ export class AuctionsController {
   @UseGuards(JwtAuthGuard)
   setAutoBid(@Req() req: any, @Body() dto: SetAutoBidDto) {
     // req.user is injected by JwtAuthGuard
-    return this.auctionsService.setAutoBid(req.user.id, dto.auctionItemId, dto.autoStepPrice, dto.ceilingPrice);
+    return this.auctionsService.setAutoBid(
+      req.user.id,
+      dto.auctionItemId,
+      dto.autoStepPrice,
+      dto.ceilingPrice,
+    );
   }
 }

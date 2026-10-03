@@ -30,7 +30,7 @@ export class ArtisansService {
     });
 
     return {
-      data: data.map(artisan => ({
+      data: data.map((artisan) => ({
         ...artisan,
         productCount: artisan.products?.length || 0,
       })),
@@ -46,7 +46,8 @@ export class ArtisansService {
       where: { id },
       relations: ['products'],
     });
-    if (!artisan) throw new NotFoundException(`Artisan with id ${id} not found`);
+    if (!artisan)
+      throw new NotFoundException(`Artisan with id ${id} not found`);
     return artisan;
   }
 
@@ -61,18 +62,23 @@ export class ArtisansService {
     return this.artisanRepository.remove(artisan);
   }
 
-  async updateProducts(id: string, updateArtisanProductsDto: UpdateArtisanProductsDto) {
+  async updateProducts(
+    id: string,
+    updateArtisanProductsDto: UpdateArtisanProductsDto,
+  ) {
     const artisan = await this.findOne(id);
     const { productIds } = updateArtisanProductsDto;
-    
+
     // Set artisanId to null for products previously associated with this artisan but not in the list
     await this.productRepository
       .createQueryBuilder()
       .update(Product)
       .set({ artisan: null as any })
-      .where('artisanId = :id AND id NOT IN (:...productIds)', { 
-        id, 
-        productIds: productIds.length ? productIds : ['00000000-0000-0000-0000-000000000000'] 
+      .where('artisanId = :id AND id NOT IN (:...productIds)', {
+        id,
+        productIds: productIds.length
+          ? productIds
+          : ['00000000-0000-0000-0000-000000000000'],
       })
       .execute();
 

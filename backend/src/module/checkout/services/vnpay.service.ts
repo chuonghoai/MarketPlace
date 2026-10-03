@@ -28,7 +28,11 @@ export class VnpayService {
     return sorted;
   }
 
-  buildVnpayPaymentUrl(orderId: string, totalAmount: number, ipAddr: string): string {
+  buildVnpayPaymentUrl(
+    orderId: string,
+    totalAmount: number,
+    ipAddr: string,
+  ): string {
     const tmnCode = this.getRequiredEnv(ENV_VARS.VNP_TMN_CODE);
     const secretKey = this.getRequiredEnv(ENV_VARS.VNP_HASH_SECRET);
     const vnpUrl = this.getRequiredEnv(ENV_VARS.VNP_URL);
@@ -38,9 +42,10 @@ export class VnpayService {
     const ipnUrl = `${callbackUrl}/checkout/vnpay/ipn`;
 
     const date = new Date();
-    
+
     // Format: yyyyMMddHHmmss
-    const createDate = date.getFullYear().toString() +
+    const createDate =
+      date.getFullYear().toString() +
       String(date.getMonth() + 1).padStart(2, '0') +
       String(date.getDate()).padStart(2, '0') +
       String(date.getHours()).padStart(2, '0') +
@@ -66,18 +71,18 @@ export class VnpayService {
     };
 
     const sortedParams = this.sortObject(vnp_Params);
-    
+
     const signData = Object.keys(sortedParams)
-      .map(key => `${key}=${sortedParams[key]}`)
+      .map((key) => `${key}=${sortedParams[key]}`)
       .join('&');
-      
+
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-    
+
     sortedParams['vnp_SecureHash'] = signed;
-    
+
     const finalQueryString = Object.keys(sortedParams)
-      .map(key => `${key}=${sortedParams[key]}`)
+      .map((key) => `${key}=${sortedParams[key]}`)
       .join('&');
 
     return `${vnpUrl}?${finalQueryString}`;
@@ -93,9 +98,9 @@ export class VnpayService {
     delete vnp_Params['vnp_SecureHashType'];
 
     const sortedParams = this.sortObject(vnp_Params);
-    
+
     const signData = Object.keys(sortedParams)
-      .map(key => `${key}=${sortedParams[key]}`)
+      .map((key) => `${key}=${sortedParams[key]}`)
       .join('&');
 
     const hmac = crypto.createHmac('sha512', secretKey);
