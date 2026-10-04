@@ -12,10 +12,12 @@ import { AuthModule } from '../auth/auth.module';
 import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { WalletsModule } from '../wallets/wallets.module';
+import { Order } from '../checkout/entities/order.entity';
+import { OrderItem } from '../checkout/entities/order-item.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Auction, AuctionItem, Product, User]),
+    TypeOrmModule.forFeature([Auction, AuctionItem, Product, User, Order, OrderItem]),
     RedisModule,
     ProductsModule,
     AuthModule,

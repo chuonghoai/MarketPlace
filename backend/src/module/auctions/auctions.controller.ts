@@ -1,5 +1,6 @@
 import { Controller, Post, Body, Param, Patch, UseGuards, Req, Get } from '@nestjs/common';
 import { AuctionsService } from './auctions.service';
+import { AuctionsGateway } from './auctions.gateway';
 import { CreateAuctionDto } from './dto/create-auction.dto';
 import { SetAutoBidDto } from './dto/set-auto-bid.dto';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
@@ -9,7 +10,10 @@ import { EUserRole } from '../users/enums/user.enum';
 
 @Controller('auctions')
 export class AuctionsController {
-  constructor(private readonly auctionsService: AuctionsService) {}
+  constructor(
+    private readonly auctionsService: AuctionsService,
+    private readonly auctionsGateway: AuctionsGateway,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -43,7 +47,12 @@ export class AuctionsController {
   @Post('auto-bid')
   @UseGuards(JwtAuthGuard)
   setAutoBid(@Req() req: any, @Body() dto: SetAutoBidDto) {
-    // req.user is injected by JwtAuthGuard
-    return this.auctionsService.setAutoBid(req.user.id, dto.auctionItemId, dto.autoStepPrice, dto.ceilingPrice);
+    const broadcastBid = (result: any) => {
+      if (this.auctionsGateway?.server) {
+        this.auctionsGateway.server.to(`auction:${dto.auctionItemId}`).emit('bidUpdated', result);
+        this.auctionsGateway.scheduleItemCountdown(dto.auctionItemId, result.countdownDuration || 30);
+      }
+    };
+    return this.auctionsService.setAutoBid(req.user.id, dto.auctionItemId, dto.autoStepPrice, dto.ceilingPrice, broadcastBid);
   }
 }

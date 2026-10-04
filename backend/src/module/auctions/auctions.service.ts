@@ -1,6 +1,6 @@
 import { Injectable, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Auction } from './entities/auction.entity';
 import { AuctionItem } from './entities/auction-item.entity';
 import { AuctionStatus } from './enums/auction.enum';
@@ -10,6 +10,11 @@ import { Product } from '../products/entities/product.entity';
 import { User } from '../users/entities/user.entity';
 import { WalletsService } from '../wallets/wallets.service';
 import { EWalletStatus } from '../wallets/enums/wallet.enum';
+import { Order } from '../checkout/entities/order.entity';
+import { OrderItem } from '../checkout/entities/order-item.entity';
+import { EOrderStatus } from '../checkout/enums/EOrderStatus.enum';
+import { EPaymentStatus } from '../checkout/enums/EPaymentStatus.enum';
+import { EPaymentMethod } from '../checkout/enums/EPaymentMethod.enum';
 
 @Injectable()
 export class AuctionsService {
@@ -24,8 +29,13 @@ export class AuctionsService {
     private productRepo: Repository<Product>,
     @InjectRepository(User)
     private userRepo: Repository<User>,
+    @InjectRepository(Order)
+    private orderRepo: Repository<Order>,
+    @InjectRepository(OrderItem)
+    private orderItemRepo: Repository<OrderItem>,
     private redisService: RedisService,
     private walletsService: WalletsService,
+    private dataSource: DataSource,
   ) { }
 
   async createAuction(dto: CreateAuctionDto) {
@@ -195,8 +205,12 @@ export class AuctionsService {
     };
   }
 
-  // Place manual bid using Lua for atomicity and integrating E-Wallet
-  async placeManualBid(userId: string, auctionItemId: string, price: number, isAutoBid = false) {
+  async placeManualBid(
+    userId: string,
+    auctionItemId: string,
+    price: number,
+    isAutoBid = false
+  ) {
     // 1. Verify user exists
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) {
@@ -224,7 +238,7 @@ export class AuctionsService {
 
     const script = `
       local state = redis.call('hgetall', KEYS[1])
-      if #state == 0 then return {err="Auction not active or found"} end
+      if #state == 0 then return {"err", "Auction not active or found"} end
       
       local data = {}
       for i=1, #state, 2 do
@@ -242,17 +256,17 @@ export class AuctionsService {
       
       -- If there is already a bid placed and now > endTimeMs, auction has ended
       if winnerId ~= '' and now > endTimeMs then
-         return {err="Phiên đấu giá đã kết thúc!"}
+         return {"err", "Phiên đấu giá đã kết thúc!"}
       end
       
       -- If no previous bid, must be at least currentPrice
       if winnerId == '' then
         if bidPrice < currentPrice then
-           return {err="Giá đặt phải bằng hoặc lớn hơn giá khởi điểm (" .. currentPrice .. " ₫)"}
+           return {"err", "Giá đặt phải bằng hoặc lớn hơn giá khởi điểm (" .. currentPrice .. " ₫)"}
         end
       else
         if bidPrice < currentPrice + minStep then
-           return {err="Giá đặt phải lớn hơn giá hiện tại tối thiểu " .. minStep .. " ₫"}
+           return {"err", "Giá đặt phải lớn hơn giá hiện tại tối thiểu " .. minStep .. " ₫"}
         end
       end
       
@@ -284,7 +298,7 @@ export class AuctionsService {
       status: AuctionStatus.ACTIVE
     });
 
-    // Trigger Auto-Bid calculation cascade asynchronously
+    // Trigger Auto-Bid calculation cascade asynchronously (only for manual bids)
     if (!isAutoBid) {
       this.triggerAutoBidCascade(auctionItemId).catch(err => this.logger.error('AutoBid Cascade Error', err));
     }
@@ -293,7 +307,13 @@ export class AuctionsService {
   }
 
   // Set Auto Bid configuration for a user with wallet check
-  async setAutoBid(userId: string, auctionItemId: string, autoStepPrice: number, ceilingPrice: number) {
+  async setAutoBid(
+    userId: string,
+    auctionItemId: string,
+    autoStepPrice: number,
+    ceilingPrice: number,
+    onBidUpdate?: (result: any) => void
+  ) {
     const walletInfo = await this.walletsService.getWalletInfo(userId);
     if (!walletInfo || walletInfo.status !== EWalletStatus.ACTIVE) {
       throw new BadRequestException('Ví điện tử của bạn không hoạt động hoặc chưa được kích hoạt');
@@ -316,13 +336,13 @@ export class AuctionsService {
 
     await redis.sadd(`auction:${auctionItemId}:autobidders`, userId);
 
-    this.triggerAutoBidCascade(auctionItemId).catch(err => this.logger.error('AutoBid Cascade Error', err));
+    this.triggerAutoBidCascade(auctionItemId, onBidUpdate).catch(err => this.logger.error('AutoBid Cascade Error', err));
 
     return { status: 'success', message: 'Thiết lập Auto-Bid thành công' };
   }
 
   // Background process to cascade auto-bids
-  private async triggerAutoBidCascade(auctionItemId: string) {
+  async triggerAutoBidCascade(auctionItemId: string, onBidUpdate?: (result: any) => void) {
     const redis = this.redisService.getClient();
 
     let stable = false;
@@ -354,7 +374,10 @@ export class AuctionsService {
 
         if (nextBidPrice <= ceiling) {
           try {
-            await this.placeManualBid(bidderId, auctionItemId, nextBidPrice, true);
+            const autoBidResult = await this.placeManualBid(bidderId, auctionItemId, nextBidPrice, true);
+            if (onBidUpdate) {
+              onBidUpdate(autoBidResult);
+            }
             stable = false;
             break;
           } catch (e) {
@@ -386,16 +409,60 @@ export class AuctionsService {
       winnerUser = await this.userRepo.findOne({ where: { id: winnerId } });
       if (winnerUser) {
         item.currentWinner = winnerUser;
-        // DEDUCT WALLET BALANCE FOR WINNER
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
+          // 1. Trừ tiền ví (có transaction queryRunner để lock)
           await this.walletsService.deductBalance(
             winnerId,
             finalPrice,
-            item.id
+            item.id,
+            queryRunner
           );
           this.logger.log(`Trừ ${finalPrice} ₫ từ ví của người thắng đấu giá ${winnerId} cho sản phẩm ${item.id}`);
+
+          // 2. Trừ tồn kho sản phẩm
+          await queryRunner.manager.decrement(Product, { id: item.product.id }, 'stock', 1);
+
+          // 3. Tự động tạo hóa đơn/đơn hàng cho người dùng sau khi thanh toán thành công qua ví
+          const order = queryRunner.manager.create(Order, {
+            userId: winnerId,
+            totalAmount: finalPrice,
+            subTotal: finalPrice,
+            walletDeductionAmount: finalPrice,
+            status: EOrderStatus.PREPARING,
+            paymentStatus: EPaymentStatus.PAID,
+            paymentMethod: EPaymentMethod.WALLET,
+            note: `Hóa đơn thanh toán tự động cho sản phẩm trúng đấu giá: ${item.product.name} (Phiên: ${item.auction?.title || item.auction?.id})`,
+            statusHistory: [{
+              status: EOrderStatus.PREPARING,
+              updatedAt: new Date().toISOString(),
+              updatedBy: 'system',
+              note: 'Tạo đơn hàng tự động từ đấu giá'
+            }]
+          });
+          const savedOrder = await queryRunner.manager.save(order);
+
+          const orderItem = queryRunner.manager.create(OrderItem, {
+            orderId: savedOrder.id,
+            productId: item.product.id,
+            productName: item.product.name,
+            productImageUrl: item.product.imageUrl || '',
+            price: finalPrice,
+            quantity: 1
+          });
+          await queryRunner.manager.save(orderItem);
+
+          await queryRunner.commitTransaction();
+          this.logger.log(`Tạo hóa đơn/đơn hàng thành công cho người thắng ${winnerId}: Order ID ${savedOrder.id}`);
+
         } catch (walletErr) {
-          this.logger.error(`Lỗi khi trừ tiền ví người thắng ${winnerId}: ${walletErr.message}`);
+          await queryRunner.rollbackTransaction();
+          this.logger.error(`Lỗi khi trừ tiền ví hoặc tạo hóa đơn người thắng ${winnerId}: ${walletErr.message}`);
+        } finally {
+          await queryRunner.release();
         }
       }
     }

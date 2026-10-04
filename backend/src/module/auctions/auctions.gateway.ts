@@ -19,7 +19,10 @@ import { ENV_VARS } from '../../constants/env.constants';
 
 @WebSocketGateway({
   namespace: 'auctions',
-  cors: { origin: '*' }
+  cors: { 
+    origin: true,
+    credentials: true
+  }
 })
 export class AuctionsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -49,7 +52,7 @@ export class AuctionsGateway implements OnGatewayConnection, OnGatewayDisconnect
       return (client as any).user;
     }
 
-    // 1. Try token extraction
+    // 1. Try token from data or handshake auth
     let token = data?.token || (client.handshake.auth as any)?.token;
     if (!token && client.handshake.headers?.authorization?.startsWith('Bearer ')) {
       token = client.handshake.headers.authorization.substring(7);
@@ -79,7 +82,7 @@ export class AuctionsGateway implements OnGatewayConnection, OnGatewayDisconnect
       }
     }
 
-    // 2. Candidate userId verification
+    // 2. Fallback: Candidate userId (for dev/test, validates against DB)
     const candidateUserId = data?.userId || (client.handshake.auth as any)?.userId;
     if (candidateUserId) {
       const dbUser = await this.userRepo.findOne({ where: { id: candidateUserId } });
@@ -124,19 +127,32 @@ export class AuctionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     @MessageBody() data: { auctionItemId: string, price: number, userId?: string, token?: string }
   ) {
     try {
-      this.logger.log(`Handling placeBid from client ${client.id} for item ${data?.auctionItemId} price ${data?.price}`);
+      this.logger.log(`placeBid: client=${client.id} item=${data?.auctionItemId} price=${data?.price}`);
+
       const user = await this.resolveUser(client, data);
       if (!user?.id) {
         return { status: 'error', message: 'Vui lòng đăng nhập để tham gia đấu giá' };
       }
       
-      const result = await this.auctionsService.placeManualBid(user.id, data.auctionItemId, Number(data.price));
+      const result = await this.auctionsService.placeManualBid(
+        user.id, 
+        data.auctionItemId, 
+        Number(data.price)
+      );
       
-      // Broadcast new state to all users in the room
+      // ✅ Broadcast bid update to ALL users in the room (including sender)
       this.server.to(`auction:${data.auctionItemId}`).emit('bidUpdated', result);
+      this.logger.log(`bidUpdated broadcast: item=${data.auctionItemId} price=${result.currentPrice}`);
       
-      // Schedule / Reset 30s countdown on server
+      // ✅ Reset 30s server-side countdown
       this.scheduleItemCountdown(data.auctionItemId, result.countdownDuration || 30);
+      
+      // ✅ Trigger auto-bid cascade – any auto-bids are also broadcast
+      this.auctionsService.triggerAutoBidCascade(data.auctionItemId, (autoBidResult) => {
+        this.server.to(`auction:${data.auctionItemId}`).emit('bidUpdated', autoBidResult);
+        this.scheduleItemCountdown(data.auctionItemId, autoBidResult.countdownDuration || 30);
+        this.logger.log(`auto-bidUpdated broadcast: item=${data.auctionItemId} price=${autoBidResult.currentPrice}`);
+      }).catch(err => this.logger.error('AutoBid Cascade Error:', err));
       
       return { status: 'success', data: result };
     } catch (error) {
@@ -165,18 +181,20 @@ export class AuctionsGateway implements OnGatewayConnection, OnGatewayDisconnect
     }
   }
 
-  // Manage 30s server timeout
+  // ✅ Server-side countdown: resets on every new bid, closes auction when timer fires
   scheduleItemCountdown(auctionItemId: string, durationSeconds: number) {
     const existing = this.itemTimers.get(auctionItemId);
     if (existing) {
       clearTimeout(existing);
     }
 
+    this.logger.log(`Countdown scheduled: item=${auctionItemId} duration=${durationSeconds}s`);
+
     const timer = setTimeout(async () => {
       try {
         const endResult = await this.auctionsService.endAuctionItem(auctionItemId);
         if (endResult) {
-          this.logger.log(`Auction item ${auctionItemId} closed. Winner: ${endResult.winner?.id || 'None'}, Price: ${endResult.finalPrice}`);
+          this.logger.log(`Auction item CLOSED: ${auctionItemId}. Winner: ${endResult.winner?.id || 'None'}, Price: ${endResult.finalPrice}`);
           this.server.to(`auction:${auctionItemId}`).emit('itemClosed', {
             auctionItemId,
             status: 'CLOSED',
