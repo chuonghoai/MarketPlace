@@ -62,7 +62,9 @@ export const AuctionTable: React.FC<AuctionTableProps> = ({ auctions, loading, o
                                                 </div>
                                                 <div className="flex flex-col overflow-hidden w-full">
                                                     <span className="text-xs font-semibold truncate">{item.product?.name || 'Sản phẩm'}</span>
-                                                    <span className="text-[10px] text-text-muted font-mono">{item.currentPrice?.toLocaleString()}đ</span>
+                                                    <span className="text-[11px] text-text-muted font-mono font-medium">
+                                                        {Number(item.currentPrice || item.startPrice || 0).toLocaleString('vi-VN')} ₫
+                                                    </span>
                                                     {item.status === AuctionStatus.PENDING && (
                                                         <button 
                                                             onClick={() => onStartItem(item.id)}
@@ -83,15 +85,20 @@ export const AuctionTable: React.FC<AuctionTableProps> = ({ auctions, loading, o
                                 )}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-xs">
-                                <div>{new Date(auction.startTime).toLocaleString()}</div>
-                                <div className="text-text-muted">đến {new Date(auction.endTime).toLocaleString()}</div>
+                                <div>{new Date(auction.startTime).toLocaleString('vi-VN')}</div>
+                                <div className="text-text-muted">đến {new Date(auction.endTime).toLocaleString('vi-VN')}</div>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
-                                <div className="font-mono font-medium">{auction.minStepPrice?.toLocaleString()}đ</div>
+                                <div className="font-mono font-medium text-xs">
+                                    {Number(auction.minStepPrice || 0).toLocaleString('vi-VN')} ₫
+                                </div>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
-                                <div className="font-mono font-bold text-primary">
-                                    {auction.items?.reduce((sum, item) => sum + (auction.status === AuctionStatus.CLOSED ? (item.currentPrice || 0) : (item.startPrice || 0)), 0).toLocaleString()}đ
+                                <div className="font-mono font-bold text-primary text-sm">
+                                    {auction.items?.reduce((sum, item) => {
+                                        const p = Number(item.currentPrice || item.startPrice || 0);
+                                        return sum + (isNaN(p) ? 0 : p);
+                                    }, 0).toLocaleString('vi-VN')} ₫
                                 </div>
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
