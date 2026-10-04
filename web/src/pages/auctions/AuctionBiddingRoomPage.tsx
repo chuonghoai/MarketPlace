@@ -32,7 +32,10 @@ const AuctionBiddingRoomPage: React.FC = () => {
     const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
     const user = userStorageService.getUser();
-    const bidTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const bidTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Refs to access latest values inside socket callbacks without stale closures
+    const auctionRef = useRef<Auction | null>(null);
+    const activeItemRef = useRef<AuctionItem | null>(null);
 
     // Fetch user wallet
     const fetchWallet = async () => {
@@ -67,8 +70,10 @@ const AuctionBiddingRoomPage: React.FC = () => {
 
                 if (found) {
                     setAuction(found);
+                    auctionRef.current = found;
                     const active = found.items?.find((i: AuctionItem) => i.status === AuctionStatus.ACTIVE) || found.items?.[0];
                     setActiveItem(active || null);
+                    activeItemRef.current = active || null;
                     
                     if (active) {
                         const cur = Number(active.currentPrice || active.startPrice || 0);
@@ -87,10 +92,13 @@ const AuctionBiddingRoomPage: React.FC = () => {
         fetchAuctionDetails();
     }, [id]);
 
-    // Setup Socket.IO for real-time bidding & countdown synchronization
+    // Keep activeItemRef current when item is switched
     useEffect(() => {
-        if (!activeItem) return;
+        activeItemRef.current = activeItem;
+    }, [activeItem]);
 
+    // Setup Socket.IO ONCE per page (not per item change)
+    useEffect(() => {
         const token = tokenService.getAccessToken();
         const currentUser = userStorageService.getUser();
 
@@ -107,7 +115,7 @@ const AuctionBiddingRoomPage: React.FC = () => {
 
         const handleLiveState = (data: any) => {
             if (!data) return;
-            console.log('Auction real-time event received:', data);
+            console.log('[Socket] Real-time event:', data);
 
             if (data.currentPrice !== undefined) {
                 const numericPrice = Number(data.currentPrice);
@@ -117,18 +125,13 @@ const AuctionBiddingRoomPage: React.FC = () => {
                     status: data.status || prev.status
                 } : null);
 
-                if (auction) {
-                    const minStep = Number(auction.minStepPrice || 10000);
-                    setBidAmount((numericPrice + minStep).toString());
-                }
+                // Use ref to avoid stale closure on minStepPrice
+                const minStep = Number(auctionRef.current?.minStepPrice || 10000);
+                setBidAmount((numericPrice + minStep).toString());
             }
 
-            if (data.winnerName) {
-                setHighestBidder(data.winnerName);
-            }
-            if (data.winnerId) {
-                setHighestBidderId(data.winnerId);
-            }
+            if (data.winnerName) setHighestBidder(data.winnerName);
+            if (data.winnerId) setHighestBidderId(data.winnerId);
 
             if (data.status === AuctionStatus.CLOSED || data.isEnded) {
                 setIsClosed(true);
@@ -144,20 +147,29 @@ const AuctionBiddingRoomPage: React.FC = () => {
         };
 
         newSocket.on('connect', () => {
-            console.log('Connected to auction socket room');
-            newSocket.emit('joinRoom', { auctionItemId: activeItem.id });
+            console.log('[Socket] Connected to auction namespace');
+            // Join the current active item's room if available
+            const item = activeItemRef.current;
+            if (item?.id) {
+                newSocket.emit('joinRoom', { auctionItemId: item.id });
+                console.log('[Socket] Joining room:', item.id);
+            }
         });
 
         newSocket.on('itemState', handleLiveState);
+
         newSocket.on('bidUpdated', (data: any) => {
+            console.log('[Socket] bidUpdated received:', data);
             handleLiveState(data);
+            setIsBidding(false);
+            if (bidTimeoutRef.current) clearTimeout(bidTimeoutRef.current);
             setSuccessMsg('⚡ Có lượt nâng giá mới từ người tham gia!');
             setTimeout(() => setSuccessMsg(null), 3500);
             fetchWallet();
         });
 
         newSocket.on('itemClosed', (data: any) => {
-            console.log('Auction item closed event:', data);
+            console.log('[Socket] itemClosed:', data);
             setIsClosed(true);
             setTimeLeft(0);
             setTargetEndTime(null);
@@ -172,10 +184,14 @@ const AuctionBiddingRoomPage: React.FC = () => {
         });
 
         newSocket.on('exception', (err: any) => {
-            console.warn('Socket exception:', err);
+            console.warn('[Socket] exception:', err);
             setIsBidding(false);
             if (bidTimeoutRef.current) clearTimeout(bidTimeoutRef.current);
             setError(err?.message || 'Có lỗi xảy ra từ máy chủ socket');
+        });
+
+        newSocket.on('connect_error', (err) => {
+            console.error('[Socket] connect_error:', err.message);
         });
 
         setSocket(newSocket);
@@ -184,7 +200,20 @@ const AuctionBiddingRoomPage: React.FC = () => {
             if (bidTimeoutRef.current) clearTimeout(bidTimeoutRef.current);
             newSocket.disconnect();
         };
-    }, [activeItem?.id, user?.id]);
+    // Only create socket once when user logs in, not every item change
+    }, [user?.id]);
+
+    // When user switches to a different item, leave old room and join new one
+    useEffect(() => {
+        if (!socket || !activeItem?.id) return;
+        if (socket.connected) {
+            socket.emit('joinRoom', { auctionItemId: activeItem.id });
+        } else {
+            socket.once('connect', () => {
+                socket.emit('joinRoom', { auctionItemId: activeItem.id });
+            });
+        }
+    }, [activeItem?.id, socket]);
 
     // Real-time 30-second countdown effect
     useEffect(() => {
@@ -209,8 +238,8 @@ const AuctionBiddingRoomPage: React.FC = () => {
 
     // Handle manual bid with E-Wallet balance verification
     const handleManualBid = () => {
-        if (!socket || !activeItem) {
-            setError('Đang kết nối lại với phòng đấu giá, vui lòng chờ trong giây lát...');
+        if (!socket || !socket.connected || !activeItem) {
+            setError('Mất kết nối máy chủ đấu giá, vui lòng tải lại trang (F5)');
             return;
         }
 
