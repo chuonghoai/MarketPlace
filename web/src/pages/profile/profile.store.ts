@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { userService } from "../../features/user/services/user.service";
 import { userStorageService } from "../../features/user/services/userStorage.service";
 import type { User } from "../../features/user/models/user.model";
@@ -7,6 +7,12 @@ import { useToast } from "../../components/toast/toast";
 export const useProfileStore = () => {
     const { toast } = useToast();
     const [user, setUser] = useState<User | null>(userStorageService.getUser());
+
+    useEffect(() => {
+        const handleAuth = () => setUser(userStorageService.getUser());
+        window.addEventListener("auth_changed", handleAuth);
+        return () => window.removeEventListener("auth_changed", handleAuth);
+    }, []);
 
     const loadProfile = async () => {
         try {
