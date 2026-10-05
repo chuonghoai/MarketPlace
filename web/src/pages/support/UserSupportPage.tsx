@@ -54,25 +54,16 @@ export const UserSupportPage: React.FC = () => {
         pageSize: 50,
       });
       setRequests(res.data || []);
-      if (selectedRequest) {
-        const updated = (res.data || []).find((r) => r.id === selectedRequest.id);
-        if (updated) {
-          fetchDetail(updated.id);
-        }
-      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg || tSupport('errorOccurred'));
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, selectedRequest, fetchDetail]);
+  }, [filterStatus]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchRequests();
-    }, 0);
-    return () => clearTimeout(timer);
+    fetchRequests();
   }, [fetchRequests]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -109,6 +100,7 @@ export const UserSupportPage: React.FC = () => {
       await supportService.addMessage(selectedRequest.id, { content: replyContent.trim() });
       setReplyContent('');
       await fetchDetail(selectedRequest.id);
+      await fetchRequests();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       alert(msg || tSupport('errorOccurred'));
@@ -119,7 +111,7 @@ export const UserSupportPage: React.FC = () => {
 
   const handleCloseTicket = async () => {
     if (!selectedRequest) return;
-    if (!window.confirm('Bạn có chắc chắn muốn đóng yêu cầu hỗ trợ này?')) return;
+    if (!window.confirm(tSupport('confirmCloseRequest'))) return;
 
     try {
       await supportService.close(selectedRequest.id);
@@ -301,7 +293,7 @@ export const UserSupportPage: React.FC = () => {
                       <div className="flex items-center gap-2 mb-1 text-[11px] text-text-muted dark:text-stone-400 font-body">
                         <span className="font-semibold text-text-ink dark:text-stone-300">
                           {isRequester
-                            ? 'Bạn'
+                            ? tSupport('you')
                             : msg.sender?.fullName || tSupport('assignedStaff')}
                         </span>
                         <span>{new Date(msg.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
@@ -344,7 +336,7 @@ export const UserSupportPage: React.FC = () => {
                 </form>
               ) : (
                 <div className="p-3 bg-stone-50 dark:bg-stone-800/50 text-text-muted dark:text-stone-400 text-xs rounded-xl text-center">
-                  {tSupport('closed')} — Phiếu hỗ trợ này đã được đóng.
+                  {tSupport('ticketClosedNotice')}
                 </div>
               )}
             </div>
@@ -354,7 +346,7 @@ export const UserSupportPage: React.FC = () => {
                 chat_bubble_outline
               </span>
               <p className="font-body text-sm">
-                Chọn một yêu cầu bên trái để xem chi tiết trao đổi
+                {tSupport('selectRequestToView')}
               </p>
             </div>
           )}

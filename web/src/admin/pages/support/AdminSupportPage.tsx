@@ -68,21 +68,15 @@ export const AdminSupportPage: React.FC = () => {
         });
       }
       setRequests(res.data || []);
-      if (selectedRequest) {
-        const updated = (res.data || []).find((r) => r.id === selectedRequest.id);
-        if (updated) {
-          fetchDetail(updated.id);
-        }
-      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg || tSupport('errorOccurred'));
     } finally {
       setLoading(false);
     }
-  }, [filterStatus, isAdmin, selectedRequest, fetchDetail]);
+  }, [filterStatus, isAdmin]);
 
-  const loadStaffs = async () => {
+  const loadStaffs = React.useCallback(async () => {
     try {
       const res = await staffService.getAll(1, 100);
       setStaffList(res.data || []);
@@ -92,17 +86,17 @@ export const AdminSupportPage: React.FC = () => {
     } catch (err: unknown) {
       console.error(err);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchRequests();
-      if (isAdmin) {
-        loadStaffs();
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [fetchRequests, isAdmin]);
+    if (isAdmin) {
+      loadStaffs();
+    }
+  }, [isAdmin, loadStaffs]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
 
   const handleAssignStaff = async () => {
     if (!selectedRequest || !selectedStaffId) return;
@@ -135,7 +129,7 @@ export const AdminSupportPage: React.FC = () => {
 
   const handleClose = async () => {
     if (!selectedRequest) return;
-    if (!window.confirm('Bạn có chắc chắn muốn đóng yêu cầu hỗ trợ này?')) return;
+    if (!window.confirm(tSupport('confirmCloseRequest'))) return;
     try {
       await supportService.close(selectedRequest.id);
       await fetchDetail(selectedRequest.id);
@@ -190,9 +184,7 @@ export const AdminSupportPage: React.FC = () => {
             {isAdmin ? tSupport('allRequests') : tSupport('assignedRequests')}
           </h1>
           <p className="font-body text-sm text-text-muted dark:text-stone-400 mt-1">
-            {isAdmin
-              ? 'Quản lý, phân công và kiểm soát chất lượng phản hồi hỗ trợ khách hàng'
-              : 'Xử lý các yêu cầu hỗ trợ được phân công cho bạn, giải đáp thắc mắc và đảm bảo SLA'}
+            {isAdmin ? tSupport('adminSubtitle') : tSupport('staffSubtitle')}
           </p>
         </div>
 
@@ -270,7 +262,7 @@ export const AdminSupportPage: React.FC = () => {
                     </p>
 
                     <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border-subtle/60 dark:border-stone-800/80 text-[11px] text-text-muted dark:text-stone-400">
-                      <span>{req.requester?.fullName || req.requester?.email || 'User'}</span>
+                      <span>{req.requester?.fullName || req.requester?.email || tSupport('userFallback')}</span>
                       <span className="font-semibold text-primary-container">
                         {req.assignedStaff?.user?.fullName || tSupport('unassigned')}
                       </span>
@@ -366,8 +358,8 @@ export const AdminSupportPage: React.FC = () => {
                       <div className="flex items-center gap-2 mb-1 text-[11px] text-text-muted dark:text-stone-400 font-body">
                         <span className="font-semibold text-text-ink dark:text-stone-300">
                           {isCustomer
-                            ? selectedRequest.requester?.fullName || 'Khách hàng'
-                            : msg.sender?.fullName || 'Nhân viên hỗ trợ'}
+                            ? selectedRequest.requester?.fullName || tSupport('customer')
+                            : msg.sender?.fullName || tSupport('supportStaff')}
                         </span>
                         <span>
                           {new Date(msg.createdAt).toLocaleTimeString('vi-VN', {
@@ -414,7 +406,7 @@ export const AdminSupportPage: React.FC = () => {
                 </form>
               ) : (
                 <div className="p-3 bg-stone-50 dark:bg-stone-800/50 text-text-muted dark:text-stone-400 text-xs rounded-xl text-center">
-                  Phiếu hỗ trợ đã đóng.
+                  {tSupport('ticketClosedNotice')}
                 </div>
               )}
             </div>
@@ -424,7 +416,7 @@ export const AdminSupportPage: React.FC = () => {
                 support_agent
               </span>
               <p className="font-body text-sm">
-                Chọn một yêu cầu hỗ trợ bên trái để xem trao đổi và thao tác
+                {tSupport('selectRequestToViewAdmin')}
               </p>
             </div>
           )}
