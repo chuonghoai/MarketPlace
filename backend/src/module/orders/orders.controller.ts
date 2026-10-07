@@ -63,10 +63,10 @@ export class OrdersController {
   async processRefund(
     @Param('id') id: string,
     @Req() req: any,
-    @Body() body: { note?: string },
+    @Body() body: { note?: string; refundProofUrl?: string },
   ) {
-    const data = await this.ordersService.adminProcessRefund(id, req.user.id, body?.note);
-    return new ApiResponse(true, 'Hoàn tiền vào ví điện tử của khách hàng thành công', data);
+    const data = await this.ordersService.adminProcessRefund(id, req.user.id, body?.note, body?.refundProofUrl);
+    return new ApiResponse(true, 'Hoàn tiền cho khách hàng thành công', data);
   }
 
   @Get(':id')

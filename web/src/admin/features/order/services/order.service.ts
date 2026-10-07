@@ -49,8 +49,8 @@ export class OrderService {
         return apiClient.patch(`/admin/order/return-requests/${id}/pickup`, { step, note });
     }
 
-    processRefund(id: string, note?: string): Promise<ApiResponse<any>> {
-        return apiClient.patch(`/admin/order/return-requests/${id}/refund`, { note });
+    processRefund(id: string, note?: string, refundProofUrl?: string): Promise<ApiResponse<any>> {
+        return apiClient.patch(`/admin/order/return-requests/${id}/refund`, { note, refundProofUrl });
     }
 }
 

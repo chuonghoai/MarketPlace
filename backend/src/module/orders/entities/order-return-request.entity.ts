@@ -29,6 +29,21 @@ export class OrderReturnRequest {
   @Column({ type: 'simple-array', nullable: true })
   proofImages: string[];
 
+  @Column({ type: 'simple-array', nullable: true })
+  proofVideos: string[];
+
+  @Column({ nullable: true })
+  bankName: string;
+
+  @Column({ nullable: true })
+  bankAccountNumber: string;
+
+  @Column({ nullable: true })
+  bankAccountHolder: string;
+
+  @Column({ nullable: true })
+  refundProofUrl: string;
+
   @Column({ type: 'enum', enum: EOrderReturnStatus, default: EOrderReturnStatus.PENDING })
   status: EOrderReturnStatus;
 

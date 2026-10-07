@@ -530,6 +530,10 @@ export class OrdersService {
       title: dto.title,
       reason: dto.reason,
       proofImages: dto.proofImages || [],
+      proofVideos: dto.proofVideos || [],
+      bankName: dto.bankName || null,
+      bankAccountNumber: dto.bankAccountNumber || null,
+      bankAccountHolder: dto.bankAccountHolder || null,
       status: EOrderReturnStatus.PENDING,
     });
     const saved = await this.returnRepository.save(returnRequest);
@@ -674,8 +678,8 @@ export class OrdersService {
     return saved;
   }
 
-  // Trường hợp 2: Trả hàng hoàn tiền - Bước bấm hoàn tiền vào ví (UC23 - 1.2)
-  async adminProcessRefund(returnId: string, processedBy: string, note?: string) {
+  // Trường hợp 2: Trả hàng hoàn tiền - Bước bấm hoàn tiền (UC23 - 1.2)
+  async adminProcessRefund(returnId: string, processedBy: string, note?: string, refundProofUrl?: string) {
     const returnReq = await this.returnRepository.findOne({
       where: { id: returnId },
       relations: ['order'],
@@ -686,12 +690,20 @@ export class OrdersService {
     if (!order) throw new NotFoundException('Không tìm thấy đơn hàng tương ứng');
 
     const refundAmount = Number(order.totalAmount);
-    // Hoàn toàn bộ số tiền đơn hàng vào Ví điện tử của khách hàng
-    await this.walletsService.refundBalance(
-      order.userId,
-      refundAmount,
-      order.id,
-    );
+    const isBankTransfer = !!returnReq.bankAccountNumber;
+
+    if (isBankTransfer) {
+      if (refundProofUrl) {
+        returnReq.refundProofUrl = refundProofUrl;
+      }
+    } else {
+      // Hoàn toàn bộ số tiền đơn hàng vào Ví điện tử của khách hàng
+      await this.walletsService.refundBalance(
+        order.userId,
+        refundAmount,
+        order.id,
+      );
+    }
 
     // Cập nhật trạng thái đơn hàng sang RETURNED
     order.status = EOrderStatus.RETURNED;
@@ -699,19 +711,24 @@ export class OrdersService {
     history.push({
       status: EOrderStatus.RETURNED,
       timestamp: new Date().toISOString(),
-      note: `Hoàn tiền ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử cho khách hàng`,
+      note: isBankTransfer
+        ? `Hoàn tiền ${refundAmount.toLocaleString('vi-VN')} ₫ qua Chuyển khoản ngân hàng (${returnReq.bankName || 'Ngân hàng'} - STK: ${returnReq.bankAccountNumber})`
+        : `Hoàn tiền ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử cho khách hàng`,
     });
     order.statusHistory = history;
     await this.orderRepository.save(order);
 
     returnReq.status = EOrderReturnStatus.COMPLETED;
-    returnReq.adminNote = note || `Đã hoàn tất hoàn trả và cộng ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`;
+    returnReq.adminNote = note || (isBankTransfer
+      ? `Đã hoàn tất chuyển khoản ${refundAmount.toLocaleString('vi-VN')} ₫ cho khách hàng`
+      : `Đã hoàn tất hoàn trả và cộng ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`);
     returnReq.processedBy = processedBy;
     const saved = await this.returnRepository.save(returnReq);
 
     return {
       returnRequest: saved,
       refundedAmount: refundAmount,
+      method: isBankTransfer ? 'BANK_TRANSFER' : 'WALLET',
     };
   }
 }

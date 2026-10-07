@@ -49,6 +49,14 @@ export class WalletsService {
     return wallet;
   }
 
+  async checkWalletExists(userId: string): Promise<{ exists: boolean; status: EWalletStatus | null }> {
+    const wallet = await this.walletRepository.findOne({ where: { userId } });
+    return {
+      exists: !!wallet,
+      status: wallet ? wallet.status : null,
+    };
+  }
+
   async getWalletInfo(userId: string) {
     const wallet = await this.getOrCreateWallet(userId);
     return {

@@ -17,12 +17,38 @@ export class CreateOrderReturnDto {
   @IsOptional()
   @IsArray()
   proofImages?: string[];
+
+  @IsOptional()
+  @IsArray()
+  proofVideos?: string[];
+
+  @IsOptional()
+  @IsString()
+  bankName?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  bankAccountHolder?: string;
 }
 
 export class AdminProcessReturnDto {
   @IsOptional()
   @IsString()
   adminNote?: string;
+}
+
+export class AdminProcessRefundDto {
+  @IsOptional()
+  @IsString()
+  adminNote?: string;
+
+  @IsOptional()
+  @IsString()
+  refundProofUrl?: string;
 }
 
 export class AdminProcessExchangeDto {

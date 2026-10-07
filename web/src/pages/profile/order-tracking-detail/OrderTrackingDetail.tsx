@@ -39,6 +39,21 @@ export const OrderTrackingDetail: React.FC = () => {
                 </div>
             )}
 
+            {/* Breadcrumb & Context Header (UC23 - Yêu cầu hỗ trợ) */}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                <a href="/profile/order-tracking" className="hover:text-amber-600 transition-colors">
+                    Đơn hàng của tôi
+                </a>
+                <span>/</span>
+                <span className="text-stone-900 dark:text-stone-200 font-medium">
+                    Đơn #{controller.order.id}
+                </span>
+                <span>/</span>
+                <span className="text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-900/40 text-[11px] font-semibold">
+                    Hỗ trợ & Xử lý đổi trả (UC23)
+                </span>
+            </div>
+
             {/* Section 1: Summary Card */}
             <OrderSummaryCard order={controller.order} />
 

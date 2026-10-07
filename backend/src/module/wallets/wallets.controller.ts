@@ -29,6 +29,16 @@ import { EWalletWithdrawalStatus } from './enums/wallet.enum';
 export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}
 
+  @Get('check')
+  async checkWalletStatus(@Req() req: any) {
+    const data = await this.walletsService.checkWalletExists(req.user.id);
+    return {
+      success: true,
+      message: 'Kiểm tra trạng thái ví thành công',
+      data,
+    };
+  }
+
   @Get('me')
   async getMyWallet(@Req() req: any) {
     const data = await this.walletsService.getWalletInfo(req.user.id);
