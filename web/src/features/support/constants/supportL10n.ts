@@ -54,6 +54,8 @@ export const SUPPORT_L10N = {
     ticketClosedNotice: 'Phiếu hỗ trợ này đã được đóng.',
     selectRequestToView: 'Chọn một yêu cầu bên trái để xem chi tiết trao đổi',
     selectRequestToViewAdmin: 'Chọn một yêu cầu hỗ trợ bên trái để xem trao đổi và thao tác',
+    realtimeConnected: 'Trực tiếp (WebSocket)',
+    liveChat: 'Hộp thoại trực tuyến',
   },
   en: {
     title: 'Support Requests',
@@ -110,6 +112,8 @@ export const SUPPORT_L10N = {
     ticketClosedNotice: 'This support request has been closed.',
     selectRequestToView: 'Select a request on the left to view details',
     selectRequestToViewAdmin: 'Select a support request on the left to view messages and take action',
+    realtimeConnected: 'Live (WebSocket)',
+    liveChat: 'Live Conversation',
   },
 };
 

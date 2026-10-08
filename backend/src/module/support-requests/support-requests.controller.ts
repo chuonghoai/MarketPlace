@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { SupportRequestsService } from './support-requests.service';
+import { SupportGateway } from './support.gateway';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
 import { RolesGuard } from '../../core/security/roles/roles.guard';
 import { Roles } from '../../core/security/roles/roles.decorator';
@@ -30,6 +31,7 @@ interface RequestWithUser {
 export class SupportRequestsController {
   constructor(
     private readonly supportRequestsService: SupportRequestsService,
+    private readonly supportGateway: SupportGateway,
   ) {}
 
   @Post()
@@ -122,6 +124,7 @@ export class SupportRequestsController {
   @Roles(EUserRole.ADMIN)
   async assignStaff(@Param('id') id: string, @Body() dto: AssignStaffDto) {
     const data = await this.supportRequestsService.assignStaff(id, dto.staffId);
+    this.supportGateway.broadcastRequestUpdate(id, data);
     return new ApiResponse(true, 'Phân công nhân viên xử lý thành công', data);
   }
 
@@ -136,6 +139,7 @@ export class SupportRequestsController {
       req.user,
       dto,
     );
+    this.supportGateway.broadcastNewMessage(id, data);
     return new ApiResponse(true, 'Gửi tin nhắn thành công', data);
   }
 
@@ -143,12 +147,14 @@ export class SupportRequestsController {
   @Roles(EUserRole.STAFF, EUserRole.ADMIN)
   async resolve(@Req() req: RequestWithUser, @Param('id') id: string) {
     const data = await this.supportRequestsService.resolve(id, req.user);
+    this.supportGateway.broadcastRequestUpdate(id, data);
     return new ApiResponse(true, 'Đánh dấu đã giải quyết thành công', data);
   }
 
   @Patch(':id/close')
   async close(@Req() req: RequestWithUser, @Param('id') id: string) {
     const data = await this.supportRequestsService.close(id, req.user);
+    this.supportGateway.broadcastRequestUpdate(id, data);
     return new ApiResponse(true, 'Đóng yêu cầu hỗ trợ thành công', data);
   }
 }

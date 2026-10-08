@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supportService } from '../../../features/support/services/support.service';
+import { supportSocketService } from '../../../features/support/services/supportSocket.service';
 import { staffService, type Staff } from '../../../features/staff/services/staff.service';
 import { userStorageService } from '../../../features/user/services/userStorage.service';
 import { EUserRole } from '../../../features/user/models/user.model';
@@ -41,6 +42,12 @@ export const AdminSupportPage: React.FC = () => {
   // Message reply
   const [replyContent, setReplyContent] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   const fetchDetail = React.useCallback(async (id: string) => {
     try {
@@ -98,6 +105,52 @@ export const AdminSupportPage: React.FC = () => {
     fetchRequests();
   }, [fetchRequests]);
 
+  // Real-time WebSocket connection for selected ticket
+  useEffect(() => {
+    if (!selectedRequest?.id) return;
+
+    const requestId = selectedRequest.id;
+    supportSocketService.joinRoom(requestId);
+
+    const unsubscribeMessage = supportSocketService.onNewMessage((newMsg) => {
+      if (newMsg.requestId === requestId) {
+        setSelectedRequest((prev) => {
+          if (!prev || prev.id !== requestId) return prev;
+          const exists = prev.messages?.some((m) => m.id === newMsg.id);
+          if (exists) return prev;
+          return {
+            ...prev,
+            messages: [...(prev.messages || []), newMsg],
+          };
+        });
+        setTimeout(scrollToBottom, 50);
+      }
+    });
+
+    const unsubscribeUpdate = supportSocketService.onRequestUpdated((updatedReq) => {
+      if (updatedReq.id === requestId) {
+        setSelectedRequest((prev) => {
+          if (!prev || prev.id !== requestId) return prev;
+          return {
+            ...prev,
+            ...updatedReq,
+          };
+        });
+        fetchRequests();
+      }
+    });
+
+    return () => {
+      unsubscribeMessage();
+      unsubscribeUpdate();
+      supportSocketService.leaveRoom(requestId);
+    };
+  }, [selectedRequest?.id, fetchRequests]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [selectedRequest?.messages]);
+
   const handleAssignStaff = async () => {
     if (!selectedRequest || !selectedStaffId) return;
 
@@ -144,11 +197,33 @@ export const AdminSupportPage: React.FC = () => {
     e.preventDefault();
     if (!selectedRequest || !replyContent.trim()) return;
 
+    const content = replyContent.trim();
     setSendingReply(true);
     try {
-      await supportService.addMessage(selectedRequest.id, { content: replyContent.trim() });
+      // Ưu tiên gửi tin nhắn qua WebSocket
+      let sentMessage;
+      try {
+        sentMessage = await supportSocketService.sendMessage(selectedRequest.id, content);
+      } catch (wsErr) {
+        console.warn('[AdminSupport] WebSocket failed, falling back to REST API:', wsErr);
+        const res = await supportService.addMessage(selectedRequest.id, { content });
+        sentMessage = res.data;
+      }
+
+      if (sentMessage) {
+        setSelectedRequest((prev) => {
+          if (!prev || prev.id !== selectedRequest.id) return prev;
+          const exists = prev.messages?.some((m) => m.id === sentMessage.id);
+          if (exists) return prev;
+          return {
+            ...prev,
+            messages: [...(prev.messages || []), sentMessage],
+          };
+        });
+      }
+
       setReplyContent('');
-      await fetchDetail(selectedRequest.id);
+      setTimeout(scrollToBottom, 50);
       await fetchRequests();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -292,6 +367,10 @@ export const AdminSupportPage: React.FC = () => {
                     <span className="font-mono text-xs text-text-muted dark:text-stone-400">
                       #{selectedRequest.id.slice(0, 8)}
                     </span>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span>{tSupport('realtimeConnected')}</span>
+                    </span>
                   </div>
                   <h2 className="font-headline text-lg sm:text-xl font-bold text-text-ink dark:text-stone-100 mt-1">
                     {selectedRequest.title}
@@ -380,6 +459,7 @@ export const AdminSupportPage: React.FC = () => {
                     </div>
                   );
                 })}
+                <div ref={messagesEndRef} />
               </div>
 
               {/* Reply Box */}
