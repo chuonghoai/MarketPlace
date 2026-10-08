@@ -9,6 +9,7 @@ const categoryService = new CategoryService();
 export const useFilterController = () => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchParams, setSearchParams] = useSearchParams();
+    const [priceError, setPriceError] = useState<string>("");
 
     const searchParamsString = searchParams.toString();
 
@@ -59,10 +60,18 @@ export const useFilterController = () => {
     const handlePriceChange = (field: 'minPrice' | 'maxPrice', value: string) => {
         if (value === '' || /^\d+$/.test(value)) {
             setLocalFilters(prev => ({ ...prev, [field]: value }));
+            setPriceError("");
         }
     };
 
     const handleApply = () => {
+        if (localFilters.minPrice && localFilters.maxPrice) {
+            if (parseInt(localFilters.minPrice) > parseInt(localFilters.maxPrice)) {
+                setPriceError("Giá tối thiểu phải nhỏ hơn giá tối đa");
+                return;
+            }
+        }
+
         const params = new URLSearchParams();
 
         const currentSearch = searchParams.get("search");
@@ -78,6 +87,7 @@ export const useFilterController = () => {
     };
 
     const handleReset = () => {
+        setPriceError("");
         const currentSearch = searchParams.get("search");
         if (currentSearch) {
             setSearchParams({ page: "1", sortBy: EFilterState.NEWEST, search: currentSearch });
@@ -89,10 +99,11 @@ export const useFilterController = () => {
     return {
         categories,
         localFilters,
+        priceError,
         handleSortChange,
         handleCategoryToggle,
         handlePriceChange,
         handleApply,
         handleReset
     };
-};
+};

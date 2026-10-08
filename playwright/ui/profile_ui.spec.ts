@@ -20,7 +20,7 @@ test.describe('Giao diện - Hồ sơ cá nhân', () => {
     await page.getByRole('button', { name: 'Chỉnh sửa' }).click();
 
     const newName = `Client ${Date.now()}`;
-    const nameInput = page.locator('input[placeholder*="họ và tên" i], input[value]').first();
+    const nameInput = page.locator('#pi-fullname');
     if (await nameInput.isVisible()) {
       await nameInput.fill(newName);
     }

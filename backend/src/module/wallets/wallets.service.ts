@@ -51,14 +51,18 @@ export class WalletsService {
       : this.walletRepository;
     let wallet = await repo.findOne({ where: { userId } });
 
-    if (!wallet) {
-      wallet = repo.create({
-        userId,
-        balance: 0,
-        status: EWalletStatus.ACTIVE,
-      });
-      wallet = await repo.save(wallet);
-    }
+    if (wallet) return wallet;
+
+    await repo
+      .createQueryBuilder()
+      .insert()
+      .into(Wallet)
+      .values({ userId, balance: 0, status: EWalletStatus.ACTIVE })
+      .orIgnore()
+      .execute();
+
+    wallet = await repo.findOne({ where: { userId } });
+    if (!wallet) throw new InternalServerErrorException();
 
     return wallet;
   }
