@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { OrderItem } from './order-item.entity';
 import { OrderVoucher } from './order-voucher.entity';
 import { EOrderStatus } from '../../checkout/enums/EOrderStatus.enum';
@@ -20,7 +28,11 @@ export class Order {
   @Column({ type: 'enum', enum: EOrderStatus, default: EOrderStatus.PENDING })
   status: EOrderStatus;
 
-  @Column({ type: 'enum', enum: EPaymentStatus, default: EPaymentStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: EPaymentStatus,
+    default: EPaymentStatus.PENDING,
+  })
   paymentStatus: EPaymentStatus;
 
   @Column({ type: 'enum', enum: EPaymentMethod, default: EPaymentMethod.COD })
@@ -49,7 +61,7 @@ export class Order {
   walletDeductionAmount: number;
 
   @Column({ type: 'json', nullable: true })
-  snapshotAddress: object;  
+  snapshotAddress: object;
 
   @Column({ nullable: true })
   cancelReason: string;
@@ -66,7 +78,9 @@ export class Order {
   @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })
   items: OrderItem[];
 
-  @OneToMany(() => OrderVoucher, (orderVoucher) => orderVoucher.order, { cascade: true })
+  @OneToMany(() => OrderVoucher, (orderVoucher) => orderVoucher.order, {
+    cascade: true,
+  })
   vouchers: OrderVoucher[];
 
   @CreateDateColumn()

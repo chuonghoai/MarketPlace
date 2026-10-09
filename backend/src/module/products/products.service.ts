@@ -4,11 +4,22 @@ import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ApiResponse } from '../../core/dto/ApiResponse.dto';
 import { EFilterState } from './enums/EFilterState.enum';
-import { FindOptionsWhere, FindOptionsOrder, Between, MoreThanOrEqual, LessThanOrEqual, In } from 'typeorm';
+import {
+  FindOptionsWhere,
+  FindOptionsOrder,
+  Between,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  In,
+} from 'typeorm';
 import { CustomException } from '../../core/exceptions/custom.exception';
 import { Favorite } from './entities/favorite.entity';
 import { Category } from '../categories/entities/category.entity';
-import { GetAllProductDto, CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import {
+  GetAllProductDto,
+  CreateProductDto,
+  UpdateProductDto,
+} from './dto/product.dto';
 import { MediaService } from '../media/media.service';
 import { OpensearchService } from '../opensearch/opensearch.service';
 
@@ -17,10 +28,17 @@ export class ProductsService implements OnModuleInit {
   private readonly logger = new Logger(ProductsService.name);
 
   async onModuleInit() {
-    this.logger.log('Bắt đầu đồng bộ tự động danh sách sản phẩm lên OpenSearch...');
+    this.logger.log(
+      'Bắt đầu đồng bộ tự động danh sách sản phẩm lên OpenSearch...',
+    );
     this.syncProductsToOpensearch()
       .then((msg) => this.logger.log(msg))
-      .catch((err) => this.logger.error('Lỗi khi đồng bộ sản phẩm lên OpenSearch:', err.message));
+      .catch((err) =>
+        this.logger.error(
+          'Lỗi khi đồng bộ sản phẩm lên OpenSearch:',
+          err.message,
+        ),
+      );
   }
 
   constructor(
@@ -32,9 +50,12 @@ export class ProductsService implements OnModuleInit {
     private readonly categoryRepository: Repository<Category>,
     private readonly mediaService: MediaService,
     private readonly opensearchService: OpensearchService,
-  ) { }
+  ) {}
 
-  async getAllProducts(dto: GetAllProductDto, rawQuery: Record<string, any>): Promise<ApiResponse<any>> {
+  async getAllProducts(
+    dto: GetAllProductDto,
+    rawQuery: Record<string, any>,
+  ): Promise<ApiResponse<any>> {
     const page = dto?.page ? parseInt(dto.page.toString(), 10) : 1;
     const pageSize = dto?.pageSize ? parseInt(dto.pageSize.toString(), 10) : 50;
 
@@ -62,43 +83,65 @@ export class ProductsService implements OnModuleInit {
 
     const skip = (page - 1) * pageSize;
 
-    
-    console.log('[getAllProducts] categories =', categories, '| type =', typeof categories, '| isArray =', Array.isArray(categories));
-    console.log('[getAllProducts] sortBy =', sortBy, '| minPrice =', minPrice, '| maxPrice =', maxPrice);
+    console.log(
+      '[getAllProducts] categories =',
+      categories,
+      '| type =',
+      typeof categories,
+      '| isArray =',
+      Array.isArray(categories),
+    );
+    console.log(
+      '[getAllProducts] sortBy =',
+      sortBy,
+      '| minPrice =',
+      minPrice,
+      '| maxPrice =',
+      maxPrice,
+    );
 
-    const qb = this.productsRepository.createQueryBuilder('product')
+    const qb = this.productsRepository
+      .createQueryBuilder('product')
       .leftJoinAndSelect('product.category', 'category')
       .leftJoinAndSelect('product.artisan', 'artisan');
 
     if (dto.search) {
-      const matchedIds = await this.opensearchService.searchProductIds(dto.search);
+      const matchedIds = await this.opensearchService.searchProductIds(
+        dto.search,
+      );
       if (matchedIds.length === 0) {
-        
-        const response = new ApiResponse(true, 'Lấy danh sách sản phẩm thành công', []);
+        const response = new ApiResponse(
+          true,
+          'Lấy danh sách sản phẩm thành công',
+          [],
+        );
         response.pagination = { page, pageSize, totalItems: 0, totalPages: 0 };
         return response;
       }
       qb.andWhere('product.id IN (:...matchedIds)', { matchedIds });
     }
 
-    
     if (categories && Array.isArray(categories) && categories.length > 0) {
       qb.andWhere('category.id IN (:...categories)', { categories });
-      console.log('[getAllProducts] Applying category filter with:', categories);
+      console.log(
+        '[getAllProducts] Applying category filter with:',
+        categories,
+      );
     }
 
-    
     const parsedMin = minPrice ? Number(minPrice) : NaN;
     const parsedMax = maxPrice ? Number(maxPrice) : NaN;
     if (!isNaN(parsedMin) && !isNaN(parsedMax)) {
-      qb.andWhere('product.price BETWEEN :minPrice AND :maxPrice', { minPrice: parsedMin, maxPrice: parsedMax });
+      qb.andWhere('product.price BETWEEN :minPrice AND :maxPrice', {
+        minPrice: parsedMin,
+        maxPrice: parsedMax,
+      });
     } else if (!isNaN(parsedMin)) {
       qb.andWhere('product.price >= :minPrice', { minPrice: parsedMin });
     } else if (!isNaN(parsedMax)) {
       qb.andWhere('product.price <= :maxPrice', { maxPrice: parsedMax });
     }
 
-    
     switch (sortBy) {
       case EFilterState.PRICE_LOW_TO_HIGH:
         qb.orderBy('product.price', 'ASC');
@@ -125,13 +168,25 @@ export class ProductsService implements OnModuleInit {
     const safeParseArray = (value: any): string[] => {
       if (!value) return [];
       if (Array.isArray(value)) {
-        if (value.length === 1 && typeof value[0] === 'string' && value[0].startsWith('[')) {
-          try { return JSON.parse(value[0]); } catch { return value; }
+        if (
+          value.length === 1 &&
+          typeof value[0] === 'string' &&
+          value[0].startsWith('[')
+        ) {
+          try {
+            return JSON.parse(value[0]);
+          } catch {
+            return value;
+          }
         }
         return value;
       }
       if (typeof value === 'string') {
-        try { return JSON.parse(value); } catch { return [value]; }
+        try {
+          return JSON.parse(value);
+        } catch {
+          return [value];
+        }
       }
       return [];
     };
@@ -141,7 +196,9 @@ export class ProductsService implements OnModuleInit {
       name: product.name,
       imageUrl: product.imageUrl,
       price: Number(product.price),
-      originalPrice: product.originalPrice ? Number(product.originalPrice) : null,
+      originalPrice: product.originalPrice
+        ? Number(product.originalPrice)
+        : null,
       discountPercentage: product.discountPercentage,
       rating: product.rating,
       stock: Number(product.stock),
@@ -157,7 +214,11 @@ export class ProductsService implements OnModuleInit {
       artisanAvatar: product.artisan?.avatar || null,
     }));
 
-    const response = new ApiResponse(true, 'Lấy danh sách sản phẩm thành công', formattedProducts);
+    const response = new ApiResponse(
+      true,
+      'Lấy danh sách sản phẩm thành công',
+      formattedProducts,
+    );
     response.pagination = {
       page: Number(page),
       pageSize: Number(pageSize),
@@ -168,7 +229,6 @@ export class ProductsService implements OnModuleInit {
     return response;
   }
 
-  
   async getProductById(id: string, userId?: string) {
     const product = await this.productsRepository.findOne({
       where: { id },
@@ -176,7 +236,11 @@ export class ProductsService implements OnModuleInit {
     });
 
     if (!product) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Sản phẩm không tồn tại');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'NOT_FOUND',
+        'Sản phẩm không tồn tại',
+      );
     }
 
     let isFavorite = false;
@@ -190,13 +254,25 @@ export class ProductsService implements OnModuleInit {
     const safeParseArray = (value: any): string[] => {
       if (!value) return [];
       if (Array.isArray(value)) {
-        if (value.length === 1 && typeof value[0] === 'string' && value[0].startsWith('[')) {
-          try { return JSON.parse(value[0]); } catch { return value; }
+        if (
+          value.length === 1 &&
+          typeof value[0] === 'string' &&
+          value[0].startsWith('[')
+        ) {
+          try {
+            return JSON.parse(value[0]);
+          } catch {
+            return value;
+          }
         }
         return value;
       }
       if (typeof value === 'string') {
-        try { return JSON.parse(value); } catch { return [value]; }
+        try {
+          return JSON.parse(value);
+        } catch {
+          return [value];
+        }
       }
       return [];
     };
@@ -212,18 +288,26 @@ export class ProductsService implements OnModuleInit {
       categoryName: product.category?.name || 'Chưa phân loại',
       categoryId: product.category?.id,
       isFavorite,
-      artisanInfo: product.artisan ? {
-        id: product.artisan.id,
-        name: product.artisan.fullName,
-        avatarUrl: product.artisan.avatar,
-      } : null,
+      artisanInfo: product.artisan
+        ? {
+            id: product.artisan.id,
+            name: product.artisan.fullName,
+            avatarUrl: product.artisan.avatar,
+          }
+        : null,
     };
   }
 
   async toggleFavorite(productId: string, userId: string): Promise<string> {
-    const product = await this.productsRepository.findOne({ where: { id: productId } });
+    const product = await this.productsRepository.findOne({
+      where: { id: productId },
+    });
     if (!product) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Sản phẩm không tồn tại');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'NOT_FOUND',
+        'Sản phẩm không tồn tại',
+      );
     }
 
     const favorite = await this.favoriteRepository.findOne({
@@ -244,9 +328,15 @@ export class ProductsService implements OnModuleInit {
   }
 
   async createProduct(dto: CreateProductDto) {
-    const category = await this.categoryRepository.findOne({ where: { id: dto.categoryId } });
+    const category = await this.categoryRepository.findOne({
+      where: { id: dto.categoryId },
+    });
     if (!category) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Danh mục không tồn tại');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'NOT_FOUND',
+        'Danh mục không tồn tại',
+      );
     }
 
     const { mediaPublicIds, ...productData } = dto;
@@ -259,14 +349,13 @@ export class ProductsService implements OnModuleInit {
 
     const saved = await this.productsRepository.save(product);
 
-    
-    
     if (mediaPublicIds && mediaPublicIds.length > 0) {
       try {
         await this.mediaService.confirmUpload(mediaPublicIds);
       } catch (err) {
-        
-        this.logger.warn(`[createProduct] Could not confirm media for product ${saved.id}: ${err?.message}`);
+        this.logger.warn(
+          `[createProduct] Could not confirm media for product ${saved.id}: ${err?.message}`,
+        );
       }
     }
 
@@ -279,13 +368,23 @@ export class ProductsService implements OnModuleInit {
   async updateProduct(id: string, dto: UpdateProductDto) {
     const product = await this.productsRepository.findOne({ where: { id } });
     if (!product) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Sản phẩm không tồn tại');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'NOT_FOUND',
+        'Sản phẩm không tồn tại',
+      );
     }
 
     if (dto.categoryId) {
-      const category = await this.categoryRepository.findOne({ where: { id: dto.categoryId } });
+      const category = await this.categoryRepository.findOne({
+        where: { id: dto.categoryId },
+      });
       if (!category) {
-        throw new CustomException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Danh mục không tồn tại');
+        throw new CustomException(
+          HttpStatus.NOT_FOUND,
+          'NOT_FOUND',
+          'Danh mục không tồn tại',
+        );
       }
       product.category = category;
     }
@@ -301,7 +400,9 @@ export class ProductsService implements OnModuleInit {
       try {
         await this.mediaService.confirmUpload(mediaPublicIds);
       } catch (err) {
-        this.logger.warn(`[updateProduct] Could not confirm media for product ${id}: ${err?.message}`);
+        this.logger.warn(
+          `[updateProduct] Could not confirm media for product ${id}: ${err?.message}`,
+        );
       }
     }
 
@@ -312,7 +413,9 @@ export class ProductsService implements OnModuleInit {
   }
 
   async syncProductsToOpensearch() {
-    const products = await this.productsRepository.find({ relations: ['category'] });
+    const products = await this.productsRepository.find({
+      relations: ['category'],
+    });
     let count = 0;
     for (const p of products) {
       await this.opensearchService.indexProduct(p);
@@ -324,7 +427,11 @@ export class ProductsService implements OnModuleInit {
   async deleteProduct(id: string) {
     const product = await this.productsRepository.findOne({ where: { id } });
     if (!product) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Sản phẩm không tồn tại');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'NOT_FOUND',
+        'Sản phẩm không tồn tại',
+      );
     }
 
     await this.productsRepository.remove(product);

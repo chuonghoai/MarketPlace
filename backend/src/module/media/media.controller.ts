@@ -18,20 +18,17 @@ class ConfirmUploadDto {
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
-  
-
   @Get('sign')
   @UseGuards(JwtAuthGuard)
   getSignedUploadParams(@Query('folder') folder?: string) {
     const data = this.mediaService.generateSignedUploadParams(folder);
     return {
       success: true,
-      message: 'Signed upload params generated. Use these to upload directly to Cloudinary.',
+      message:
+        'Signed upload params generated. Use these to upload directly to Cloudinary.',
       data,
     };
   }
-
-  
 
   @Patch('confirm')
   @UseGuards(JwtAuthGuard)

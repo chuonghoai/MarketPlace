@@ -23,20 +23,31 @@ export class StaffsService {
   ) {}
 
   private generatePassword(): string {
-    return Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    return (
+      Math.random().toString(36).slice(-8) +
+      Math.random().toString(36).slice(-8)
+    );
   }
 
   async create(createStaffDto: CreateStaffDto): Promise<ApiResponse<Staff>> {
     const { fullName, email, phone, salary, avatarUrl } = createStaffDto;
 
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
-      throw new CustomException(HttpStatus.BAD_REQUEST, 'EMAIL_EXISTED', 'Email đã tồn tại trong hệ thống');
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'EMAIL_EXISTED',
+        'Email đã tồn tại trong hệ thống',
+      );
     }
 
     const password = this.generatePassword();
     const hashedPassword = await bcrypt.hash(password, 10);
-    const finalAvatarUrl = avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}`;
+    const finalAvatarUrl =
+      avatarUrl ||
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}`;
 
     const user = this.userRepository.create({
       fullName,
@@ -107,28 +118,45 @@ export class StaffsService {
     });
 
     if (!staff) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'STAFF_NOT_FOUND', 'Không tìm thấy nhân viên');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'STAFF_NOT_FOUND',
+        'Không tìm thấy nhân viên',
+      );
     }
 
     return new ApiResponse(true, 'Lấy thông tin nhân viên thành công', staff);
   }
 
-  async update(id: string, updateStaffDto: UpdateStaffDto): Promise<ApiResponse<Staff>> {
+  async update(
+    id: string,
+    updateStaffDto: UpdateStaffDto,
+  ): Promise<ApiResponse<Staff>> {
     const staff = await this.staffRepository.findOne({
       where: { id },
       relations: ['user'],
     });
 
     if (!staff) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'STAFF_NOT_FOUND', 'Không tìm thấy nhân viên');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'STAFF_NOT_FOUND',
+        'Không tìm thấy nhân viên',
+      );
     }
 
     const { fullName, email, phone, salary, avatarUrl } = updateStaffDto;
 
     if (email && email !== staff.user.email) {
-      const existingUser = await this.userRepository.findOne({ where: { email } });
+      const existingUser = await this.userRepository.findOne({
+        where: { email },
+      });
       if (existingUser) {
-        throw new CustomException(HttpStatus.BAD_REQUEST, 'EMAIL_EXISTED', 'Email đã tồn tại trong hệ thống');
+        throw new CustomException(
+          HttpStatus.BAD_REQUEST,
+          'EMAIL_EXISTED',
+          'Email đã tồn tại trong hệ thống',
+        );
       }
       staff.user.email = email;
     }

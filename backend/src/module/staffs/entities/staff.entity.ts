@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('staffs')
@@ -11,7 +18,7 @@ export class Staff {
   user: User;
 
   // @Column({ nullable: true })
-  // position: string; 
+  // position: string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   salary: number;

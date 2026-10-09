@@ -40,8 +40,16 @@ export class WalletsController {
   }
 
   @Post('topup')
-  async topupWallet(@Req() req: any, @Body() dto: TopupWalletDto, @Ip() ip: string) {
-    const ipAddr = req.headers['x-forwarded-for'] || req.socket?.remoteAddress || ip || '127.0.0.1';
+  async topupWallet(
+    @Req() req: any,
+    @Body() dto: TopupWalletDto,
+    @Ip() ip: string,
+  ) {
+    const ipAddr =
+      req.headers['x-forwarded-for'] ||
+      req.socket?.remoteAddress ||
+      ip ||
+      '127.0.0.1';
     const result = await this.walletsService.topup(
       req.user.id,
       dto.amount,
@@ -50,7 +58,9 @@ export class WalletsController {
     );
     return {
       success: true,
-      message: result.paymentRequired ? 'Tạo link nạp tiền thành công' : 'Nạp tiền vào ví thành công',
+      message: result.paymentRequired
+        ? 'Tạo link nạp tiền thành công'
+        : 'Nạp tiền vào ví thành công',
       data: result,
     };
   }
@@ -89,7 +99,11 @@ export class WalletsController {
 
   @Get('momo/verify')
   async verifyMomoTopup(@Req() req: any, @Query() query: any) {
-    if (query.resultCode && String(query.resultCode) !== '0' && String(query.resultCode) !== '00') {
+    if (
+      query.resultCode &&
+      String(query.resultCode) !== '0' &&
+      String(query.resultCode) !== '00'
+    ) {
       return {
         success: false,
         message: 'Giao dịch nạp tiền qua MoMo không thành công hoặc đã bị hủy',
@@ -213,7 +227,11 @@ export class WalletsController {
     @Req() req: any,
     @Body() dto: CompleteWithdrawalDto,
   ) {
-    const data = await this.walletsService.completeWithdrawal(id, req.user.id, dto);
+    const data = await this.walletsService.completeWithdrawal(
+      id,
+      req.user.id,
+      dto,
+    );
     return {
       success: true,
       message: 'Hoàn tất yêu cầu rút tiền thành công',
@@ -229,7 +247,11 @@ export class WalletsController {
     @Req() req: any,
     @Body() dto: RejectWithdrawalDto,
   ) {
-    const data = await this.walletsService.rejectWithdrawal(id, req.user.id, dto);
+    const data = await this.walletsService.rejectWithdrawal(
+      id,
+      req.user.id,
+      dto,
+    );
     return {
       success: true,
       message: 'Từ chối yêu cầu rút tiền và hoàn trả số dư thành công',

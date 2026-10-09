@@ -22,9 +22,13 @@ import { MailModule } from '../mails/mail.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>(ENV_VARS.JWT_ACCESS_SECRET);
-        if (!secret) throw new Error('JWT_ACCESS_SECRET is required in environment');
-        const expiresIn = configService.get<string>(ENV_VARS.JWT_ACCESS_EXPIRES_IN);
-        if (!expiresIn) throw new Error('JWT_ACCESS_EXPIRES_IN is required in environment');
+        if (!secret)
+          throw new Error('JWT_ACCESS_SECRET is required in environment');
+        const expiresIn = configService.get<string>(
+          ENV_VARS.JWT_ACCESS_EXPIRES_IN,
+        );
+        if (!expiresIn)
+          throw new Error('JWT_ACCESS_EXPIRES_IN is required in environment');
         return {
           secret,
           signOptions: {
@@ -38,4 +42,4 @@ import { MailModule } from '../mails/mail.module';
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}

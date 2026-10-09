@@ -9,14 +9,20 @@ export class CartService {
   constructor(
     @InjectRepository(CartItem)
     private readonly cartItemRepository: Repository<CartItem>,
-  ) { }
+  ) {}
 
   async getCartCount(userId: string): Promise<number> {
-    const items = await this.cartItemRepository.find({ where: { user: { id: userId } } });
+    const items = await this.cartItemRepository.find({
+      where: { user: { id: userId } },
+    });
     return items.reduce((sum, item) => sum + item.quantity, 0);
   }
 
-  async addToCart(userId: string, productId: string, quantity: number): Promise<number> {
+  async addToCart(
+    userId: string,
+    productId: string,
+    quantity: number,
+  ): Promise<number> {
     let item = await this.cartItemRepository.findOne({
       where: { user: { id: userId }, product: { id: productId } },
     });
@@ -40,31 +46,41 @@ export class CartService {
       relations: ['product', 'product.seller', 'product.seller.user'],
     });
 
-    return items.map(item => ({
+    return items.map((item) => ({
       product: {
         id: item.product.id,
         name: item.product.name,
         imageUrl: item.product.imageUrl,
         price: Number(item.product.price),
         description: item.product.description,
-        seller: item.product.seller ? {
-          id: item.product.seller.id,
-          name: item.product.seller.user?.fullName,
-          avatarUrl: item.product.seller.user?.avatarUrl,
-          averageRating: item.product.seller.averageRating,
-        } : null,
+        seller: item.product.seller
+          ? {
+              id: item.product.seller.id,
+              name: item.product.seller.user?.fullName,
+              avatarUrl: item.product.seller.user?.avatarUrl,
+              averageRating: item.product.seller.averageRating,
+            }
+          : null,
       },
       quantity: item.quantity,
     }));
   }
 
-  async updateQuantity(userId: string, productId: string, quantity: number): Promise<number> {
+  async updateQuantity(
+    userId: string,
+    productId: string,
+    quantity: number,
+  ): Promise<number> {
     const item = await this.cartItemRepository.findOne({
       where: { user: { id: userId }, product: { id: productId } },
     });
 
     if (!item) {
-      throw new CustomException(HttpStatus.NOT_FOUND, 'NOT_FOUND', 'Sản phẩm không có trong giỏ hàng');
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'NOT_FOUND',
+        'Sản phẩm không có trong giỏ hàng',
+      );
     }
 
     if (quantity <= 0) {
@@ -88,4 +104,4 @@ export class CartService {
 
     return this.getCartCount(userId);
   }
-}
+}
