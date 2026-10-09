@@ -19,7 +19,6 @@ class SupportSocketService {
     }
 
     const token = tokenService.getAccessToken();
-    const currentUser = userStorageService.getUser();
 
     const socketUrl = `${ENV.API_URL}/support`;
 
@@ -29,7 +28,6 @@ class SupportSocketService {
       transports: ['websocket', 'polling'],
       auth: {
         token: token || undefined,
-        userId: currentUser?.id || undefined,
       },
       extraHeaders: token
         ? {
@@ -41,7 +39,11 @@ class SupportSocketService {
     this.socket.on('connect', () => {
       console.log('[SupportSocket] Connected to server:', this.socket?.id);
       if (this.currentRoom) {
-        this.socket?.emit('joinRoom', { requestId: this.currentRoom });
+        const currentToken = tokenService.getAccessToken();
+        this.socket?.emit('joinRoom', {
+          requestId: this.currentRoom,
+          token: currentToken || undefined,
+        });
       }
     });
 
@@ -59,7 +61,11 @@ class SupportSocketService {
   joinRoom(requestId: string) {
     this.currentRoom = requestId;
     const socket = this.connect();
-    socket.emit('joinRoom', { requestId });
+    const token = tokenService.getAccessToken();
+    socket.emit('joinRoom', {
+      requestId,
+      token: token || undefined,
+    });
   }
 
   leaveRoom(requestId: string) {
@@ -75,7 +81,6 @@ class SupportSocketService {
     return new Promise((resolve, reject) => {
       const socket = this.connect();
       const token = tokenService.getAccessToken();
-      const currentUser = userStorageService.getUser();
 
       const timer = setTimeout(() => {
         reject(new Error('WebSocket timeout: Không nhận được phản hồi từ máy chủ'));
@@ -87,7 +92,6 @@ class SupportSocketService {
           requestId,
           content,
           token: token || undefined,
-          userId: currentUser?.id || undefined,
         },
         (response: { status: string; data?: SupportRequestMessage; message?: string }) => {
           clearTimeout(timer);

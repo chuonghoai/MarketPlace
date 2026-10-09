@@ -73,6 +73,13 @@ export const UserSupportPage: React.FC = () => {
     fetchRequests();
   }, [fetchRequests]);
 
+  // Ngắt kết nối socket khi người dùng rời khỏi trang
+  useEffect(() => {
+    return () => {
+      supportSocketService.disconnect();
+    };
+  }, []);
+
   // Real-time WebSocket connection for selected ticket
   useEffect(() => {
     if (!selectedRequest?.id) return;

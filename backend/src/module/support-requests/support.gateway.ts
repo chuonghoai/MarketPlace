@@ -84,29 +84,35 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
       }
     }
 
-    const candidateUserId = data?.userId || (client.handshake.auth as any)?.userId;
-    if (candidateUserId) {
-      const dbUser = await this.userRepo.findOne({ where: { id: candidateUserId } });
-      if (dbUser) {
-        (client as any).user = dbUser;
-        return dbUser;
-      }
-    }
-
     return null;
   }
 
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { requestId: string },
+    @MessageBody() data: { requestId: string; token?: string },
   ) {
     if (!data?.requestId) {
       return { event: 'error', message: 'Missing requestId' };
     }
+
+    const user = await this.resolveUser(client, data);
+    if (!user) {
+      return { event: 'error', message: 'Unauthorized' };
+    }
+
+    try {
+      await this.supportRequestsService.findOne(data.requestId, user);
+    } catch (err: any) {
+      this.logger.warn(
+        `[SupportGateway] Unauthorized joinRoom attempt by user ${user.id} for ticket ${data.requestId}: ${err.message}`,
+      );
+      return { event: 'error', message: 'Bạn không có quyền tham gia phòng hỗ trợ này' };
+    }
+
     const room = `support:${data.requestId}`;
     client.join(room);
-    this.logger.log(`[SupportGateway] Client ${client.id} joined ${room}`);
+    this.logger.log(`[SupportGateway] Client ${client.id} (user: ${user.id}) joined ${room}`);
     return { event: 'joined', data: { roomId: data.requestId } };
   }
 
@@ -127,7 +133,7 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @SubscribeMessage('sendMessage')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { requestId: string; content: string; token?: string; userId?: string },
+    @MessageBody() data: { requestId: string; content: string; token?: string },
   ) {
     try {
       if (!data?.requestId || !data?.content?.trim()) {
@@ -147,6 +153,12 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
 
       // Broadcast to all participants in this support ticket room
       this.server.to(`support:${data.requestId}`).emit('newMessage', message);
+
+      if ((message as any)?.updatedRequest) {
+        this.server
+          .to(`support:${data.requestId}`)
+          .emit('requestUpdated', (message as any).updatedRequest);
+      }
 
       return { status: 'success', data: message };
     } catch (error: any) {

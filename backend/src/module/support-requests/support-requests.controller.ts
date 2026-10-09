@@ -140,6 +140,9 @@ export class SupportRequestsController {
       dto,
     );
     this.supportGateway.broadcastNewMessage(id, data);
+    if ((data as any)?.updatedRequest) {
+      this.supportGateway.broadcastRequestUpdate(id, (data as any).updatedRequest);
+    }
     return new ApiResponse(true, 'Gửi tin nhắn thành công', data);
   }
 

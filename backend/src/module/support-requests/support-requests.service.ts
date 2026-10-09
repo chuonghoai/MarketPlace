@@ -285,8 +285,11 @@ export class SupportRequestsService {
       isAssignedStaff = true;
     }
 
-    // Khi staff được gán gửi tin nhắn đầu tiên thì set firstResponseAt và chuyển sang IN_PROGRESS
-    if (isAssignedStaff && !request.firstResponseAt) {
+    let updatedRequest: SupportRequest | null = null;
+    const isStaffOrAdmin = isAssignedStaff || user.role === EUserRole.ADMIN;
+
+    // Khi staff hoặc admin gửi tin nhắn đầu tiên thì set firstResponseAt và chuyển sang IN_PROGRESS
+    if (isStaffOrAdmin && !request.firstResponseAt) {
       request.firstResponseAt = new Date();
       if (
         request.status === ESupportRequestStatus.ASSIGNED ||
@@ -294,7 +297,7 @@ export class SupportRequestsService {
       ) {
         request.status = ESupportRequestStatus.IN_PROGRESS;
       }
-      await this.requestRepo.save(request);
+      updatedRequest = await this.requestRepo.save(request);
     }
 
     const message = this.messageRepo.create({
@@ -305,10 +308,16 @@ export class SupportRequestsService {
 
     const savedMessage = await this.messageRepo.save(message);
 
-    return this.messageRepo.findOne({
+    const foundMessage = await this.messageRepo.findOne({
       where: { id: savedMessage.id },
       relations: ['sender'],
-    }) as Promise<SupportRequestMessage>;
+    });
+
+    if (foundMessage && updatedRequest) {
+      (foundMessage as any).updatedRequest = updatedRequest;
+    }
+
+    return foundMessage as SupportRequestMessage;
   }
 
   async resolve(
