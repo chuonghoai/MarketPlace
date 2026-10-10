@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Wallet } from './wallet.entity';
 import { EWalletWithdrawalStatus } from '../enums/wallet.enum';
 
@@ -29,7 +37,11 @@ export class WalletWithdrawal {
   @Column()
   accountHolder: string;
 
-  @Column({ type: 'enum', enum: EWalletWithdrawalStatus, default: EWalletWithdrawalStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: EWalletWithdrawalStatus,
+    default: EWalletWithdrawalStatus.PENDING,
+  })
   status: EWalletWithdrawalStatus;
 
   @Column({ type: 'text', nullable: true })

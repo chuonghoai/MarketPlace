@@ -8,9 +8,10 @@ export class PaypalService {
 
   constructor(private configService: ConfigService) {
     const environment = this.getRequiredEnv(ENV_VARS.PAYPAL_ENVIRONMENT);
-    this.baseUrl = environment === 'sandbox' 
-      ? 'https://api-m.sandbox.paypal.com' 
-      : 'https://api-m.paypal.com';
+    this.baseUrl =
+      environment === 'sandbox'
+        ? 'https://api-m.sandbox.paypal.com'
+        : 'https://api-m.paypal.com';
   }
 
   private getRequiredEnv(key: string): string {
@@ -22,16 +23,16 @@ export class PaypalService {
   private async getAccessToken(): Promise<string> {
     const clientId = this.getRequiredEnv(ENV_VARS.PAYPAL_CLIENT_ID);
     const clientSecret = this.getRequiredEnv(ENV_VARS.PAYPAL_CLIENT_SECRET);
-    
+
     const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    
+
     const response = await fetch(`${this.baseUrl}/v1/oauth2/token`, {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${auth}`,
+        Authorization: `Basic ${auth}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: 'grant_type=client_credentials'
+      body: 'grant_type=client_credentials',
     });
 
     const data = await response.json();
@@ -39,11 +40,14 @@ export class PaypalService {
       console.error('PayPal getAccessToken Error:', data);
       throw new InternalServerErrorException('Cannot connect to PayPal');
     }
-    
+
     return data.access_token;
   }
 
-  async buildPayPalPaymentUrl(orderId: string, totalAmountVND: number): Promise<string> {
+  async buildPayPalPaymentUrl(
+    orderId: string,
+    totalAmountVND: number,
+  ): Promise<string> {
     const accessToken = await this.getAccessToken();
     const callbackUrl = this.getRequiredEnv(ENV_VARS.PAYMENT_CALLBACK_BASE_URL);
     const returnUrl = `${callbackUrl}/checkout/paypal/capture?orderId=${orderId}`;
@@ -59,9 +63,9 @@ export class PaypalService {
           reference_id: orderId,
           amount: {
             currency_code: 'USD',
-            value: amountUSD
-          }
-        }
+            value: amountUSD,
+          },
+        },
       ],
       payment_source: {
         paypal: {
@@ -72,19 +76,19 @@ export class PaypalService {
             landing_page: 'LOGIN',
             user_action: 'PAY_NOW',
             return_url: `${returnUrl}?orderId=${orderId}`,
-            cancel_url: `${cancelUrl}?orderId=${orderId}`
-          }
-        }
-      }
+            cancel_url: `${cancelUrl}?orderId=${orderId}`,
+          },
+        },
+      },
     };
 
     const response = await fetch(`${this.baseUrl}/v2/checkout/orders`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
@@ -94,7 +98,9 @@ export class PaypalService {
     }
 
     // Return the approve link
-    const approveLink = data.links.find((link: any) => link.rel === 'payer-action');
+    const approveLink = data.links.find(
+      (link: any) => link.rel === 'payer-action',
+    );
     if (approveLink) {
       return approveLink.href;
     }
@@ -103,21 +109,24 @@ export class PaypalService {
 
   async captureOrder(token: string): Promise<boolean> {
     const accessToken = await this.getAccessToken();
-    
-    const response = await fetch(`${this.baseUrl}/v2/checkout/orders/${token}/capture`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      }
-    });
+
+    const response = await fetch(
+      `${this.baseUrl}/v2/checkout/orders/${token}/capture`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
 
     const data = await response.json();
     if (!response.ok) {
       console.error('PayPal captureOrder Error:', data);
       return false;
     }
-    
+
     return data.status === 'COMPLETED';
   }
 }

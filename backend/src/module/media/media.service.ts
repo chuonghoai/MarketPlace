@@ -8,25 +8,22 @@ export class MediaService {
 
   constructor(private readonly configService: ConfigService) {}
 
-  
-  
-  
-  
-
   generateSignedUploadParams(folder: string = 'tm-dt') {
     const timestamp = Math.round(Date.now() / 1000);
     const apiSecret = this.configService.get<string>('CLOUDINARY_API_SECRET')!;
     const apiKey = this.configService.get<string>('CLOUDINARY_API_KEY');
     const cloudName = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
 
-    
     const paramsToSign: Record<string, string | number> = {
       folder,
       tags: 'tmp',
       timestamp,
     };
 
-    const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
+    const signature = cloudinary.utils.api_sign_request(
+      paramsToSign,
+      apiSecret,
+    );
 
     this.logger.log(`Generated signed upload params for folder: ${folder}`);
 
@@ -37,13 +34,9 @@ export class MediaService {
       signature,
       timestamp,
       folder,
-      tags: 'tmp', 
+      tags: 'tmp',
     };
   }
-
-  
-  
-  
 
   async confirmUpload(publicIds: string[]): Promise<void> {
     if (!publicIds || publicIds.length === 0) {
@@ -51,7 +44,9 @@ export class MediaService {
     }
 
     await cloudinary.uploader.remove_tag('tmp', publicIds);
-    this.logger.log(`Confirmed and removed tmp tag from: [${publicIds.join(', ')}]`);
+    this.logger.log(
+      `Confirmed and removed tmp tag from: [${publicIds.join(', ')}]`,
+    );
   }
 
   // ─── Cleanup Orphan Tmp Files ─────────────────────────────────────────────────
@@ -84,10 +79,12 @@ export class MediaService {
         );
       }
 
-      nextCursor = result.next_cursor as string | undefined;
+      nextCursor = result.next_cursor;
     } while (nextCursor);
 
-    this.logger.log(`[Cleanup] Finished. Total orphan files deleted: ${deletedCount}`);
+    this.logger.log(
+      `[Cleanup] Finished. Total orphan files deleted: ${deletedCount}`,
+    );
     return { deleted: deletedCount };
   }
 }

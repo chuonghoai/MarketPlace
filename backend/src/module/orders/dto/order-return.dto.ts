@@ -1,8 +1,17 @@
-import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { EOrderReturnType } from '../enums/order-return.enum';
 
 export class CreateOrderReturnDto {
-  @IsEnum(EOrderReturnType, { message: 'Mục đích yêu cầu phải là EXCHANGE (Đổi món mới) hoặc RETURN_REFUND (Trả hàng hoàn tiền)' })
+  @IsEnum(EOrderReturnType, {
+    message:
+      'Mục đích yêu cầu phải là EXCHANGE (Đổi món mới) hoặc RETURN_REFUND (Trả hàng hoàn tiền)',
+  })
   @IsNotEmpty({ message: 'Vui lòng chọn mục đích yêu cầu' })
   type: EOrderReturnType;
 

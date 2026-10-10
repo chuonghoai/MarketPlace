@@ -43,6 +43,10 @@ import { ArtisanDetailPage } from "../admin/pages/artisans/ArtisanDetailPage";
 import { AdminWithdrawalsPage } from "../admin/pages/wallets/AdminWithdrawalsPage";
 import { StaffPage } from "../admin/pages/staff/StaffPage";
 import { SettingsPage } from "../admin/pages/settings/SettingsPage";
+import UserSupportPage from "../pages/support/UserSupportPage";
+import AdminSupportPage from "../admin/pages/support/AdminSupportPage";
+import StaffKpiPage from "../admin/pages/kpi/StaffKpiPage";
+import MyKpiPage from "../admin/pages/kpi/MyKpiPage";
 
 function AppRoutes() {
     return (
@@ -102,6 +106,7 @@ function AppRoutes() {
                             <Route path=":orderId/evaluate" element={<OrderEvaluatePage />} />
                         </Route>
                         <Route path="devices" element={<DeviceManagementPage />} />
+                        <Route path="support" element={<UserSupportPage />} />
                     </Route>
                 </Route>
 
@@ -117,6 +122,17 @@ function AppRoutes() {
                             <DashboardPage />
                         </AuthGuard>
                     } />
+                    <Route path="kpi" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.ADMIN]}>
+                            <StaffKpiPage />
+                        </AuthGuard>
+                    } />
+                    <Route path="kpi/me" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.STAFF]}>
+                            <MyKpiPage />
+                        </AuthGuard>
+                    } />
+                    <Route path="support" element={<AdminSupportPage />} />
                     <Route path="products" element={<ProductsPage />} />
                     <Route path="products/create" element={<CreateProductPage />} />
                     <Route path="products/:id" element={<ProductDetailPage />} />

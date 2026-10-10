@@ -5,6 +5,7 @@ import { EUserRole, type User } from "../../../features/user/models/user.model";
 import { useToast } from "../../toast/toast";
 import { authService } from "../../../features/auth/services/auth.service";
 import { cartService } from "../../../features/cart/services/cart.service";
+import { tSupport } from "../../../features/support/constants/supportL10n";
 
 export const Header = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -95,6 +96,12 @@ export const Header = () => {
   const handleNavigateWallet = () => {
     if (!user) return;
     navigate("/profile/wallet");
+  };
+
+  const handleNavigateSupport = () => {
+    if (!user) return;
+    const navPath = user.role === EUserRole.ADMIN || user.role === EUserRole.STAFF ? "/admin/support" : "/profile/support";
+    navigate(navPath);
   };
 
   return (
@@ -228,6 +235,11 @@ export const Header = () => {
                     {/* Button wallet */}
                     <button onClick={handleNavigateWallet} className="cursor-pointer flex items-center h-12 px-4 text-[14px] font-medium text-text-ink hover:bg-market-background transition-colors border-t border-border-subtle">
                       Ví điện tử
+                    </button>
+
+                    {/* Button support */}
+                    <button onClick={handleNavigateSupport} className="cursor-pointer flex items-center h-12 px-4 text-[14px] font-medium text-text-ink hover:bg-market-background transition-colors border-t border-border-subtle">
+                      {tSupport('title')}
                     </button>
 
                     {/* Button setting */}

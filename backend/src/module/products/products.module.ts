@@ -10,7 +10,11 @@ import { MediaModule } from '../media/media.module';
 import { OpensearchModule } from '../opensearch/opensearch.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Favorite, Category, Artisan]), MediaModule, OpensearchModule],
+  imports: [
+    TypeOrmModule.forFeature([Product, Favorite, Category, Artisan]),
+    MediaModule,
+    OpensearchModule,
+  ],
   controllers: [ProductsController],
   providers: [ProductsService],
   exports: [ProductsService],

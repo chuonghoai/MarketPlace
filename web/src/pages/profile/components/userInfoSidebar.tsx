@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import type { User } from "../../../features/user/models/user.model";
 import { authService } from "../../../features/auth/services/auth.service";
 import { useToast } from "../../../components/toast/toast";
+import { tSupport } from "../../../features/support/constants/supportL10n";
 
 interface UserInfoSidebarProps {
     user: User | null;
@@ -74,6 +75,16 @@ export const UserInfoSidebar = ({
             ),
         },
         {
+            id: "support",
+            label: tSupport("title"),
+            path: "/profile/support",
+            icon: (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            ),
+        },
+        {
             id: "devices",
             label: "Thiết bị đăng nhập",
             path: "/profile/devices",
@@ -105,7 +116,7 @@ export const UserInfoSidebar = ({
                 </svg>
             ),
             action: () => {
-                authService.logout(),
+                authService.logout();
                 toast("Đăng xuất thành công", "info");
                 navigate("/login");
             },

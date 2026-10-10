@@ -21,9 +21,37 @@ import { RedisModule } from '../redis/redis.module';
 import { WalletsModule } from '../wallets/wallets.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, Address, CartItem, User, OrderVoucher, Voucher, CheckoutPrepare]), MailModule, VouchersModule, RedisModule, WalletsModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      Order,
+      OrderItem,
+      Product,
+      Address,
+      CartItem,
+      User,
+      OrderVoucher,
+      Voucher,
+      CheckoutPrepare,
+    ]),
+    MailModule,
+    VouchersModule,
+    RedisModule,
+    WalletsModule,
+  ],
   controllers: [CheckoutController],
-  providers: [CheckoutService, ShippingService, MomoService, VnpayService, PaypalService],
-  exports: [CheckoutService, ShippingService, MomoService, VnpayService, PaypalService]
+  providers: [
+    CheckoutService,
+    ShippingService,
+    MomoService,
+    VnpayService,
+    PaypalService,
+  ],
+  exports: [
+    CheckoutService,
+    ShippingService,
+    MomoService,
+    VnpayService,
+    PaypalService,
+  ],
 })
 export class CheckoutModule {}

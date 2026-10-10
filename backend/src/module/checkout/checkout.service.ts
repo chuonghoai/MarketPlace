@@ -62,7 +62,7 @@ export class CheckoutService {
     private dataSource: DataSource,
     private redisService: RedisService,
     private walletsService: WalletsService,
-  ) { }
+  ) {}
 
   private mapAddressToDto(address: Address): AddressResponseDto {
     return {
@@ -82,7 +82,10 @@ export class CheckoutService {
     };
   }
 
-  async prepareCheckoutAndSaveCart(dto: PrepareCartCheckoutDto, userId: string): Promise<PrepareCheckoutResponseDto> {
+  async prepareCheckoutAndSaveCart(
+    dto: PrepareCartCheckoutDto,
+    userId: string,
+  ): Promise<PrepareCheckoutResponseDto> {
     if (dto.items && dto.items.length > 0) {
       for (const item of dto.items) {
         let cartItem = await this.cartItemRepository.findOne({
@@ -113,19 +116,29 @@ export class CheckoutService {
     return this.prepareCheckout(prepareDto, userId);
   }
 
-  async prepareCheckout(dto: PrepareCheckoutDto, userId: string): Promise<PrepareCheckoutResponseDto> {
+  async prepareCheckout(
+    dto: PrepareCheckoutDto,
+    userId: string,
+  ): Promise<PrepareCheckoutResponseDto> {
     let prepareTempId = dto.prepareTempId;
 
     if (prepareTempId) {
-      const existingPrepare = await this.checkoutPrepareRepository.findOne({ where: { id: prepareTempId } });
+      const existingPrepare = await this.checkoutPrepareRepository.findOne({
+        where: { id: prepareTempId },
+      });
       if (!existingPrepare) {
         throw new NotFoundException('Dữ liệu prepare không tồn tại');
       }
-      if (existingPrepare.userId !== userId && existingPrepare.userId !== null) {
+      if (
+        existingPrepare.userId !== userId &&
+        existingPrepare.userId !== null
+      ) {
         throw new BadRequestException('Không có quyền truy cập');
       }
       if (existingPrepare.status !== ECheckoutPrepareStatus.PREPARING) {
-        throw new BadRequestException('Dữ liệu prepare đã được sử dụng hoặc hết hạn');
+        throw new BadRequestException(
+          'Dữ liệu prepare đã được sử dụng hoặc hết hạn',
+        );
       }
       if (new Date(existingPrepare.expiredAt) < new Date()) {
         existingPrepare.status = ECheckoutPrepareStatus.EXPIRED;
@@ -136,12 +149,13 @@ export class CheckoutService {
       const payload = existingPrepare.payload;
       if (dto.items && dto.items.length > 0) payload.items = dto.items;
       if (dto.addressId !== undefined) payload.addressId = dto.addressId;
-      if (dto.voucherCodes !== undefined) payload.voucherCodes = dto.voucherCodes;
-      
+      if (dto.voucherCodes !== undefined)
+        payload.voucherCodes = dto.voucherCodes;
+
       dto.items = payload.items;
       dto.addressId = payload.addressId;
       dto.voucherCodes = payload.voucherCodes;
-      
+
       existingPrepare.payload = payload;
       await this.checkoutPrepareRepository.save(existingPrepare);
     } else {
@@ -154,17 +168,17 @@ export class CheckoutService {
       const payload = {
         items: dto.items,
         addressId: dto.addressId,
-        voucherCodes: dto.voucherCodes
+        voucherCodes: dto.voucherCodes,
       };
 
       const prepareRecord = this.checkoutPrepareRepository.create({
         userId,
         payload,
         expiredAt,
-        status: ECheckoutPrepareStatus.PREPARING
+        status: ECheckoutPrepareStatus.PREPARING,
       });
       await this.checkoutPrepareRepository.save(prepareRecord);
-      
+
       prepareTempId = prepareRecord.id;
     }
 
@@ -177,7 +191,8 @@ export class CheckoutService {
       address = await this.addressRepository.findOne({
         where: { id: dto.addressId, userId },
       });
-      if (!address) throw new NotFoundException('Không tìm thấy địa chỉ giao hàng');
+      if (!address)
+        throw new NotFoundException('Không tìm thấy địa chỉ giao hàng');
     } else {
       address = await this.addressRepository.findOne({
         where: { userId, isDefault: true },
@@ -185,7 +200,9 @@ export class CheckoutService {
     }
 
     const productIds = dto.items.map((i) => i.productId);
-    const products = await this.productRepository.findBy({ id: In(productIds) });
+    const products = await this.productRepository.findBy({
+      id: In(productIds),
+    });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     const validItems: CheckoutItemResponseDto[] = [];
@@ -196,11 +213,17 @@ export class CheckoutService {
       const product = productMap.get(item.productId);
 
       if (!product) {
-        invalidItems.push({ productId: item.productId, reason: 'Sản phẩm không tồn tại' });
+        invalidItems.push({
+          productId: item.productId,
+          reason: 'Sản phẩm không tồn tại',
+        });
         continue;
       }
       if (product.stock <= 0) {
-        invalidItems.push({ productId: item.productId, reason: 'Sản phẩm đã hết hàng' });
+        invalidItems.push({
+          productId: item.productId,
+          reason: 'Sản phẩm đã hết hàng',
+        });
         continue;
       }
       if (item.quantity > product.stock) {
@@ -231,7 +254,7 @@ export class CheckoutService {
 
     let discountAmount = 0;
     let shippingDiscountAmount = 0;
-    let validVouchers: Voucher[] = [];
+    const validVouchers: Voucher[] = [];
 
     if (dto.voucherCodes && dto.voucherCodes.length > 0) {
       let freeshipCount = 0;
@@ -239,9 +262,16 @@ export class CheckoutService {
 
       for (const code of dto.voucherCodes) {
         try {
-          const voucher = await this.vouchersService.checkVoucherEligibility(code, userId, subTotal);
+          const voucher = await this.vouchersService.checkVoucherEligibility(
+            code,
+            userId,
+            subTotal,
+          );
           validVouchers.push(voucher);
-          if (voucher.voucher_type === VoucherType.FREESHIP_CASH || voucher.voucher_type === VoucherType.FREESHIP_PERCENT) {
+          if (
+            voucher.voucher_type === VoucherType.FREESHIP_CASH ||
+            voucher.voucher_type === VoucherType.FREESHIP_PERCENT
+          ) {
             freeshipCount++;
           } else {
             nonFreeshipCount++;
@@ -252,15 +282,27 @@ export class CheckoutService {
       }
 
       if (freeshipCount > 1) {
-        throw new BadRequestException('Chỉ được áp dụng tối đa 1 mã miễn phí vận chuyển');
+        throw new BadRequestException(
+          'Chỉ được áp dụng tối đa 1 mã miễn phí vận chuyển',
+        );
       }
       if (nonFreeshipCount > 2) {
-        throw new BadRequestException('Chỉ được áp dụng tối đa 2 mã giảm giá sản phẩm');
+        throw new BadRequestException(
+          'Chỉ được áp dụng tối đa 2 mã giảm giá sản phẩm',
+        );
       }
 
       validVouchers.sort((a, b) => {
-        if (a.voucher_type === VoucherType.PERCENT && b.voucher_type === VoucherType.CASH) return -1;
-        if (a.voucher_type === VoucherType.CASH && b.voucher_type === VoucherType.PERCENT) return 1;
+        if (
+          a.voucher_type === VoucherType.PERCENT &&
+          b.voucher_type === VoucherType.CASH
+        )
+          return -1;
+        if (
+          a.voucher_type === VoucherType.CASH &&
+          b.voucher_type === VoucherType.PERCENT
+        )
+          return 1;
         return 0;
       });
 
@@ -268,7 +310,10 @@ export class CheckoutService {
       for (const v of validVouchers) {
         if (v.voucher_type === VoucherType.PERCENT) {
           let discount = (subTotal * Number(v.discount_value)) / 100;
-          if (v.max_discount_amount && discount > Number(v.max_discount_amount)) {
+          if (
+            v.max_discount_amount &&
+            discount > Number(v.max_discount_amount)
+          ) {
             discount = Number(v.max_discount_amount);
           }
           if (discount > remainingSubTotal) discount = remainingSubTotal;
@@ -285,69 +330,96 @@ export class CheckoutService {
       }
     }
 
-    const { boxLength, boxWidth, boxHeight, boxWeight, packingResult } = this.shippingService.calculateOptimalBox(dto.items, productMap);
+    const { boxLength, boxWidth, boxHeight, boxWeight, packingResult } =
+      this.shippingService.calculateOptimalBox(dto.items, productMap);
     if (packingResult) {
-      console.log("[prepareCheckout] Kiện hàng tối ưu:", packingResult);
+      console.log('[prepareCheckout] Kiện hàng tối ưu:', packingResult);
     }
 
     const shippingFee = address
-      ? await this.shippingService.calcShippingFeeGHN(address.districtCode, address.wardCode.toString(), boxWeight, boxLength, boxWidth, boxHeight)
+      ? await this.shippingService.calcShippingFeeGHN(
+          address.districtCode,
+          address.wardCode.toString(),
+          boxWeight,
+          boxLength,
+          boxWidth,
+          boxHeight,
+        )
       : 0;
 
-    const appliedVouchers: { voucherCode: string; voucherType: string; discountValue: number }[] = [];
+    const appliedVouchers: {
+      voucherCode: string;
+      voucherType: string;
+      discountValue: number;
+    }[] = [];
 
     for (const v of validVouchers) {
-       if (v.voucher_type === VoucherType.PERCENT || v.voucher_type === VoucherType.CASH) {
-          if ((v as any)._calculatedDiscount > 0) {
-             appliedVouchers.push({
-                voucherCode: v.code,
-                voucherType: v.voucher_type,
-                discountValue: (v as any)._calculatedDiscount
-             });
-          }
-       } else if (v.voucher_type === VoucherType.FREESHIP_PERCENT) {
-          let discount = (shippingFee * Number(v.discount_value)) / 100;
-          if (v.max_discount_amount && discount > Number(v.max_discount_amount)) {
-            discount = Number(v.max_discount_amount);
-          }
-          if (discount > shippingFee - shippingDiscountAmount) discount = shippingFee - shippingDiscountAmount;
-          shippingDiscountAmount += discount;
-          if (discount > 0) {
-             appliedVouchers.push({
-                voucherCode: v.code,
-                voucherType: v.voucher_type,
-                discountValue: discount
-             });
-          }
-       } else if (v.voucher_type === VoucherType.FREESHIP_CASH) {
-          let discount = Number(v.discount_value);
-          if (discount > shippingFee - shippingDiscountAmount) discount = shippingFee - shippingDiscountAmount;
-          shippingDiscountAmount += discount;
-          if (discount > 0) {
-             appliedVouchers.push({
-                voucherCode: v.code,
-                voucherType: v.voucher_type,
-                discountValue: discount
-             });
-          }
-       }
+      if (
+        v.voucher_type === VoucherType.PERCENT ||
+        v.voucher_type === VoucherType.CASH
+      ) {
+        if ((v as any)._calculatedDiscount > 0) {
+          appliedVouchers.push({
+            voucherCode: v.code,
+            voucherType: v.voucher_type,
+            discountValue: (v as any)._calculatedDiscount,
+          });
+        }
+      } else if (v.voucher_type === VoucherType.FREESHIP_PERCENT) {
+        let discount = (shippingFee * Number(v.discount_value)) / 100;
+        if (v.max_discount_amount && discount > Number(v.max_discount_amount)) {
+          discount = Number(v.max_discount_amount);
+        }
+        if (discount > shippingFee - shippingDiscountAmount)
+          discount = shippingFee - shippingDiscountAmount;
+        shippingDiscountAmount += discount;
+        if (discount > 0) {
+          appliedVouchers.push({
+            voucherCode: v.code,
+            voucherType: v.voucher_type,
+            discountValue: discount,
+          });
+        }
+      } else if (v.voucher_type === VoucherType.FREESHIP_CASH) {
+        let discount = Number(v.discount_value);
+        if (discount > shippingFee - shippingDiscountAmount)
+          discount = shippingFee - shippingDiscountAmount;
+        shippingDiscountAmount += discount;
+        if (discount > 0) {
+          appliedVouchers.push({
+            voucherCode: v.code,
+            voucherType: v.voucher_type,
+            discountValue: discount,
+          });
+        }
+      }
     }
 
-    const totalQuantity = validItems.reduce((sum, item) => sum + item.quantity, 0);
+    const totalQuantity = validItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0,
+    );
     const numberOfItems = validItems.length;
-    const firstProductThumbnail = validItems.length > 0 ? validItems[0].product.imageUrl : null;
-    const productNamesSummary = validItems.length > 0 
-      ? (validItems.length === 1 ? validItems[0].product.name : `${validItems[0].product.name} và ${validItems.length - 1} sản phẩm khác`)
-      : null;
+    const firstProductThumbnail =
+      validItems.length > 0 ? validItems[0].product.imageUrl : null;
+    const productNamesSummary =
+      validItems.length > 0
+        ? validItems.length === 1
+          ? validItems[0].product.name
+          : `${validItems[0].product.name} và ${validItems.length - 1} sản phẩm khác`
+        : null;
 
     if (prepareTempId) {
-       await this.checkoutPrepareRepository.update({ id: prepareTempId }, {
-         numberOfItems,
-         totalQuantity,
-         estimatedTotalPrice: subTotal,
-         firstProductThumbnail,
-         productNamesSummary
-       });
+      await this.checkoutPrepareRepository.update(
+        { id: prepareTempId },
+        {
+          numberOfItems,
+          totalQuantity,
+          estimatedTotalPrice: subTotal,
+          firstProductThumbnail,
+          productNamesSummary,
+        },
+      );
     }
 
     const walletInfo = await this.walletsService.getWalletInfo(userId);
@@ -361,7 +433,8 @@ export class CheckoutService {
       discountAmount,
       shippingDiscountAmount,
       appliedVouchers,
-      totalAmount: subTotal - discountAmount + shippingFee - shippingDiscountAmount,
+      totalAmount:
+        subTotal - discountAmount + shippingFee - shippingDiscountAmount,
       invalidItems,
       walletInfo,
     };
@@ -371,29 +444,39 @@ export class CheckoutService {
     const orders = await this.checkoutPrepareRepository.find({
       where: {
         userId,
-        status: ECheckoutPrepareStatus.PREPARING
+        status: ECheckoutPrepareStatus.PREPARING,
       },
       order: {
-        updatedAt: 'DESC'
-      }
+        updatedAt: 'DESC',
+      },
     });
 
     const now = new Date();
-    return orders.filter(order => new Date(order.expiredAt) > now).map(order => ({
-      prepareTempId: order.id,
-      createdAt: order.createdAt,
-      updatedAt: order.updatedAt,
-      expiredAt: order.expiredAt,
-      numberOfItems: order.numberOfItems,
-      totalQuantity: order.totalQuantity,
-      estimatedTotalPrice: order.estimatedTotalPrice,
-      firstProductThumbnail: order.firstProductThumbnail,
-      productNamesSummary: order.productNamesSummary,
-      status: order.status
-    }));
+    return orders
+      .filter((order) => new Date(order.expiredAt) > now)
+      .map((order) => ({
+        prepareTempId: order.id,
+        createdAt: order.createdAt,
+        updatedAt: order.updatedAt,
+        expiredAt: order.expiredAt,
+        numberOfItems: order.numberOfItems,
+        totalQuantity: order.totalQuantity,
+        estimatedTotalPrice: order.estimatedTotalPrice,
+        firstProductThumbnail: order.firstProductThumbnail,
+        productNamesSummary: order.productNamesSummary,
+        status: order.status,
+      }));
   }
 
-  async checkoutOrder(dto: CreateOrderDto, userId: string, ipAddr: string = '127.0.0.1'): Promise<{ orderId: string; payUrl: string | null, paymentRequired: boolean }> {
+  async checkoutOrder(
+    dto: CreateOrderDto,
+    userId: string,
+    ipAddr: string = '127.0.0.1',
+  ): Promise<{
+    orderId: string;
+    payUrl: string | null;
+    paymentRequired: boolean;
+  }> {
     if (!dto.items || dto.items.length === 0) {
       throw new BadRequestException('Giỏ hàng trống');
     }
@@ -401,10 +484,13 @@ export class CheckoutService {
     const address = await this.addressRepository.findOne({
       where: { id: dto.addressId, userId },
     });
-    if (!address) throw new NotFoundException('Không tìm thấy địa chỉ giao hàng');
+    if (!address)
+      throw new NotFoundException('Không tìm thấy địa chỉ giao hàng');
 
     const productIds = dto.items.map((i) => i.productId);
-    const products = await this.productRepository.findBy({ id: In(productIds) });
+    const products = await this.productRepository.findBy({
+      id: In(productIds),
+    });
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     let subTotal = 0;
@@ -420,7 +506,8 @@ export class CheckoutService {
 
     for (const item of dto.items) {
       const product = productMap.get(item.productId);
-      if (!product) throw new NotFoundException(`Sản phẩm ${item.productId} không tồn tại`);
+      if (!product)
+        throw new NotFoundException(`Sản phẩm ${item.productId} không tồn tại`);
       if (item.quantity > product.stock) {
         throw new BadRequestException(
           `Sản phẩm "${product.name}" không đủ hàng (còn ${product.stock})`,
@@ -441,16 +528,24 @@ export class CheckoutService {
       });
     }
 
-    const { boxLength, boxWidth, boxHeight, boxWeight, packingResult } = this.shippingService.calculateOptimalBox(dto.items, productMap);
+    const { boxLength, boxWidth, boxHeight, boxWeight, packingResult } =
+      this.shippingService.calculateOptimalBox(dto.items, productMap);
     if (packingResult) {
-      console.log("[checkoutOrder] Kiện hàng tối ưu:", packingResult);
+      console.log('[checkoutOrder] Kiện hàng tối ưu:', packingResult);
     }
 
-    const shippingFee = await this.shippingService.calcShippingFeeGHN(address.districtCode, address.wardCode.toString(), boxWeight, boxLength, boxWidth, boxHeight);
+    const shippingFee = await this.shippingService.calcShippingFeeGHN(
+      address.districtCode,
+      address.wardCode.toString(),
+      boxWeight,
+      boxLength,
+      boxWidth,
+      boxHeight,
+    );
 
     let discountAmount = 0;
     let shippingDiscountAmount = 0;
-    let validVouchers: Voucher[] = [];
+    const validVouchers: Voucher[] = [];
 
     if (dto.voucherCodes && dto.voucherCodes.length > 0) {
       let freeshipCount = 0;
@@ -458,9 +553,16 @@ export class CheckoutService {
 
       for (const code of dto.voucherCodes) {
         try {
-          const voucher = await this.vouchersService.checkVoucherEligibility(code, userId, subTotal);
+          const voucher = await this.vouchersService.checkVoucherEligibility(
+            code,
+            userId,
+            subTotal,
+          );
           validVouchers.push(voucher);
-          if (voucher.voucher_type === VoucherType.FREESHIP_CASH || voucher.voucher_type === VoucherType.FREESHIP_PERCENT) {
+          if (
+            voucher.voucher_type === VoucherType.FREESHIP_CASH ||
+            voucher.voucher_type === VoucherType.FREESHIP_PERCENT
+          ) {
             freeshipCount++;
           } else {
             nonFreeshipCount++;
@@ -471,15 +573,27 @@ export class CheckoutService {
       }
 
       if (freeshipCount > 1) {
-        throw new BadRequestException('Chỉ được áp dụng tối đa 1 mã miễn phí vận chuyển');
+        throw new BadRequestException(
+          'Chỉ được áp dụng tối đa 1 mã miễn phí vận chuyển',
+        );
       }
       if (nonFreeshipCount > 2) {
-        throw new BadRequestException('Chỉ được áp dụng tối đa 2 mã giảm giá sản phẩm');
+        throw new BadRequestException(
+          'Chỉ được áp dụng tối đa 2 mã giảm giá sản phẩm',
+        );
       }
 
       validVouchers.sort((a, b) => {
-        if (a.voucher_type === VoucherType.PERCENT && b.voucher_type === VoucherType.CASH) return -1;
-        if (a.voucher_type === VoucherType.CASH && b.voucher_type === VoucherType.PERCENT) return 1;
+        if (
+          a.voucher_type === VoucherType.PERCENT &&
+          b.voucher_type === VoucherType.CASH
+        )
+          return -1;
+        if (
+          a.voucher_type === VoucherType.CASH &&
+          b.voucher_type === VoucherType.PERCENT
+        )
+          return 1;
         return 0;
       });
 
@@ -487,7 +601,10 @@ export class CheckoutService {
       for (const v of validVouchers) {
         if (v.voucher_type === VoucherType.PERCENT) {
           let discount = (subTotal * Number(v.discount_value)) / 100;
-          if (v.max_discount_amount && discount > Number(v.max_discount_amount)) {
+          if (
+            v.max_discount_amount &&
+            discount > Number(v.max_discount_amount)
+          ) {
             discount = Number(v.max_discount_amount);
           }
           if (discount > remainingSubTotal) discount = remainingSubTotal;
@@ -505,42 +622,64 @@ export class CheckoutService {
 
       for (const v of validVouchers) {
         if (v.voucher_type === VoucherType.FREESHIP_PERCENT) {
-            let discount = (shippingFee * Number(v.discount_value)) / 100;
-            if (v.max_discount_amount && discount > Number(v.max_discount_amount)) {
-              discount = Number(v.max_discount_amount);
-            }
-            if (discount > shippingFee - shippingDiscountAmount) discount = shippingFee - shippingDiscountAmount;
-            shippingDiscountAmount += discount;
-            (v as any)._calculatedDiscount = discount;
+          let discount = (shippingFee * Number(v.discount_value)) / 100;
+          if (
+            v.max_discount_amount &&
+            discount > Number(v.max_discount_amount)
+          ) {
+            discount = Number(v.max_discount_amount);
+          }
+          if (discount > shippingFee - shippingDiscountAmount)
+            discount = shippingFee - shippingDiscountAmount;
+          shippingDiscountAmount += discount;
+          (v as any)._calculatedDiscount = discount;
         } else if (v.voucher_type === VoucherType.FREESHIP_CASH) {
-            let discount = Number(v.discount_value);
-            if (discount > shippingFee - shippingDiscountAmount) discount = shippingFee - shippingDiscountAmount;
-            shippingDiscountAmount += discount;
-            (v as any)._calculatedDiscount = discount;
+          let discount = Number(v.discount_value);
+          if (discount > shippingFee - shippingDiscountAmount)
+            discount = shippingFee - shippingDiscountAmount;
+          shippingDiscountAmount += discount;
+          (v as any)._calculatedDiscount = discount;
         }
       }
     }
 
-    const totalAmount = subTotal - discountAmount + shippingFee - shippingDiscountAmount;
+    const totalAmount =
+      subTotal - discountAmount + shippingFee - shippingDiscountAmount;
 
     const redisDeductedItems: { productId: string; quantity: number }[] = [];
     for (const item of validOrderItems) {
-      const res = await this.redisService.deductStock(item.productId, item.quantity);
+      const res = await this.redisService.deductStock(
+        item.productId,
+        item.quantity,
+      );
       if (res === -1) {
         const product = productMap.get(item.productId);
         await this.redisService.setStockNx(item.productId, product!.stock);
-        const res2 = await this.redisService.deductStock(item.productId, item.quantity);
+        const res2 = await this.redisService.deductStock(
+          item.productId,
+          item.quantity,
+        );
         if (res2 === 0) {
           await this.redisService.restoreStock(redisDeductedItems);
-          throw new BadRequestException(`Rất tiếc, sản phẩm "${item.productName}" đã hết hàng (Redis)`);
+          throw new BadRequestException(
+            `Rất tiếc, sản phẩm "${item.productName}" đã hết hàng (Redis)`,
+          );
         } else {
-          redisDeductedItems.push({ productId: item.productId, quantity: item.quantity });
+          redisDeductedItems.push({
+            productId: item.productId,
+            quantity: item.quantity,
+          });
         }
       } else if (res === 0) {
         await this.redisService.restoreStock(redisDeductedItems);
-        throw new BadRequestException(`Rất tiếc, sản phẩm "${item.productName}" đã hết hàng (Redis)`);
+        throw new BadRequestException(
+          `Rất tiếc, sản phẩm "${item.productName}" đã hết hàng (Redis)`,
+        );
       } else {
-        redisDeductedItems.push({ productId: item.productId, quantity: item.quantity });
+        redisDeductedItems.push({
+          productId: item.productId,
+          quantity: item.quantity,
+        });
       }
     }
 
@@ -559,13 +698,19 @@ export class CheckoutService {
       remainingAmount = totalAmount - walletDeductionAmount;
 
       if (remainingAmount > 0 && dto.paymentMethod === EPaymentMethod.WALLET) {
-        throw new BadRequestException('Số dư ví không đủ để thanh toán toàn bộ đơn hàng, vui lòng chọn phương thức thanh toán phụ');
+        throw new BadRequestException(
+          'Số dư ví không đủ để thanh toán toàn bộ đơn hàng, vui lòng chọn phương thức thanh toán phụ',
+        );
       }
     }
 
     const isFullyPaidByWallet = dto.useWallet && remainingAmount === 0;
-    const finalPaymentMethod = isFullyPaidByWallet ? EPaymentMethod.WALLET : dto.paymentMethod;
-    const finalPaymentStatus = isFullyPaidByWallet ? EPaymentStatus.PAID : EPaymentStatus.PENDING;
+    const finalPaymentMethod = isFullyPaidByWallet
+      ? EPaymentMethod.WALLET
+      : dto.paymentMethod;
+    const finalPaymentStatus = isFullyPaidByWallet
+      ? EPaymentStatus.PAID
+      : EPaymentStatus.PENDING;
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -575,7 +720,8 @@ export class CheckoutService {
     try {
       if (finalPaymentMethod === 'COD' || isFullyPaidByWallet) {
         for (const v of validVouchers) {
-          const lockedVoucher = await queryRunner.manager.createQueryBuilder(Voucher, 'voucher')
+          const lockedVoucher = await queryRunner.manager
+            .createQueryBuilder(Voucher, 'voucher')
             .setLock('pessimistic_write')
             .where('voucher.id = :id', { id: v.id })
             .getOne();
@@ -583,7 +729,9 @@ export class CheckoutService {
             throw new BadRequestException(`Mã voucher không tồn tại`);
           }
           if (lockedVoucher.used_count >= lockedVoucher.total_limit) {
-            throw new BadRequestException(`Mã voucher ${lockedVoucher.code} đã hết lượt sử dụng`);
+            throw new BadRequestException(
+              `Mã voucher ${lockedVoucher.code} đã hết lượt sử dụng`,
+            );
           }
           lockedVoucher.used_count += 1;
           await queryRunner.manager.save(lockedVoucher);
@@ -603,17 +751,26 @@ export class CheckoutService {
         paymentStatus: finalPaymentStatus,
         paymentMethod: finalPaymentMethod,
         snapshotAddress: this.mapAddressToDto(address),
-        statusHistory: [{
-          status: EOrderStatus.PENDING,
-          timestamp: new Date(),
-          note: isFullyPaidByWallet ? 'Đơn hàng đã được thanh toán qua Ví điện tử' : 'Đơn hàng đã được tạo'
-        }]
+        statusHistory: [
+          {
+            status: EOrderStatus.PENDING,
+            timestamp: new Date(),
+            note: isFullyPaidByWallet
+              ? 'Đơn hàng đã được thanh toán qua Ví điện tử'
+              : 'Đơn hàng đã được tạo',
+          },
+        ],
       });
       order = await queryRunner.manager.save(order);
       orderId = order.id;
 
       if (dto.useWallet && walletDeductionAmount > 0) {
-        await this.walletsService.deductBalance(userId, walletDeductionAmount, orderId, queryRunner);
+        await this.walletsService.deductBalance(
+          userId,
+          walletDeductionAmount,
+          orderId,
+          queryRunner,
+        );
       }
 
       const orderItems = validOrderItems.map((item) =>
@@ -633,23 +790,26 @@ export class CheckoutService {
       validOrderItems.sort((a, b) => a.productId.localeCompare(b.productId));
 
       for (const item of validOrderItems) {
-        const result = await queryRunner.manager.update(Product,
+        const result = await queryRunner.manager.update(
+          Product,
           {
             id: item.productId,
-            stock: MoreThanOrEqual(item.quantity)
+            stock: MoreThanOrEqual(item.quantity),
           },
           {
-            stock: () => `stock - ${item.quantity}`
-          }
+            stock: () => `stock - ${item.quantity}`,
+          },
         );
-        
+
         if (result.affected === 0) {
-          throw new BadRequestException(`Rất tiếc, sản phẩm "${item.productName}" không đủ số lượng hoặc vừa có người khác mua mất!`);
+          throw new BadRequestException(
+            `Rất tiếc, sản phẩm "${item.productName}" không đủ số lượng hoặc vừa có người khác mua mất!`,
+          );
         }
       }
 
       if (validVouchers.length > 0) {
-        const orderVouchers = validVouchers.map(v => {
+        const orderVouchers = validVouchers.map((v) => {
           return queryRunner.manager.create(OrderVoucher, {
             orderId,
             userId,
@@ -661,9 +821,11 @@ export class CheckoutService {
               title: v.title,
               voucher_type: v.voucher_type,
               discount_value: Number(v.discount_value),
-              max_discount_amount: v.max_discount_amount ? Number(v.max_discount_amount) : null,
-              min_order_value: Number(v.min_order_value)
-            }
+              max_discount_amount: v.max_discount_amount
+                ? Number(v.max_discount_amount)
+                : null,
+              min_order_value: Number(v.min_order_value),
+            },
           });
         });
         await queryRunner.manager.save(orderVouchers);
@@ -685,26 +847,37 @@ export class CheckoutService {
         this.mailService.sendOrderStatusUpdateEmail(user.email, {
           orderCode: orderId,
           customerName: address.fullName,
-          newStatus: 'Đơn hàng đã được thanh toán qua Ví điện tử và đang chờ được xử lý',
+          newStatus:
+            'Đơn hàng đã được thanh toán qua Ví điện tử và đang chờ được xử lý',
           updatedAt: new Date().toLocaleString('vi-VN'),
-          orderItems: validOrderItems
+          orderItems: validOrderItems,
         });
       }
       return { orderId, payUrl: null, paymentRequired: false };
     }
 
     if (dto.paymentMethod === 'MOMO') {
-      const payUrl = await this.momoService.buildMoMoPaymentUrl(orderId, remainingAmount);
+      const payUrl = await this.momoService.buildMoMoPaymentUrl(
+        orderId,
+        remainingAmount,
+      );
       return { orderId, payUrl, paymentRequired: true };
     }
 
     if (dto.paymentMethod === 'VNPAY') {
-      const payUrl = this.vnpayService.buildVnpayPaymentUrl(orderId, remainingAmount, ipAddr);
+      const payUrl = this.vnpayService.buildVnpayPaymentUrl(
+        orderId,
+        remainingAmount,
+        ipAddr,
+      );
       return { orderId, payUrl, paymentRequired: true };
     }
 
     if (dto.paymentMethod === 'PAYPAL') {
-      const payUrl = await this.paypalService.buildPayPalPaymentUrl(orderId, remainingAmount);
+      const payUrl = await this.paypalService.buildPayPalPaymentUrl(
+        orderId,
+        remainingAmount,
+      );
       return { orderId, payUrl, paymentRequired: true };
     }
 
@@ -718,7 +891,7 @@ export class CheckoutService {
         customerName: address.fullName,
         newStatus: 'Đơn hàng đang chờ được xử lý',
         updatedAt: new Date().toLocaleString('vi-VN'),
-        orderItems: validOrderItems
+        orderItems: validOrderItems,
       });
     }
 
@@ -730,15 +903,18 @@ export class CheckoutService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const orderVouchers = await queryRunner.manager.find(OrderVoucher, { where: { orderId } });
+      const orderVouchers = await queryRunner.manager.find(OrderVoucher, {
+        where: { orderId },
+      });
       for (const ov of orderVouchers) {
-        const lockedVoucher = await queryRunner.manager.createQueryBuilder(Voucher, 'voucher')
+        const lockedVoucher = await queryRunner.manager
+          .createQueryBuilder(Voucher, 'voucher')
           .setLock('pessimistic_write')
           .where('voucher.id = :id', { id: ov.voucherId })
           .getOne();
         if (lockedVoucher) {
-            lockedVoucher.used_count += 1;
-            await queryRunner.manager.save(lockedVoucher);
+          lockedVoucher.used_count += 1;
+          await queryRunner.manager.save(lockedVoucher);
         }
       }
       await queryRunner.commitTransaction();
@@ -755,15 +931,18 @@ export class CheckoutService {
     await queryRunner.connect();
     await queryRunner.startTransaction();
     try {
-      const orderVouchers = await queryRunner.manager.find(OrderVoucher, { where: { orderId } });
+      const orderVouchers = await queryRunner.manager.find(OrderVoucher, {
+        where: { orderId },
+      });
       for (const ov of orderVouchers) {
-        const lockedVoucher = await queryRunner.manager.createQueryBuilder(Voucher, 'voucher')
+        const lockedVoucher = await queryRunner.manager
+          .createQueryBuilder(Voucher, 'voucher')
           .setLock('pessimistic_write')
           .where('voucher.id = :id', { id: ov.voucherId })
           .getOne();
         if (lockedVoucher && lockedVoucher.used_count > 0) {
-            lockedVoucher.used_count -= 1;
-            await queryRunner.manager.save(lockedVoucher);
+          lockedVoucher.used_count -= 1;
+          await queryRunner.manager.save(lockedVoucher);
         }
       }
       await queryRunner.commitTransaction();
@@ -775,13 +954,16 @@ export class CheckoutService {
     }
   }
 
-  private async clearPurchasedItemsFromCart(userId: string, productIds: string[]) {
+  private async clearPurchasedItemsFromCart(
+    userId: string,
+    productIds: string[],
+  ) {
     if (!productIds || productIds.length === 0) return;
     const items = await this.cartItemRepository.find({
       where: {
         user: { id: userId },
-        product: { id: In(productIds) }
-      }
+        product: { id: In(productIds) },
+      },
     });
     if (items.length > 0) {
       await this.cartItemRepository.remove(items);
@@ -795,22 +977,26 @@ export class CheckoutService {
     });
     if (!order) return;
 
-    const user = await this.userRepository.findOne({ where: { id: order.userId } });
+    const user = await this.userRepository.findOne({
+      where: { id: order.userId },
+    });
     if (!user) return;
 
     let snapshotAddress: any = order.snapshotAddress;
     if (typeof snapshotAddress === 'string') {
-      try { snapshotAddress = JSON.parse(snapshotAddress); } catch (e) { }
+      try {
+        snapshotAddress = JSON.parse(snapshotAddress);
+      } catch (e) {}
     }
 
-    const orderItems = order.items.map(item => ({
+    const orderItems = order.items.map((item) => ({
       productName: item.productName,
       productImageUrl: item.productImageUrl,
       price: item.price,
       quantity: item.quantity,
       originalPrice: item.originalPrice,
       discountPercentage: item.discountPercentage,
-      totalAmount: item.price * item.quantity
+      totalAmount: item.price * item.quantity,
     }));
 
     this.mailService.sendBillingEmail(user.email, {
@@ -824,7 +1010,7 @@ export class CheckoutService {
       total: order.totalAmount,
       paymentMethod: order.paymentMethod,
       paymentStatus: 'Đã thanh toán',
-      createdAt: order.createdAt.toLocaleString('vi-VN')
+      createdAt: order.createdAt.toLocaleString('vi-VN'),
     });
   }
 
@@ -833,16 +1019,21 @@ export class CheckoutService {
     if (!isValid) return false;
 
     const { orderId, resultCode } = ipnData;
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
 
     if (order) {
-      order.paymentStatus = resultCode === 0 ? EPaymentStatus.PAID : EPaymentStatus.FAILED;
+      order.paymentStatus =
+        resultCode === 0 ? EPaymentStatus.PAID : EPaymentStatus.FAILED;
       await this.orderRepository.save(order);
 
       // If MOMO payment succeeded, clear items from cart and consume vouchers
       if (resultCode === 0) {
-        const orderItems = await this.orderItemRepository.find({ where: { orderId } });
-        const productIds = orderItems.map(item => item.productId);
+        const orderItems = await this.orderItemRepository.find({
+          where: { orderId },
+        });
+        const productIds = orderItems.map((item) => item.productId);
         await this.clearPurchasedItemsFromCart(order.userId, productIds);
         await this.consumeVouchersForOrder(orderId);
         this.sendOnlinePaymentBillingEmail(orderId);
@@ -852,13 +1043,17 @@ export class CheckoutService {
     return true;
   }
 
-  async processVnpayIPN(query: any): Promise<{ RspCode: string; Message: string }> {
+  async processVnpayIPN(
+    query: any,
+  ): Promise<{ RspCode: string; Message: string }> {
     const isValid = this.vnpayService.verifyIpnSignature(query);
     if (!isValid) return { RspCode: '97', Message: 'Invalid signature' };
 
     const orderId = query['vnp_TxnRef'];
     const vnp_ResponseCode = query['vnp_ResponseCode'];
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
 
     if (!order) return { RspCode: '01', Message: 'Order not found' };
 
@@ -870,8 +1065,10 @@ export class CheckoutService {
       order.paymentStatus = EPaymentStatus.PAID;
       await this.orderRepository.save(order);
 
-      const orderItems = await this.orderItemRepository.find({ where: { orderId } });
-      const productIds = orderItems.map(item => item.productId);
+      const orderItems = await this.orderItemRepository.find({
+        where: { orderId },
+      });
+      const productIds = orderItems.map((item) => item.productId);
       await this.clearPurchasedItemsFromCart(order.userId, productIds);
       await this.consumeVouchersForOrder(orderId);
       this.sendOnlinePaymentBillingEmail(orderId);
@@ -884,7 +1081,9 @@ export class CheckoutService {
   }
 
   async capturePayPalOrder(token: string, orderId: string): Promise<boolean> {
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
     if (!order) return false;
 
     if (order.paymentStatus === EPaymentStatus.PAID) return true;
@@ -895,8 +1094,10 @@ export class CheckoutService {
       order.paymentStatus = EPaymentStatus.PAID;
       await this.orderRepository.save(order);
 
-      const orderItems = await this.orderItemRepository.find({ where: { orderId } });
-      const productIds = orderItems.map(item => item.productId);
+      const orderItems = await this.orderItemRepository.find({
+        where: { orderId },
+      });
+      const productIds = orderItems.map((item) => item.productId);
       await this.clearPurchasedItemsFromCart(order.userId, productIds);
       await this.consumeVouchersForOrder(orderId);
       this.sendOnlinePaymentBillingEmail(orderId);
@@ -909,7 +1110,9 @@ export class CheckoutService {
   }
 
   async cancelPayPalOrder(orderId: string): Promise<boolean> {
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+    });
     if (order && order.paymentStatus !== EPaymentStatus.PAID) {
       order.paymentStatus = EPaymentStatus.FAILED;
       await this.orderRepository.save(order);
@@ -919,12 +1122,14 @@ export class CheckoutService {
   }
 
   async getPaymentStatus(orderId: string, userId: string): Promise<any> {
-    const order = await this.orderRepository.findOne({ where: { id: orderId, userId } });
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId, userId },
+    });
     if (!order) return null;
     return {
       orderId: order.id,
       paymentMethod: order.paymentMethod,
-      paymentStatus: order.paymentStatus
+      paymentStatus: order.paymentStatus,
     };
   }
 }

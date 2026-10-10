@@ -33,10 +33,6 @@ export const ArtisanSelectionModal = ({ isOpen, onClose, onSelect, currentArtisa
         }
     };
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        fetchArtisans(search);
-    };
 
     const handleConfirm = () => {
         const selected = artisans.find(a => a.id === selectedId) || null;

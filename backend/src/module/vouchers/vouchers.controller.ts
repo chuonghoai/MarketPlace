@@ -1,11 +1,29 @@
-import { Controller, Get, Post, Patch, Put, Delete, Param, Body, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import { VouchersService } from './vouchers.service';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
 import { RolesGuard } from '../../core/security/roles/roles.guard';
 import { Roles } from '../../core/security/roles/roles.decorator';
 import { EUserRole } from '../users/enums/user.enum';
 import { ApiResponse } from '../../core/dto/ApiResponse.dto';
-import { CreateVoucherRequestDto, GetVouchersQueryDto, UpdateVoucherRequestDto, UpdateVoucherStatusRequestDto } from './dto/vouchers.dto';
+import {
+  CreateVoucherRequestDto,
+  GetVouchersQueryDto,
+  UpdateVoucherRequestDto,
+  UpdateVoucherStatusRequestDto,
+} from './dto/vouchers.dto';
 
 @Controller('api/v1/admin/vouchers')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -47,7 +65,11 @@ export class VouchersController {
     @Body() dto: UpdateVoucherStatusRequestDto,
   ) {
     const data = await this.vouchersService.updateVoucherStatus(id, dto);
-    return new ApiResponse(true, 'Cập nhật trạng thái voucher thành công', data);
+    return new ApiResponse(
+      true,
+      'Cập nhật trạng thái voucher thành công',
+      data,
+    );
   }
 
   @Put(':id')
