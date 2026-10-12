@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useWalletStore } from './wallet.store';
 import { useToast } from '../../../components/toast/toast';
 import { tWallet } from '../../../features/wallet/constants/walletL10n';
@@ -10,15 +10,21 @@ export const useWalletController = () => {
   const { toast } = useToast();
   const [isTopupModalOpen, setIsTopupModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const handledTopupRef = useRef(false);
 
   useEffect(() => {
     store.fetchWallet();
     store.fetchTransactions(1);
     store.fetchWithdrawals();
 
+    if (handledTopupRef.current) return;
+
     // Check if returning from VNPay Topup
     if (window.location.search.includes('vnp_ResponseCode')) {
-      walletService.verifyVnpayTopup(window.location.search.slice(1)).then((res) => {
+      handledTopupRef.current = true;
+      const search = window.location.search.slice(1);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      walletService.verifyVnpayTopup(search).then((res) => {
         if (res.success) {
           toast(res.message || tWallet('topupSuccess'), 'success');
           store.fetchWallet();
@@ -26,13 +32,15 @@ export const useWalletController = () => {
         } else {
           toast(res.message || 'Giao dịch VNPay thất bại', 'error');
         }
-        window.history.replaceState({}, document.title, window.location.pathname);
       });
     }
 
     // Check if returning from MoMo Topup
     if (window.location.search.includes('topup=momo')) {
-      walletService.verifyMomoTopup(window.location.search.slice(1)).then((res) => {
+      handledTopupRef.current = true;
+      const search = window.location.search.slice(1);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      walletService.verifyMomoTopup(search).then((res) => {
         if (res.success) {
           toast(res.message || tWallet('topupSuccess'), 'success');
           store.fetchWallet();
@@ -40,13 +48,15 @@ export const useWalletController = () => {
         } else {
           toast(res.message || 'Giao dịch MoMo thất bại', 'error');
         }
-        window.history.replaceState({}, document.title, window.location.pathname);
       });
     }
 
     // Check if returning from PayPal Topup
     if (window.location.search.includes('topup=paypal')) {
-      walletService.verifyPaypalTopup(window.location.search.slice(1)).then((res) => {
+      handledTopupRef.current = true;
+      const search = window.location.search.slice(1);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      walletService.verifyPaypalTopup(search).then((res) => {
         if (res.success) {
           toast(res.message || tWallet('topupSuccess'), 'success');
           store.fetchWallet();
@@ -54,7 +64,6 @@ export const useWalletController = () => {
         } else {
           toast(res.message || 'Giao dịch PayPal thất bại', 'error');
         }
-        window.history.replaceState({}, document.title, window.location.pathname);
       });
     }
   }, [store.fetchWallet, store.fetchTransactions, store.fetchWithdrawals, toast]);
@@ -71,19 +80,14 @@ export const useWalletController = () => {
     setIsTopupModalOpen(false);
   }, []);
 
-  const handleConfirmTopup = useCallback(async (amount: number, method: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL' = 'DIRECT') => {
+  const handleConfirmTopup = useCallback(async (amount: number, method: 'VNPAY' | 'MOMO' | 'PAYPAL' = 'MOMO') => {
     if (amount < 10000) {
       toast(tWallet('topupMinError'), 'warning');
       return;
     }
 
     const res = await store.topup(amount, method);
-    if (res.success) {
-      if (method === 'DIRECT') {
-        toast(tWallet('topupSuccess'), 'success');
-        setIsTopupModalOpen(false);
-      }
-    } else {
+    if (!res.success) {
       toast(res.message || 'Lỗi khi nạp tiền', 'error');
     }
   }, [store, toast]);

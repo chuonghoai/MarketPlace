@@ -22,6 +22,16 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
         }
     };
 
+    const isWithin7Days = (() => {
+        if (order.orderStatus !== EOrderStatus.SUCCESS) return false;
+        const successHistory = Array.isArray(order.statusHistory)
+            ? order.statusHistory.slice().reverse().find((h: any) => h.status === EOrderStatus.SUCCESS)
+            : undefined;
+        const deliveredDate = successHistory ? new Date(successHistory.timestamp) : new Date(order.createdAt);
+        const diffDays = (Date.now() - deliveredDate.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+    })();
+
     const handleReturn = (e: React.MouseEvent) => {
         e.preventDefault();
         if (onReturn) {
@@ -110,7 +120,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                     </button>
                 )}
 
-                {order.orderStatus === EOrderStatus.SUCCESS && (
+                {order.orderStatus === EOrderStatus.SUCCESS && isWithin7Days && (
                     <button
                         onClick={handleReturn}
                         className="hidden md:block px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 hover:text-red-600 transition-colors"

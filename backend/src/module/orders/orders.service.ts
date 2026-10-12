@@ -503,6 +503,7 @@ export class OrdersService {
         buyerPhone: snapshot.phoneNumber || '',
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
+        statusHistory: order.statusHistory,
       };
     });
   }

@@ -42,6 +42,7 @@ export class OrderListItemDto {
   buyerPhone: string;
   paymentMethod: EPaymentMethod;
   paymentStatus: EPaymentStatus;
+  statusHistory?: any;
 }
 
 export class OrderStatusHistoryDto {

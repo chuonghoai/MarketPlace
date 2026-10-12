@@ -17,13 +17,21 @@ export class VnpayService {
     const sorted: any = {};
     const str: string[] = [];
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (
+        obj.hasOwnProperty(key) &&
+        key.startsWith('vnp_') &&
+        key !== 'vnp_SecureHash' &&
+        key !== 'vnp_SecureHashType' &&
+        obj[key] !== '' &&
+        obj[key] !== null &&
+        obj[key] !== undefined
+      ) {
         str.push(encodeURIComponent(key));
       }
     }
     str.sort();
     for (let key = 0; key < str.length; key++) {
-      sorted[str[key]] = encodeURIComponent(obj[str[key]]).replace(/%20/g, '+');
+      sorted[str[key]] = encodeURIComponent(String(obj[str[key]])).replace(/%20/g, '+');
     }
     return sorted;
   }
@@ -90,14 +98,10 @@ export class VnpayService {
 
   verifyIpnSignature(query: any): boolean {
     const secretKey = this.getRequiredEnv(ENV_VARS.VNP_HASH_SECRET);
+    const secureHash = query?.['vnp_SecureHash'];
+    if (!secureHash) return false;
 
-    const vnp_Params = { ...query };
-    const secureHash = vnp_Params['vnp_SecureHash'];
-
-    delete vnp_Params['vnp_SecureHash'];
-    delete vnp_Params['vnp_SecureHashType'];
-
-    const sortedParams = this.sortObject(vnp_Params);
+    const sortedParams = this.sortObject(query);
 
     const signData = Object.keys(sortedParams)
       .map((key) => `${key}=${sortedParams[key]}`)
@@ -106,7 +110,7 @@ export class VnpayService {
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
-    if (secureHash !== signed) {
+    if (signed.toLowerCase() !== String(secureHash).toLowerCase()) {
       console.log('Invalid signature from VNPay IPN');
       return false;
     }

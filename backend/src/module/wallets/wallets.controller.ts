@@ -92,6 +92,13 @@ export class WalletsController {
     const amount = Number(query.vnp_Amount) / 100;
     const txRef = query.vnp_TxnRef;
 
+    if (await this.walletsService.isTransactionProcessed(txRef)) {
+      return {
+        success: true,
+        message: 'Giao dịch nạp tiền qua VNPay đã được xử lý trước đó',
+      };
+    }
+
     const result = await this.walletsService.topup(
       req.user.id,
       amount,
@@ -126,6 +133,13 @@ export class WalletsController {
     }
     const txRef = query.orderId || query.requestId || 'MOMO';
 
+    if (await this.walletsService.isTransactionProcessed(txRef)) {
+      return {
+        success: true,
+        message: 'Giao dịch nạp tiền qua MoMo đã được xử lý trước đó',
+      };
+    }
+
     const result = await this.walletsService.topup(
       req.user.id,
       amount,
@@ -155,6 +169,13 @@ export class WalletsController {
       throw new BadRequestException('Số tiền nạp PayPal không hợp lệ');
     }
     const txRef = query.txRef || query.token || 'PAYPAL';
+
+    if (await this.walletsService.isTransactionProcessed(txRef)) {
+      return {
+        success: true,
+        message: 'Giao dịch nạp tiền qua PayPal đã được xử lý trước đó',
+      };
+    }
 
     const result = await this.walletsService.topup(
       req.user.id,

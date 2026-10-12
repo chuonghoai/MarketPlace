@@ -73,3 +73,58 @@ describe('WalletsService.getOrCreateWallet', () => {
     await expect(service.getOrCreateWallet('user-1')).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 });
+
+describe('WalletsService.verifyVnpaySignature', () => {
+  const secretKey = 'MY_VNPAY_SECRET';
+  const configService = {
+    get: jest.fn().mockImplementation((key: string) => {
+      if (key === 'VNP_HASH_SECRET') return secretKey;
+      return null;
+    }),
+  };
+  const service = new WalletsService(
+    {} as any,
+    {} as any,
+    {} as any,
+    {} as any,
+    configService as any,
+  );
+
+  beforeEach(() => {
+    configService.get.mockReturnValue(secretKey);
+  });
+
+  it('validates signature correctly even when extraneous parameters like topup are present', () => {
+    const crypto = require('crypto');
+    const vnpParams: Record<string, string> = {
+      vnp_Amount: '10000000',
+      vnp_BankCode: 'NCB',
+      vnp_ResponseCode: '00',
+      vnp_TxnRef: 'TOPUP_123',
+    };
+    const signData = Object.keys(vnpParams)
+      .sort()
+      .map((k) => `${k}=${encodeURIComponent(vnpParams[k]).replace(/%20/g, '+')}`)
+      .join('&');
+    const hash = crypto.createHmac('sha512', secretKey).update(signData).digest('hex');
+
+    const queryWithExtra = {
+      ...vnpParams,
+      topup: 'vnpay',
+      other_param: 'test',
+      vnp_SecureHash: hash.toUpperCase(), // Test case-insensitive
+    };
+
+    expect(service.verifyVnpaySignature(queryWithExtra)).toBe(true);
+  });
+
+  it('returns false when signature does not match or is missing', () => {
+    expect(service.verifyVnpaySignature({})).toBe(false);
+    expect(
+      service.verifyVnpaySignature({
+        vnp_Amount: '10000000',
+        vnp_SecureHash: 'invalid_hash',
+      }),
+    ).toBe(false);
+  });
+});

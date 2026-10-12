@@ -16,4 +16,5 @@ export interface OrderItemTracking {
 
     paymentMethod: EPaymentMethod;
     paymentStatus: EPaymentStatus;
+    statusHistory?: Array<{ status: string; timestamp: string | Date; note?: string }>;
 }
