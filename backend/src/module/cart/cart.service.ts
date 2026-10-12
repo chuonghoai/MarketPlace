@@ -2,6 +2,7 @@ import { Injectable, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CartItem } from './entities/cart-item.entity';
+import { Product } from '../products/entities/product.entity';
 import { CustomException } from '../../core/exceptions/custom.exception';
 
 @Injectable()
@@ -9,6 +10,8 @@ export class CartService {
   constructor(
     @InjectRepository(CartItem)
     private readonly cartItemRepository: Repository<CartItem>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
   ) {}
 
   async getCartCount(userId: string): Promise<number> {
@@ -23,17 +26,48 @@ export class CartService {
     productId: string,
     quantity: number,
   ): Promise<number> {
+    if (quantity <= 0) {
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'INVALID_QUANTITY',
+        'Số lượng phải lớn hơn 0',
+      );
+    }
+
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new CustomException(
+        HttpStatus.NOT_FOUND,
+        'NOT_FOUND',
+        'Sản phẩm không tồn tại',
+      );
+    }
+
     let item = await this.cartItemRepository.findOne({
       where: { user: { id: userId }, product: { id: productId } },
     });
 
+    const currentQty = item ? item.quantity : 0;
+    const targetQty = currentQty + quantity;
+
+    if (targetQty > product.stock) {
+      throw new CustomException(
+        HttpStatus.BAD_REQUEST,
+        'EXCEED_STOCK_LIMIT',
+        `Số lượng vượt quá tồn kho khả dụng (còn ${product.stock} sản phẩm)`,
+      );
+    }
+
     if (item) {
-      item.quantity += quantity;
+      item.quantity = targetQty;
     } else {
       item = this.cartItemRepository.create({
         user: { id: userId },
         product: { id: productId },
-        quantity,
+        quantity: targetQty,
       });
     }
     await this.cartItemRepository.save(item);
@@ -52,6 +86,7 @@ export class CartService {
         name: item.product.name,
         imageUrl: item.product.imageUrl,
         price: Number(item.product.price),
+        stock: Number(item.product.stock ?? 0),
         description: item.product.description,
         seller: item.product.seller
           ? {
@@ -73,6 +108,7 @@ export class CartService {
   ): Promise<number> {
     const item = await this.cartItemRepository.findOne({
       where: { user: { id: userId }, product: { id: productId } },
+      relations: ['product'],
     });
 
     if (!item) {
@@ -86,6 +122,13 @@ export class CartService {
     if (quantity <= 0) {
       await this.cartItemRepository.remove(item);
     } else {
+      if (item.product && quantity > item.product.stock) {
+        throw new CustomException(
+          HttpStatus.BAD_REQUEST,
+          'EXCEED_STOCK_LIMIT',
+          `Số lượng vượt quá tồn kho khả dụng (còn ${item.product.stock} sản phẩm)`,
+        );
+      }
       item.quantity = quantity;
       await this.cartItemRepository.save(item);
     }
