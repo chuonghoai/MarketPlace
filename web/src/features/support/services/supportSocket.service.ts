@@ -1,7 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 import { ENV } from '../../../core/config/env.config';
 import { tokenService } from '../../../core/auth/token.service';
-import { userStorageService } from '../../user/services/userStorage.service';
 import type { SupportRequest, SupportRequestMessage } from '../models/support.model';
 
 class SupportSocketService {
