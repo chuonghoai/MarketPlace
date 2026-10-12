@@ -7,6 +7,7 @@ import { OrderSummaryCard } from "./components/OrderSummaryCard";
 import { OrderItemsSection } from "./components/OrderItemsSection";
 import { ShippingInfoCard } from "./components/ShippingInfoCard";
 import { OrderNotesCard } from "./components/OrderNotesCard";
+import { EOrderStatus } from "../../../features/order/enums/orderStatus.enum";
 
 export const OrderTrackingDetail: React.FC = () => {
     const controller = useOrderTrackingDetailController();
@@ -38,6 +39,42 @@ export const OrderTrackingDetail: React.FC = () => {
                     <div className="w-8 h-8 rounded-full border-2 border-market-primary border-t-transparent animate-spin"></div>
                 </div>
             )}
+
+            {/* Breadcrumb & Context Header (UC23 - Yêu cầu hỗ trợ) */}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
+                <a href="/profile/order-tracking" className="hover:text-amber-600 transition-colors">
+                    Đơn hàng của tôi
+                </a>
+                <span>/</span>
+                <span className="text-stone-900 dark:text-stone-200 font-medium">
+                    Đơn #{controller.order.id}
+                </span>
+                {controller.order.orderStatus === EOrderStatus.RETURNED && (() => {
+                    const isReturnFinished =
+                        controller.order.returnStatus === 'COMPLETED' ||
+                        controller.order.statusHistory?.some(
+                            h =>
+                                h.note &&
+                                (h.note.includes('Hoàn tiền') ||
+                                    h.note.includes('đổi hàng mới') ||
+                                    h.note.includes('Đã hoàn tất'))
+                        );
+                    return (
+                        <>
+                            <span>/</span>
+                            <span
+                                className={`px-2.5 py-0.5 rounded-full border text-[11px] font-semibold ${
+                                    isReturnFinished
+                                        ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/40'
+                                        : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40'
+                                }`}
+                            >
+                                {isReturnFinished ? 'Đổi trả thành công' : 'Đang xử lý đổi trả'}
+                            </span>
+                        </>
+                    );
+                })()}
+            </div>
 
             {/* Section 1: Summary Card */}
             <OrderSummaryCard order={controller.order} />

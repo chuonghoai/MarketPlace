@@ -4,7 +4,7 @@ import { tWallet } from '../../../../features/wallet/constants/walletL10n';
 interface TopupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (amount: number, method: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL') => Promise<void>;
+  onConfirm: (amount: number, method: 'VNPAY' | 'MOMO' | 'PAYPAL') => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -18,7 +18,7 @@ export const TopupModal: React.FC<TopupModalProps> = ({
 }) => {
   const [selectedAmount, setSelectedAmount] = useState<number>(100000);
   const [customAmount, setCustomAmount] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL'>('MOMO');
+  const [paymentMethod, setPaymentMethod] = useState<'VNPAY' | 'MOMO' | 'PAYPAL'>('MOMO');
 
   if (!isOpen) return null;
 
@@ -165,37 +165,6 @@ export const TopupModal: React.FC<TopupModalProps> = ({
                   className="w-4 h-4 text-primary-container cursor-pointer"
                 />
               </label>
-
-              <label
-                className={`flex items-center justify-between p-3 border-2 rounded-xl cursor-pointer transition-all ${
-                  paymentMethod === 'DIRECT'
-                    ? 'border-primary-container bg-surface-container shadow-xs'
-                    : 'border-border-subtle hover:border-primary-container/50 hover:bg-surface-container'
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-8 h-8 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-xl">bolt</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-semibold text-xs text-text-ink">{tWallet('topupDirect')}</p>
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
-                        Test
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-text-muted">{tWallet('topupDirectDesc')}</p>
-                  </div>
-                </div>
-                <input
-                  type="radio"
-                  name="topupMethod"
-                  value="DIRECT"
-                  checked={paymentMethod === 'DIRECT'}
-                  onChange={() => setPaymentMethod('DIRECT')}
-                  className="w-4 h-4 text-primary-container cursor-pointer"
-                />
-              </label>
             </div>
           </div>
 
@@ -282,7 +251,6 @@ export const TopupModal: React.FC<TopupModalProps> = ({
                   {paymentMethod === 'MOMO' && 'Thanh toán qua MoMo'}
                   {paymentMethod === 'VNPAY' && 'Thanh toán qua VNPAY'}
                   {paymentMethod === 'PAYPAL' && 'Thanh toán qua PayPal'}
-                  {paymentMethod === 'DIRECT' && 'Nạp tiền ngay (Thử nghiệm)'}
                 </span>
               )}
             </button>

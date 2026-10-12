@@ -213,7 +213,35 @@ export class OrdersService {
       throw new NotFoundException(`Không tìm thấy đơn hàng với ID ${id}`);
     }
 
-    return this.mapToOrderDetailDto(order);
+    const returnReq = await this.returnRepository.findOne({
+      where: { orderId: id },
+    });
+
+    if (returnReq && order.status === EOrderStatus.SUCCESS) {
+      order.status = EOrderStatus.RETURNED;
+      order.returnReason = returnReq.reason;
+      if (Array.isArray(order.statusHistory)) {
+        order.statusHistory = order.statusHistory.map((h) => {
+          if (
+            h.note &&
+            (h.note.includes('yêu cầu Trả hàng') ||
+              h.note.includes('yêu cầu Đổi món') ||
+              h.note.includes('yêu cầu đổi trả'))
+          ) {
+            return { ...h, status: EOrderStatus.RETURNED };
+          }
+          return h;
+        });
+      }
+      await this.orderRepository.save(order);
+    }
+
+    const dto = this.mapToOrderDetailDto(order);
+    if (returnReq) {
+      dto.returnStatus = returnReq.status;
+      dto.newOrderId = returnReq.newOrderId || undefined;
+    }
+    return dto;
   }
 
   async updateOrderStatus(
@@ -503,6 +531,7 @@ export class OrdersService {
         buyerPhone: snapshot.phoneNumber || '',
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
+        statusHistory: order.statusHistory,
       };
     });
   }
@@ -523,6 +552,7 @@ export class OrdersService {
       shipping: 0,
       success: 0,
       cancelled: 0,
+      returned: 0,
     };
 
     statuses.forEach((item) => {
@@ -534,8 +564,8 @@ export class OrdersService {
       if (statusKey === 'shipping') result.shipping += count;
       if (statusKey === 'success' || statusKey === 'delivered')
         result.success += count;
-      if (statusKey === 'cancelled' || statusKey === 'returned')
-        result.cancelled += count;
+      if (statusKey === 'returned') result.returned += count;
+      if (statusKey === 'cancelled') result.cancelled += count;
     });
 
     result.all = result.pending + result.preparing + result.shipping;
@@ -555,7 +585,35 @@ export class OrdersService {
       throw new NotFoundException(`Không tìm thấy đơn hàng`);
     }
 
-    return this.mapToOrderDetailDto(order);
+    const returnReq = await this.returnRepository.findOne({
+      where: { orderId: id },
+    });
+
+    if (returnReq && order.status === EOrderStatus.SUCCESS) {
+      order.status = EOrderStatus.RETURNED;
+      order.returnReason = returnReq.reason;
+      if (Array.isArray(order.statusHistory)) {
+        order.statusHistory = order.statusHistory.map((h) => {
+          if (
+            h.note &&
+            (h.note.includes('yêu cầu Trả hàng') ||
+              h.note.includes('yêu cầu Đổi món') ||
+              h.note.includes('yêu cầu đổi trả'))
+          ) {
+            return { ...h, status: EOrderStatus.RETURNED };
+          }
+          return h;
+        });
+      }
+      await this.orderRepository.save(order);
+    }
+
+    const dto = this.mapToOrderDetailDto(order);
+    if (returnReq) {
+      dto.returnStatus = returnReq.status;
+      dto.newOrderId = returnReq.newOrderId || undefined;
+    }
+    return dto;
   }
 
   async updateTrackingOrderStatus(
@@ -699,14 +757,22 @@ export class OrdersService {
       title: dto.title,
       reason: dto.reason,
       proofImages: dto.proofImages || [],
+      proofVideos: dto.proofVideos || [],
+      bankName: dto.bankName || null,
+      bankAccountNumber: dto.bankAccountNumber || null,
+      bankAccountHolder: dto.bankAccountHolder || null,
       status: EOrderReturnStatus.PENDING,
     });
     const saved = await this.returnRepository.save(returnRequest);
 
+    // Cập nhật trạng thái đơn hàng sang RETURNED
+    order.status = EOrderStatus.RETURNED;
+    order.returnReason = dto.reason;
+
     // Append to statusHistory
     const history = order.statusHistory || [];
     history.push({
-      status: order.status,
+      status: EOrderStatus.RETURNED,
       timestamp: new Date().toISOString(),
       note: `Khách hàng gửi yêu cầu ${dto.type === EOrderReturnType.EXCHANGE ? 'Đổi món hàng mới' : 'Trả hàng hoàn tiền'}: ${dto.title}`,
     });
@@ -728,6 +794,7 @@ export class OrdersService {
     page = 1,
     limit = 20,
     status?: EOrderReturnStatus,
+    orderId?: string,
   ) {
     const qb = this.returnRepository
       .createQueryBuilder('ret')
@@ -735,7 +802,11 @@ export class OrdersService {
       .leftJoinAndSelect('order.items', 'items');
 
     if (status) {
-      qb.where('ret.status = :status', { status });
+      qb.andWhere('ret.status = :status', { status });
+    }
+
+    if (orderId) {
+      qb.andWhere('ret.orderId = :orderId', { orderId });
     }
 
     const [items, total] = await qb
@@ -832,6 +903,15 @@ export class OrdersService {
     returnReq.processedBy = processedBy;
     await this.returnRepository.save(returnReq);
 
+    const oldHistory = oldOrder.statusHistory || [];
+    oldHistory.push({
+      status: EOrderStatus.RETURNED,
+      timestamp: new Date().toISOString(),
+      note: `Đã hoàn tất đổi hàng mới. Đơn hàng mới: #${savedNewOrder.id}`,
+    });
+    oldOrder.statusHistory = oldHistory;
+    await this.orderRepository.save(oldOrder);
+
     return {
       returnRequest: returnReq,
       newOrderId: savedNewOrder.id,
@@ -847,6 +927,7 @@ export class OrdersService {
   ) {
     const returnReq = await this.returnRepository.findOne({
       where: { id: returnId },
+      relations: ['order'],
     });
     if (!returnReq)
       throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
@@ -861,14 +942,30 @@ export class OrdersService {
     }
     returnReq.processedBy = processedBy;
     const saved = await this.returnRepository.save(returnReq);
+
+    if (returnReq.order) {
+      const history = returnReq.order.statusHistory || [];
+      history.push({
+        status: EOrderStatus.RETURNED,
+        timestamp: new Date().toISOString(),
+        note:
+          step === 'PICKING_UP'
+            ? `Shipper đang đến lấy lại hàng: ${note || 'Đang nhận lại kiện hàng từ người mua'}`.trim()
+            : `Đã nhận hàng hoàn trả về kho kiểm tra: ${note || 'Kiện hàng đã về kho an toàn'}`.trim(),
+      });
+      returnReq.order.statusHistory = history;
+      await this.orderRepository.save(returnReq.order);
+    }
+
     return saved;
   }
 
-  // Trường hợp 2: Trả hàng hoàn tiền - Bước bấm hoàn tiền vào ví (UC23 - 1.2)
+  // Trường hợp 2: Trả hàng hoàn tiền - Bước bấm hoàn tiền (UC23 - 1.2)
   async adminProcessRefund(
     returnId: string,
     processedBy: string,
     note?: string,
+    refundProofUrl?: string,
   ) {
     const returnReq = await this.returnRepository.findOne({
       where: { id: returnId },
@@ -882,12 +979,20 @@ export class OrdersService {
       throw new NotFoundException('Không tìm thấy đơn hàng tương ứng');
 
     const refundAmount = Number(order.totalAmount);
-    // Hoàn toàn bộ số tiền đơn hàng vào Ví điện tử của khách hàng
-    await this.walletsService.refundBalance(
-      order.userId,
-      refundAmount,
-      order.id,
-    );
+    const isBankTransfer = !!returnReq.bankAccountNumber;
+
+    if (isBankTransfer) {
+      if (refundProofUrl) {
+        returnReq.refundProofUrl = refundProofUrl;
+      }
+    } else {
+      // Hoàn toàn bộ số tiền đơn hàng vào Ví điện tử của khách hàng
+      await this.walletsService.refundBalance(
+        order.userId,
+        refundAmount,
+        order.id,
+      );
+    }
 
     // Cập nhật trạng thái đơn hàng sang RETURNED
     order.status = EOrderStatus.RETURNED;
@@ -895,7 +1000,9 @@ export class OrdersService {
     history.push({
       status: EOrderStatus.RETURNED,
       timestamp: new Date().toISOString(),
-      note: `Hoàn tiền ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử cho khách hàng`,
+      note: isBankTransfer
+        ? `Hoàn tiền ${refundAmount.toLocaleString('vi-VN')} ₫ qua Chuyển khoản ngân hàng (${returnReq.bankName || 'Ngân hàng'} - STK: ${returnReq.bankAccountNumber})`
+        : `Hoàn tiền ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử cho khách hàng`,
     });
     order.statusHistory = history;
     await this.orderRepository.save(order);
@@ -903,13 +1010,16 @@ export class OrdersService {
     returnReq.status = EOrderReturnStatus.COMPLETED;
     returnReq.adminNote =
       note ||
-      `Đã hoàn tất hoàn trả và cộng ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`;
+      (isBankTransfer
+        ? `Đã hoàn tất chuyển khoản ${refundAmount.toLocaleString('vi-VN')} ₫ cho khách hàng`
+        : `Đã hoàn tất hoàn trả và cộng ${refundAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`);
     returnReq.processedBy = processedBy;
     const saved = await this.returnRepository.save(returnReq);
 
     return {
       returnRequest: saved,
       refundedAmount: refundAmount,
+      method: isBankTransfer ? 'BANK_TRANSFER' : 'WALLET',
     };
   }
 }

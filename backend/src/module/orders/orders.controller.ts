@@ -50,11 +50,13 @@ export class OrdersController {
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('status') status?: EOrderReturnStatus,
+    @Query('orderId') orderId?: string,
   ) {
     const data = await this.ordersService.getAdminReturnRequests(
       Number(page) || 1,
       Number(limit) || 20,
       status,
+      orderId,
     );
     return new ApiResponse(
       true,
@@ -100,16 +102,17 @@ export class OrdersController {
   async processRefund(
     @Param('id') id: string,
     @Req() req: any,
-    @Body() body: { note?: string },
+    @Body() body: { note?: string; refundProofUrl?: string },
   ) {
     const data = await this.ordersService.adminProcessRefund(
       id,
       req.user.id,
       body?.note,
+      body?.refundProofUrl,
     );
     return new ApiResponse(
       true,
-      'Hoàn tiền vào ví điện tử của khách hàng thành công',
+      'Hoàn tiền cho khách hàng thành công',
       data,
     );
   }

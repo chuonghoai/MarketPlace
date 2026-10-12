@@ -5,5 +5,6 @@ export const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
     [EOrderStatus.PREPARING]: { label: 'Đang chuẩn bị', color: 'bg-[#DBEAFE] text-[#1E40AF]' },
     [EOrderStatus.SHIPPING]: { label: 'Đang giao', color: 'bg-[#F3E8FF] text-[#6B21A8]' },
     [EOrderStatus.SUCCESS]: { label: 'Đã hoàn thành', color: 'bg-[#DCFCE7] text-[#166534]' },
+    [EOrderStatus.RETURNED]: { label: 'Đổi trả / Hoàn hàng', color: 'bg-[#FFEDD5] text-[#C2410C]' },
     [EOrderStatus.CANCELLED]: { label: 'Bị hủy', color: 'bg-[#FEE2E2] text-[#991B1B]' },
 };

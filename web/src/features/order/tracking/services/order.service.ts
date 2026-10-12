@@ -46,6 +46,10 @@ export class OrderService {
         title: string;
         reason: string;
         proofImages?: string[];
+        proofVideos?: string[];
+        bankName?: string;
+        bankAccountNumber?: string;
+        bankAccountHolder?: string;
     }): Promise<ApiResponse<any>> {
         return apiClient.post(`/orders/tracking/${orderId}/return-request`, data);
     }

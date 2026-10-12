@@ -29,6 +29,16 @@ import { EWalletWithdrawalStatus } from './enums/wallet.enum';
 export class WalletsController {
   constructor(private readonly walletsService: WalletsService) {}
 
+  @Get('check')
+  async checkWalletStatus(@Req() req: any) {
+    const data = await this.walletsService.checkWalletExists(req.user.id);
+    return {
+      success: true,
+      message: 'Kiểm tra trạng thái ví thành công',
+      data,
+    };
+  }
+
   @Get('me')
   async getMyWallet(@Req() req: any) {
     const data = await this.walletsService.getWalletInfo(req.user.id);
@@ -82,6 +92,13 @@ export class WalletsController {
     const amount = Number(query.vnp_Amount) / 100;
     const txRef = query.vnp_TxnRef;
 
+    if (await this.walletsService.isTransactionProcessed(txRef)) {
+      return {
+        success: true,
+        message: 'Giao dịch nạp tiền qua VNPay đã được xử lý trước đó',
+      };
+    }
+
     const result = await this.walletsService.topup(
       req.user.id,
       amount,
@@ -116,6 +133,13 @@ export class WalletsController {
     }
     const txRef = query.orderId || query.requestId || 'MOMO';
 
+    if (await this.walletsService.isTransactionProcessed(txRef)) {
+      return {
+        success: true,
+        message: 'Giao dịch nạp tiền qua MoMo đã được xử lý trước đó',
+      };
+    }
+
     const result = await this.walletsService.topup(
       req.user.id,
       amount,
@@ -145,6 +169,13 @@ export class WalletsController {
       throw new BadRequestException('Số tiền nạp PayPal không hợp lệ');
     }
     const txRef = query.txRef || query.token || 'PAYPAL';
+
+    if (await this.walletsService.isTransactionProcessed(txRef)) {
+      return {
+        success: true,
+        message: 'Giao dịch nạp tiền qua PayPal đã được xử lý trước đó',
+      };
+    }
 
     const result = await this.walletsService.topup(
       req.user.id,

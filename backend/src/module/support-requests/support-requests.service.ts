@@ -25,13 +25,27 @@ export class SupportRequestsService {
     private readonly messageRepo: Repository<SupportRequestMessage>,
     @InjectRepository(Staff)
     private readonly staffRepo: Repository<Staff>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async getStaffByUserId(userId: string): Promise<Staff | null> {
-    return this.staffRepo.findOne({
+    let staff = await this.staffRepo.findOne({
       where: { user: { id: userId } },
       relations: ['user'],
     });
+
+    if (!staff) {
+      const user = await this.userRepo.findOne({ where: { id: userId } });
+      if (user && (user.role === EUserRole.STAFF || user.role === EUserRole.ADMIN)) {
+        staff = this.staffRepo.create({
+          user,
+        });
+        staff = await this.staffRepo.save(staff);
+      }
+    }
+
+    return staff;
   }
 
   async create(
@@ -99,9 +113,11 @@ export class SupportRequestsService {
   }> {
     const staff = await this.getStaffByUserId(userId);
     if (!staff) {
-      throw new ForbiddenException(
-        'Tài khoản của bạn chưa được liên kết với hồ sơ nhân viên',
-      );
+      return {
+        items: [],
+        totalItems: 0,
+        totalPages: 0,
+      };
     }
 
     const { page = 1, pageSize = 10, status } = query;

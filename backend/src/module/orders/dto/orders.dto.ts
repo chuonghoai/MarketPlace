@@ -2,6 +2,7 @@ import { IsEnum, IsOptional, IsString, IsNotEmpty } from 'class-validator';
 import { EOrderStatus } from '../../checkout/enums/EOrderStatus.enum';
 import { EPaymentMethod } from '../../checkout/enums/EPaymentMethod.enum';
 import { EPaymentStatus } from '../../checkout/enums/EPaymentStatus.enum';
+import { EOrderReturnStatus } from '../enums/order-return.enum';
 
 export class GetOrdersFilterDto {
   @IsOptional()
@@ -42,6 +43,7 @@ export class OrderListItemDto {
   buyerPhone: string;
   paymentMethod: EPaymentMethod;
   paymentStatus: EPaymentStatus;
+  statusHistory?: any;
 }
 
 export class OrderStatusHistoryDto {
@@ -89,4 +91,6 @@ export class OrderDetailDto {
   paymentMethod: EPaymentMethod;
   paymentStatus: EPaymentStatus;
   cancelReason?: string;
+  returnStatus?: EOrderReturnStatus;
+  newOrderId?: string;
 }

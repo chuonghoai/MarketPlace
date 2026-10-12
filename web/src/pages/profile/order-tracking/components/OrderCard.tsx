@@ -22,6 +22,28 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
         }
     };
 
+    const hasReturnHistory =
+        order.orderStatus === EOrderStatus.RETURNED ||
+        (Array.isArray(order.statusHistory) &&
+            order.statusHistory.some(
+                (h: any) =>
+                    h.status === EOrderStatus.RETURNED ||
+                    (h.note &&
+                        (h.note.includes("yêu cầu Trả hàng") ||
+                            h.note.includes("yêu cầu Đổi món") ||
+                            h.note.includes("yêu cầu đổi trả")))
+            ));
+
+    const isWithin7Days = (() => {
+        if (order.orderStatus !== EOrderStatus.SUCCESS || hasReturnHistory) return false;
+        const successHistory = Array.isArray(order.statusHistory)
+            ? order.statusHistory.slice().reverse().find((h: any) => h.status === EOrderStatus.SUCCESS)
+            : undefined;
+        const deliveredDate = successHistory ? new Date(successHistory.timestamp) : new Date(order.createdAt);
+        const diffDays = (Date.now() - deliveredDate.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+    })();
+
     const handleReturn = (e: React.MouseEvent) => {
         e.preventDefault();
         if (onReturn) {
@@ -30,6 +52,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
             console.log("Yêu cầu trả hàng:", order.id);
         }
     };
+
+    const isReturnFinished =
+        (order as any).returnStatus === 'COMPLETED' ||
+        (Array.isArray(order.statusHistory) &&
+            order.statusHistory.some(
+                (h: any) =>
+                    h.note &&
+                    (h.note.includes('Hoàn tiền') ||
+                        h.note.includes('đổi hàng mới') ||
+                        h.note.includes('Đã hoàn tất'))
+            ));
 
     return (
         <div className="bg-white border border-border-subtle rounded-xl shadow-sm overflow-hidden flex flex-col hover:border-market-primary/30 transition-colors">
@@ -44,7 +77,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                         })}
                     </span>
                 </div>
-                <OrderStatusBadge status={order.orderStatus} />
+                <OrderStatusBadge status={order.orderStatus} isReturnFinished={isReturnFinished} />
             </div>
 
             {/* Body */}
@@ -110,7 +143,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                     </button>
                 )}
 
-                {order.orderStatus === EOrderStatus.SUCCESS && (
+                {order.orderStatus === EOrderStatus.SUCCESS && isWithin7Days && (
                     <button
                         onClick={handleReturn}
                         className="hidden md:block px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 hover:text-red-600 transition-colors"

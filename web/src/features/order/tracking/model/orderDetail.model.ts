@@ -60,4 +60,6 @@ export interface OrderTrackingDetail {
     paymentStatus: EPaymentStatus;
 
     cancelReason?: string;      // Lý do hủy đơn nếu EOrderStatus là CANCELLED hoặc RETURNED
+    returnStatus?: string;      // Trạng thái yêu cầu đổi trả: PENDING, PICKING_UP, RECEIVED, COMPLETED
+    newOrderId?: string;        // Mã đơn hàng thay thế nếu là yêu cầu đổi hàng
 }

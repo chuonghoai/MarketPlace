@@ -67,6 +67,14 @@ export class WalletsService {
     return wallet;
   }
 
+  async checkWalletExists(userId: string): Promise<{ exists: boolean; status: EWalletStatus | null }> {
+    const wallet = await this.walletRepository.findOne({ where: { userId } });
+    return {
+      exists: !!wallet,
+      status: wallet ? wallet.status : null,
+    };
+  }
+
   async getWalletInfo(userId: string) {
     const wallet = await this.getOrCreateWallet(userId);
     return {
@@ -181,7 +189,7 @@ export class WalletsService {
     const secretKey = this.getRequiredEnv(ENV_VARS.VNP_HASH_SECRET);
     const vnpUrl = this.getRequiredEnv(ENV_VARS.VNP_URL);
     const appUrl = this.getRequiredEnv(ENV_VARS.APP_PUBLIC_URL);
-    const returnUrl = `${appUrl}/profile/wallet?topup=vnpay`;
+    const returnUrl = `${appUrl}/profile/wallet`;
 
     const date = new Date();
     const createDate =
@@ -231,14 +239,21 @@ export class WalletsService {
 
   verifyVnpaySignature(query: any): boolean {
     const secretKey = this.getRequiredEnv(ENV_VARS.VNP_HASH_SECRET);
-    const vnp_Params = { ...query };
-    const secureHash = vnp_Params['vnp_SecureHash'];
-    delete vnp_Params['vnp_SecureHash'];
-    delete vnp_Params['vnp_SecureHashType'];
+    const secureHash = query?.['vnp_SecureHash'];
+    if (!secureHash) return false;
 
-    const sorted: any = {};
-    for (const key of Object.keys(vnp_Params).sort()) {
-      sorted[key] = encodeURIComponent(vnp_Params[key]).replace(/%20/g, '+');
+    const sorted: Record<string, string> = {};
+    for (const key of Object.keys(query).sort()) {
+      if (
+        key.startsWith('vnp_') &&
+        key !== 'vnp_SecureHash' &&
+        key !== 'vnp_SecureHashType' &&
+        query[key] !== '' &&
+        query[key] !== null &&
+        query[key] !== undefined
+      ) {
+        sorted[key] = encodeURIComponent(String(query[key])).replace(/%20/g, '+');
+      }
     }
 
     const signData = Object.keys(sorted)
@@ -247,7 +262,7 @@ export class WalletsService {
 
     const hmac = crypto.createHmac('sha512', secretKey);
     const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
-    return signed === secureHash;
+    return signed.toLowerCase() === String(secureHash).toLowerCase();
   }
 
   async buildMomoPaymentUrl(
@@ -377,7 +392,7 @@ export class WalletsService {
       });
       const orderData = await orderRes.json();
       const approveLink = orderData.links?.find(
-        (l: any) => l.rel === 'payer-action',
+        (l: any) => l.rel === 'approve' || l.rel === 'payer-action',
       );
       if (!approveLink?.href) {
         throw new InternalServerErrorException(
@@ -391,6 +406,15 @@ export class WalletsService {
         'Loi ket noi cong thanh toan PayPal',
       );
     }
+  }
+
+  async isTransactionProcessed(txRef: string): Promise<boolean> {
+    if (!txRef) return false;
+    const existing = await this.transactionRepository
+      .createQueryBuilder('tx')
+      .where('tx.description LIKE :pattern', { pattern: `%${txRef}%` })
+      .getOne();
+    return !!existing;
   }
 
   async deductBalance(

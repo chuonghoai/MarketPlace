@@ -40,6 +40,21 @@ export class OrderReturnRequest {
   @Column({ type: 'simple-array', nullable: true })
   proofImages: string[];
 
+  @Column({ type: 'simple-array', nullable: true })
+  proofVideos: string[];
+
+  @Column({ type: 'varchar', nullable: true })
+  bankName: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  bankAccountNumber: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  bankAccountHolder: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  refundProofUrl: string | null;
+
   @Column({
     type: 'enum',
     enum: EOrderReturnStatus,

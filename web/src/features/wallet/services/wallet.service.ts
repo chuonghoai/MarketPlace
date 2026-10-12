@@ -10,6 +10,10 @@ import type {
 } from "../models/wallet.model";
 
 export class WalletService {
+  async checkWalletStatus(): Promise<ApiResponse<{ exists: boolean; status: string | null }>> {
+    return apiClient.get<ApiResponse<{ exists: boolean; status: string | null }>>("/wallets/check");
+  }
+
   async getMyWallet(): Promise<ApiResponse<WalletInfo>> {
     return apiClient.get<ApiResponse<WalletInfo>>("/wallets/me");
   }
