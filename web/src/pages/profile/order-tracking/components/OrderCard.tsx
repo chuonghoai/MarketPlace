@@ -22,8 +22,20 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
         }
     };
 
+    const hasReturnHistory =
+        order.orderStatus === EOrderStatus.RETURNED ||
+        (Array.isArray(order.statusHistory) &&
+            order.statusHistory.some(
+                (h: any) =>
+                    h.status === EOrderStatus.RETURNED ||
+                    (h.note &&
+                        (h.note.includes("yêu cầu Trả hàng") ||
+                            h.note.includes("yêu cầu Đổi món") ||
+                            h.note.includes("yêu cầu đổi trả")))
+            ));
+
     const isWithin7Days = (() => {
-        if (order.orderStatus !== EOrderStatus.SUCCESS) return false;
+        if (order.orderStatus !== EOrderStatus.SUCCESS || hasReturnHistory) return false;
         const successHistory = Array.isArray(order.statusHistory)
             ? order.statusHistory.slice().reverse().find((h: any) => h.status === EOrderStatus.SUCCESS)
             : undefined;
@@ -41,6 +53,17 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
         }
     };
 
+    const isReturnFinished =
+        (order as any).returnStatus === 'COMPLETED' ||
+        (Array.isArray(order.statusHistory) &&
+            order.statusHistory.some(
+                (h: any) =>
+                    h.note &&
+                    (h.note.includes('Hoàn tiền') ||
+                        h.note.includes('đổi hàng mới') ||
+                        h.note.includes('Đã hoàn tất'))
+            ));
+
     return (
         <div className="bg-white border border-border-subtle rounded-xl shadow-sm overflow-hidden flex flex-col hover:border-market-primary/30 transition-colors">
             {/* Header */}
@@ -54,7 +77,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                         })}
                     </span>
                 </div>
-                <OrderStatusBadge status={order.orderStatus} />
+                <OrderStatusBadge status={order.orderStatus} isReturnFinished={isReturnFinished} />
             </div>
 
             {/* Body */}

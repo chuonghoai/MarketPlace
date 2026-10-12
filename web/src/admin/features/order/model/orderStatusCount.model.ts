@@ -5,4 +5,5 @@ export interface OrderStatusCount {
     shipping: number;
     success: number;
     cancelled: number;
+    returned?: number;
 }

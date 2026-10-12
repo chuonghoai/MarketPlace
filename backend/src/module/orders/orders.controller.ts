@@ -50,11 +50,13 @@ export class OrdersController {
     @Query('page') page = 1,
     @Query('limit') limit = 20,
     @Query('status') status?: EOrderReturnStatus,
+    @Query('orderId') orderId?: string,
   ) {
     const data = await this.ordersService.getAdminReturnRequests(
       Number(page) || 1,
       Number(limit) || 20,
       status,
+      orderId,
     );
     return new ApiResponse(
       true,

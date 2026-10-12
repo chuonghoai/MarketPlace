@@ -7,6 +7,7 @@ import { OrderSummaryCard } from "./components/OrderSummaryCard";
 import { OrderItemsSection } from "./components/OrderItemsSection";
 import { ShippingInfoCard } from "./components/ShippingInfoCard";
 import { OrderNotesCard } from "./components/OrderNotesCard";
+import { EOrderStatus } from "../../../features/order/enums/orderStatus.enum";
 
 export const OrderTrackingDetail: React.FC = () => {
     const controller = useOrderTrackingDetailController();
@@ -48,10 +49,31 @@ export const OrderTrackingDetail: React.FC = () => {
                 <span className="text-stone-900 dark:text-stone-200 font-medium">
                     Đơn #{controller.order.id}
                 </span>
-                <span>/</span>
-                <span className="text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-900/40 text-[11px] font-semibold">
-                    Hỗ trợ & Xử lý đổi trả (UC23)
-                </span>
+                {controller.order.orderStatus === EOrderStatus.RETURNED && (() => {
+                    const isReturnFinished =
+                        controller.order.returnStatus === 'COMPLETED' ||
+                        controller.order.statusHistory?.some(
+                            h =>
+                                h.note &&
+                                (h.note.includes('Hoàn tiền') ||
+                                    h.note.includes('đổi hàng mới') ||
+                                    h.note.includes('Đã hoàn tất'))
+                        );
+                    return (
+                        <>
+                            <span>/</span>
+                            <span
+                                className={`px-2.5 py-0.5 rounded-full border text-[11px] font-semibold ${
+                                    isReturnFinished
+                                        ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/40'
+                                        : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40'
+                                }`}
+                            >
+                                {isReturnFinished ? 'Đổi trả thành công' : 'Đang xử lý đổi trả'}
+                            </span>
+                        </>
+                    );
+                })()}
             </div>
 
             {/* Section 1: Summary Card */}

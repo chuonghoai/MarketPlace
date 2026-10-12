@@ -157,7 +157,7 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
                     <div>
                         <div className="flex items-center gap-2">
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
-                                Yêu cầu hỗ trợ (UC23)
+                                Yêu cầu hỗ trợ
                             </span>
                         </div>
                         <h3 className="text-xl font-bold font-['Lora',serif] text-stone-900 dark:text-stone-100 mt-1">

@@ -80,6 +80,12 @@ describe('SupportRequestsService', () => {
           provide: getRepositoryToken(Staff),
           useValue: staffRepo,
         },
+        {
+          provide: getRepositoryToken(User),
+          useValue: {
+            findOne: jest.fn(),
+          },
+        },
       ],
     }).compile();
 

@@ -17,6 +17,7 @@ export const OrderFilterTabs = ({
         { label: 'Đang chuẩn bị', value: EOrderStatus.PREPARING, count: orderStatusCount.preparing, showCount: true },
         { label: 'Đang giao', value: EOrderStatus.SHIPPING, count: orderStatusCount.shipping, showCount: true },
         { label: 'Đã hoàn thành', value: EOrderStatus.SUCCESS, count: orderStatusCount.success, showCount: false },
+        { label: 'Đổi trả / Hoàn hàng', value: EOrderStatus.RETURNED, count: orderStatusCount.returned || 0, showCount: true },
         { label: 'Bị hủy', value: EOrderStatus.CANCELLED, count: orderStatusCount.cancelled, showCount: false },
     ];
 

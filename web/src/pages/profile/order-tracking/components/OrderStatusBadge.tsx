@@ -3,6 +3,7 @@ import { EOrderStatus } from "../../../../features/order/enums/orderStatus.enum"
 
 interface OrderStatusBadgeProps {
     status: EOrderStatus;
+    isReturnFinished?: boolean;
     className?: string;
 }
 
@@ -13,13 +14,20 @@ const statusConfig: Record<EOrderStatus, { label: string; colorClass: string }> 
     [EOrderStatus.DELIVERED]: { label: "Đã giao", colorClass: "bg-market-success/10 text-market-success border-market-success/20" },
     [EOrderStatus.SUCCESS]: { label: "Thành công", colorClass: "bg-market-success/10 text-market-success border-market-success/20" },
     [EOrderStatus.CANCELLED]: { label: "Đã hủy", colorClass: "bg-red-500/10 text-red-600 border-red-500/20" },
-    [EOrderStatus.RETURNED]: { label: "Trả hàng", colorClass: "bg-red-500/10 text-red-600 border-red-500/20" },
+    [EOrderStatus.RETURNED]: { label: "Đang đổi trả", colorClass: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20" },
 };
 
-export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status, className = "" }) => {
-    const config = statusConfig[status];
+export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status, isReturnFinished, className = "" }) => {
+    let config = statusConfig[status];
 
     if (!config) return null;
+
+    if (status === EOrderStatus.RETURNED && isReturnFinished) {
+        config = {
+            label: "Đổi trả thành công",
+            colorClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+        };
+    }
 
     return (
         <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${config.colorClass} ${className}`}>

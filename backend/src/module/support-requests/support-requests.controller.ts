@@ -69,7 +69,7 @@ export class SupportRequestsController {
   }
 
   @Get('assigned')
-  @Roles(EUserRole.STAFF)
+  @Roles(EUserRole.STAFF, EUserRole.ADMIN)
   async getAssignedRequests(
     @Req() req: RequestWithUser,
     @Query() query: SupportRequestQueryDto,
@@ -93,7 +93,7 @@ export class SupportRequestsController {
   }
 
   @Get()
-  @Roles(EUserRole.ADMIN)
+  @Roles(EUserRole.ADMIN, EUserRole.STAFF)
   async getAll(@Query() query: SupportRequestQueryDto) {
     const result = await this.supportRequestsService.findAll(query);
     const res = new ApiResponse(

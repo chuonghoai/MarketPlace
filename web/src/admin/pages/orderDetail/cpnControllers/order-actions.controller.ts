@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { orderService } from '../../../features/order/services/order.service';
 import type { OrderDetail } from '../../../features/order/model/orderDetail.model';
 import { EOrderStatus } from '../../../../features/order/enums/orderStatus.enum';
@@ -6,6 +6,37 @@ import { EOrderStatus } from '../../../../features/order/enums/orderStatus.enum'
 export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (updatedDetail: OrderDetail) => void) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [isReturnCompleted, setIsReturnCompleted] = useState(
+        order.returnStatus === 'COMPLETED'
+    );
+    const [newOrderId, setNewOrderId] = useState<string | undefined>(
+        order.newOrderId
+    );
+
+    useEffect(() => {
+        if (order.newOrderId) {
+            setNewOrderId(order.newOrderId);
+        }
+        if (order.orderStatus === EOrderStatus.RETURNED) {
+            if (order.returnStatus === 'COMPLETED') {
+                setIsReturnCompleted(true);
+            }
+            orderService
+                .getReturnRequests(1, 1, undefined, order.id)
+                .then((res) => {
+                    const req = res.data?.items?.find((r: any) => r.orderId === order.id);
+                    if (req) {
+                        if (req.status === 'COMPLETED') {
+                            setIsReturnCompleted(true);
+                        }
+                        if (req.newOrderId) {
+                            setNewOrderId(req.newOrderId);
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [order.id, order.orderStatus, order.returnStatus, order.newOrderId]);
 
     // Gọi service cập nhật trạng thái
     const updateStatus = async (status: EOrderStatus, note: string) => {
@@ -44,6 +75,7 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
     const handleCloseReturnModal = () => setIsReturnModalOpen(false);
     const handleReturnSuccess = () => {
         setIsReturnModalOpen(false);
+        setIsReturnCompleted(true);
         // Refresh order
         orderService.getOrderDetail(order.id).then((res) => {
             if (res.success && res.data) onUpdateSuccess(res.data);
@@ -76,6 +108,8 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
         handleProcessReturn,
         handleOpenGoogleMaps,
         isReturnModalOpen,
+        isReturnCompleted,
+        newOrderId: newOrderId || order.newOrderId,
         handleCloseReturnModal,
         handleReturnSuccess,
     };

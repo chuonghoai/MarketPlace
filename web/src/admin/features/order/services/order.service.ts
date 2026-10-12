@@ -35,9 +35,10 @@ export class OrderService {
 
     // Xử lý đổi trả, hoàn tiền (UC23)
 
-    getReturnRequests(page = 1, limit = 20, status?: string): Promise<ApiResponse<any>> {
+    getReturnRequests(page = 1, limit = 20, status?: string, orderId?: string): Promise<ApiResponse<any>> {
         const query = new URLSearchParams({ page: String(page), limit: String(limit) });
         if (status) query.append('status', status);
+        if (orderId) query.append('orderId', orderId);
         return apiClient.get(`/admin/order/return-requests?${query.toString()}`);
     }
 

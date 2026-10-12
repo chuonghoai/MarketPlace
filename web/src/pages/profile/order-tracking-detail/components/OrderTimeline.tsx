@@ -6,7 +6,29 @@ interface OrderTimelineProps {
     history: OrderTrackingStatusHistory[];
 }
 
-const getStatusLabel = (status: EOrderStatus): string => {
+const getStatusLabel = (status: EOrderStatus, note?: string): string => {
+    if (
+        note &&
+        (note.includes("Hoàn tiền") ||
+            note.includes("đổi hàng mới") ||
+            note.includes("Đã hoàn tất"))
+    ) {
+        return "Đổi trả thành công";
+    }
+    if (
+        note &&
+        (note.includes("yêu cầu Trả hàng") ||
+            note.includes("yêu cầu Đổi món") ||
+            note.includes("yêu cầu đổi trả"))
+    ) {
+        return "Yêu cầu hoàn trả";
+    }
+    if (note && note.includes("Shipper đang đến lấy lại hàng")) {
+        return "Shipper đang lấy hàng";
+    }
+    if (note && note.includes("Đã nhận hàng hoàn trả về kho")) {
+        return "Đã nhận hàng về kho";
+    }
     switch (status) {
         case EOrderStatus.PENDING: return "Đặt hàng thành công";
         case EOrderStatus.PREPARING: return "Shop đang chuẩn bị hàng";
@@ -56,7 +78,7 @@ export const OrderTimeline: React.FC<OrderTimelineProps> = ({ history }) => {
                                             isLatest ? "text-market-primary text-base" : "text-stone-600 text-sm"
                                         }`}
                                     >
-                                        {getStatusLabel(item.status)}
+                                        {getStatusLabel(item.status, item.note)}
                                     </h4>
                                     <span className={`text-xs ${isLatest ? "text-stone-500" : "text-stone-400"}`}>
                                         {new Date(item.timestamp).toLocaleString("vi-VN", {
