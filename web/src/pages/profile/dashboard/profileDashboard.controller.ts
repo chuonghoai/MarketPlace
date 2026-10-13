@@ -60,6 +60,10 @@ export const useProfileDashboardController = () => {
         }
     };
 
+    const handleRemoveFavorite = async (productId: string) => {
+        return dashboardStore.removeFavorite(productId);
+    };
+
     return {
         user,
         formData: dashboardStore.formData,
@@ -68,11 +72,13 @@ export const useProfileDashboardController = () => {
         wishlistPagination: dashboardStore.wishlistPagination,
         wishlistPage: currentUrlState.page,
         isLoadingWishlist: dashboardStore.isLoadingWishlist,
+        removingFavoriteId: dashboardStore.removingFavoriteId,
         isEditMode,
         handleFieldChange,
         handleEnterEdit,
         handleCancelEdit,
         handleSaveProfile,
         handleWishlistPageChange,
+        handleRemoveFavorite,
     };
 };
