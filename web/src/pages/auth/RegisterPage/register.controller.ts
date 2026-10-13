@@ -80,6 +80,7 @@ export const useRegisterController = () => {
 
     // API register new account
     const onRegister = async (data: RegisterRequest) => {
+        clearErrors("root");
         try {
             const result = await authService.register(data);
 
@@ -88,14 +89,18 @@ export const useRegisterController = () => {
                 const nextRoute = getDefaultRouteByRole(result.data.user.role);
                 navigate(nextRoute);
             } else {
-                toast(result.message, 'error');
+                const errorMessage = result.message || (result as any)?.error?.message || "Đăng ký không thành công";
+                toast(errorMessage, 'error');
             }
-        } catch (error: unknown) {
-            toast("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.", 'error');
-            setError("root", {
-                type: "server",
-                message: error instanceof Error ? error.message : "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.",
-            });
+        } catch (error: any) {
+            const errorMessage =
+                error?.response?.data?.error?.message ||
+                error?.response?.data?.message ||
+                (error instanceof Error && !error.message.includes("status code")
+                    ? error.message
+                    : "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.");
+
+            toast(errorMessage, 'error');
         }
     };
 
