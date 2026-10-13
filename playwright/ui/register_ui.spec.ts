@@ -26,6 +26,20 @@ test.describe('Giao diện - Đăng ký tài khoản', () => {
   });
 
   test('Hiển thị thông báo lỗi thân thiện "Mã OTP không chính xác" khi nhập sai OTP (MKP_003)', async ({ page }) => {
+    await page.route('**/auth/register', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: {
+            code: 'OTP_INVALID',
+            message: 'Mã OTP không chính xác',
+          },
+        }),
+      });
+    });
+
     await page.goto('/register');
     await page.getByPlaceholder('Nhập địa chỉ email...').fill('wrong_otp_user@example.com');
     await page.getByPlaceholder('Nhập mã 6 chữ số...').fill('000000');
@@ -36,5 +50,32 @@ test.describe('Giao diện - Đăng ký tài khoản', () => {
 
     // Kết quả mong đợi theo tài liệu kiểm thử MKP_003:
     await expect(page.getByText(/Mã OTP không chính xác/i)).toBeVisible({ timeout: 4000 });
+  });
+
+  test('Hiển thị thông báo mã OTP đã hết hạn khi đăng ký (MKP_004)', async ({ page }) => {
+    await page.route('**/auth/register', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          error: {
+            code: 'OTP_EXPIRED',
+            message: 'Mã OTP đã hết hạn',
+          },
+        }),
+      });
+    });
+
+    await page.goto('/register');
+    await page.getByPlaceholder('Nhập địa chỉ email...').fill('expired_otp_user@example.com');
+    await page.getByPlaceholder('Nhập mã 6 chữ số...').fill('123456');
+    await page.getByPlaceholder('Tạo mật khẩu...').fill('Password123@');
+    await page.getByPlaceholder('Xác nhận lại mật khẩu...').fill('Password123@');
+
+    await page.getByRole('button', { name: 'Đăng ký tài khoản' }).click();
+
+    // Kết quả mong đợi theo tài liệu kiểm thử MKP_004:
+    await expect(page.getByText(/Mã OTP đã hết hạn/i)).toBeVisible({ timeout: 4000 });
   });
 });

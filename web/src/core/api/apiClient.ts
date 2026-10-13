@@ -2,6 +2,20 @@ import type { AxiosRequestConfig } from "axios";
 import { axiosInstance } from "./axios";
 
 class ApiClient {
+    private formatErrorResponse<T>(error: any): T {
+        if (error.response && error.response.data) {
+            const responseData = error.response.data;
+            if (responseData.error && responseData.error.message) {
+                responseData.message = responseData.error.message;
+            }
+            if (responseData.success === undefined) {
+                responseData.success = false;
+            }
+            return responseData as T;
+        }
+        throw error;
+    }
+
     async get<T>(
         url: string,
         config?: AxiosRequestConfig
@@ -10,14 +24,7 @@ class ApiClient {
             const response = await axiosInstance.get<T>(url, config);
             return response.data;
         } catch (error: any) {
-            if (error.response && error.response.data) {
-                const data = error.response.data;
-                if (data.error && data.error.message && !data.message) {
-                    data.message = data.error.message;
-                }
-                return data as T;
-            }
-            throw error;
+            return this.formatErrorResponse<T>(error);
         }
     }
 
@@ -30,14 +37,7 @@ class ApiClient {
             const response = await axiosInstance.post<T>(url, data, config);
             return response.data;
         } catch (error: any) {
-            if (error.response && error.response.data) {
-                const responseData = error.response.data;
-                if (responseData.error && responseData.error.message && !responseData.message) {
-                    responseData.message = responseData.error.message;
-                }
-                return responseData as T;
-            }
-            throw error;
+            return this.formatErrorResponse<T>(error);
         }
     }
 
@@ -50,14 +50,7 @@ class ApiClient {
             const response = await axiosInstance.put<T>(url, data, config);
             return response.data;
         } catch (error: any) {
-            if (error.response && error.response.data) {
-                const responseData = error.response.data;
-                if (responseData.error && responseData.error.message && !responseData.message) {
-                    responseData.message = responseData.error.message;
-                }
-                return responseData as T;
-            }
-            throw error;
+            return this.formatErrorResponse<T>(error);
         }
     }
 
@@ -70,14 +63,7 @@ class ApiClient {
             const response = await axiosInstance.patch<T>(url, data, config);
             return response.data;
         } catch (error: any) {
-            if (error.response && error.response.data) {
-                const responseData = error.response.data;
-                if (responseData.error && responseData.error.message && !responseData.message) {
-                    responseData.message = responseData.error.message;
-                }
-                return responseData as T;
-            }
-            throw error;
+            return this.formatErrorResponse<T>(error);
         }
     }
 
@@ -89,14 +75,7 @@ class ApiClient {
             const response = await axiosInstance.delete<T>(url, config);
             return response.data;
         } catch (error: any) {
-            if (error.response && error.response.data) {
-                const responseData = error.response.data;
-                if (responseData.error && responseData.error.message && !responseData.message) {
-                    responseData.message = responseData.error.message;
-                }
-                return responseData as T;
-            }
-            throw error;
+            return this.formatErrorResponse<T>(error);
         }
     }
 }
