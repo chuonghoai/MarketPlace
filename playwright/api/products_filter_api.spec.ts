@@ -31,6 +31,51 @@ test.describe('API - Bộ lọc và sắp xếp sản phẩm', () => {
     expect(response.status()).toBe(400);
   });
 
+  test('Chấp nhận khi minPrice bằng maxPrice minPrice === maxPrice (MKP_014)', async ({ request }) => {
+    const response = await request.get('/products', {
+      params: {
+        'filters[minPrice]': '200000',
+        'filters[maxPrice]': '200000',
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.success).toBe(true);
+  });
+
+  test('Chấp nhận khi chỉ truyền minPrice hoặc chỉ truyền maxPrice (MKP_014)', async ({ request }) => {
+    const resMin = await request.get('/products', {
+      params: {
+        'filters[minPrice]': '50000',
+      },
+    });
+    expect(resMin.status()).toBe(200);
+
+    const resMax = await request.get('/products', {
+      params: {
+        'filters[maxPrice]': '500000',
+      },
+    });
+    expect(resMax.status()).toBe(200);
+  });
+
+  test('Trả về mã lỗi 400 khi giá trị query sai định dạng hoặc âm (MKP_014)', async ({ request }) => {
+    const response = await request.get('/products', {
+      params: {
+        'filters[minPrice]': 'abc',
+      },
+    });
+    expect(response.status()).toBe(400);
+
+    const responseNegative = await request.get('/products', {
+      params: {
+        'filters[minPrice]': '-1000',
+      },
+    });
+    expect(responseNegative.status()).toBe(400);
+  });
+
   test('Xử lý lọc và sắp xếp sản phẩm theo tiêu chí mới nhất (MKP_015)', async ({ request }) => {
     const response = await request.get('/products', {
       params: {

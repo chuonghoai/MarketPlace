@@ -65,12 +65,19 @@ export const useFilterController = () => {
     };
 
     const handleApply = () => {
-        if (localFilters.minPrice && localFilters.maxPrice) {
-            if (parseInt(localFilters.minPrice) > parseInt(localFilters.maxPrice)) {
-                setPriceError("Giá tối thiểu phải nhỏ hơn giá tối đa");
+        const minTrim = localFilters.minPrice ? localFilters.minPrice.trim() : "";
+        const maxTrim = localFilters.maxPrice ? localFilters.maxPrice.trim() : "";
+
+        if (minTrim !== "" && maxTrim !== "") {
+            const minNum = Number(minTrim);
+            const maxNum = Number(maxTrim);
+            if (!isNaN(minNum) && !isNaN(maxNum) && minNum > maxNum) {
+                setPriceError("Giá tối thiểu phải nhỏ hơn hoặc bằng giá tối đa.");
                 return;
             }
         }
+
+        setPriceError("");
 
         const params = new URLSearchParams();
 
@@ -79,8 +86,8 @@ export const useFilterController = () => {
 
         params.set("page", "1");
         params.set("sortBy", localFilters.sortBy);
-        if (localFilters.minPrice) params.set("minPrice", localFilters.minPrice);
-        if (localFilters.maxPrice) params.set("maxPrice", localFilters.maxPrice);
+        if (minTrim !== "") params.set("minPrice", minTrim);
+        if (maxTrim !== "") params.set("maxPrice", maxTrim);
 
         localFilters.categories.forEach((id) => params.append("categories", id));
         setSearchParams(params);

@@ -1,17 +1,16 @@
-import { Injectable, HttpStatus, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  HttpStatus,
+  Logger,
+  OnModuleInit,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ApiResponse } from '../../core/dto/ApiResponse.dto';
 import { EFilterState } from './enums/EFilterState.enum';
-import {
-  FindOptionsWhere,
-  FindOptionsOrder,
-  Between,
-  MoreThanOrEqual,
-  LessThanOrEqual,
-  In,
-} from 'typeorm';
+
 import { CustomException } from '../../core/exceptions/custom.exception';
 import { Favorite } from './entities/favorite.entity';
 import { Category } from '../categories/entities/category.entity';
@@ -60,12 +59,62 @@ export class ProductsService implements OnModuleInit {
     const pageSize = dto?.pageSize ? parseInt(dto.pageSize.toString(), 10) : 50;
 
     const sortBy = dto?.['filters[sortBy]'];
-    const minPrice = dto?.['filters[minPrice]'] || undefined;
-    const maxPrice = dto?.['filters[maxPrice]'] || undefined;
+    const rawFiltersObj = rawQuery?.filters as Record<string, any>;
+
+    const rawMinPrice =
+      dto?.['filters[minPrice]'] ??
+      dto?.filters?.minPrice ??
+      rawQuery?.['filters[minPrice]'] ??
+      rawFiltersObj?.minPrice;
+
+    const rawMaxPrice =
+      dto?.['filters[maxPrice]'] ??
+      dto?.filters?.maxPrice ??
+      rawQuery?.['filters[maxPrice]'] ??
+      rawFiltersObj?.maxPrice;
+
+    const hasMin =
+      rawMinPrice !== undefined &&
+      rawMinPrice !== null &&
+      String(rawMinPrice).trim() !== '';
+    const hasMax =
+      rawMaxPrice !== undefined &&
+      rawMaxPrice !== null &&
+      String(rawMaxPrice).trim() !== '';
+
+    let parsedMin: number | undefined;
+    let parsedMax: number | undefined;
+
+    if (hasMin) {
+      parsedMin = Number(rawMinPrice);
+      if (Number.isNaN(parsedMin) || parsedMin < 0) {
+        throw new BadRequestException(
+          'minPrice must be a valid non-negative number',
+        );
+      }
+    }
+
+    if (hasMax) {
+      parsedMax = Number(rawMaxPrice);
+      if (Number.isNaN(parsedMax) || parsedMax < 0) {
+        throw new BadRequestException(
+          'maxPrice must be a valid non-negative number',
+        );
+      }
+    }
+
+    if (
+      parsedMin !== undefined &&
+      parsedMax !== undefined &&
+      parsedMin > parsedMax
+    ) {
+      throw new BadRequestException(
+        'minPrice must be less than or equal to maxPrice',
+      );
+    }
 
     let categories: string[] | undefined;
 
-    const rawFiltersObj = rawQuery?.filters as Record<string, any>;
     if (rawFiltersObj?.categories) {
       const rawCats = rawFiltersObj.categories;
       categories = Array.isArray(rawCats) ? rawCats : [rawCats];
@@ -95,9 +144,9 @@ export class ProductsService implements OnModuleInit {
       '[getAllProducts] sortBy =',
       sortBy,
       '| minPrice =',
-      minPrice,
+      rawMinPrice,
       '| maxPrice =',
-      maxPrice,
+      rawMaxPrice,
     );
 
     const qb = this.productsRepository
@@ -129,16 +178,14 @@ export class ProductsService implements OnModuleInit {
       );
     }
 
-    const parsedMin = minPrice ? Number(minPrice) : NaN;
-    const parsedMax = maxPrice ? Number(maxPrice) : NaN;
-    if (!isNaN(parsedMin) && !isNaN(parsedMax)) {
+    if (parsedMin !== undefined && parsedMax !== undefined) {
       qb.andWhere('product.price BETWEEN :minPrice AND :maxPrice', {
         minPrice: parsedMin,
         maxPrice: parsedMax,
       });
-    } else if (!isNaN(parsedMin)) {
+    } else if (parsedMin !== undefined) {
       qb.andWhere('product.price >= :minPrice', { minPrice: parsedMin });
-    } else if (!isNaN(parsedMax)) {
+    } else if (parsedMax !== undefined) {
       qb.andWhere('product.price <= :maxPrice', { maxPrice: parsedMax });
     }
 
