@@ -87,7 +87,7 @@ export class ProductsService implements OnModuleInit {
 
     if (hasMin) {
       parsedMin = Number(rawMinPrice);
-      if (Number.isNaN(parsedMin) || parsedMin < 0) {
+      if (!Number.isFinite(parsedMin) || parsedMin < 0) {
         throw new BadRequestException(
           'minPrice must be a valid non-negative number',
         );
@@ -96,7 +96,7 @@ export class ProductsService implements OnModuleInit {
 
     if (hasMax) {
       parsedMax = Number(rawMaxPrice);
-      if (Number.isNaN(parsedMax) || parsedMax < 0) {
+      if (!Number.isFinite(parsedMax) || parsedMax < 0) {
         throw new BadRequestException(
           'maxPrice must be a valid non-negative number',
         );

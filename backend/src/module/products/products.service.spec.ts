@@ -182,6 +182,14 @@ describe('ProductsService - Price Filter Validation (MKP-014)', () => {
       await expect(service.getAllProducts(negativeDto, {})).rejects.toThrow(
         BadRequestException,
       );
+
+      const infinityDto: GetAllProductDto = {
+        'filters[minPrice]': 'Infinity',
+      };
+
+      await expect(service.getAllProducts(infinityDto, {})).rejects.toThrow(
+        BadRequestException,
+      );
       expect(productsRepo.createQueryBuilder).not.toHaveBeenCalled();
     });
 

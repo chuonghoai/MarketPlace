@@ -1,6 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('API - Bộ lọc và sắp xếp sản phẩm', () => {
+  test.beforeEach(async () => {
+    // Khoảng đệm ngắn để tránh vượt ngưỡng rate limit 6 req/s của Backend ThrottlerGuard
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  });
+
   test('Lọc sản phẩm trong khoảng giá hợp lệ thành công (MKP_013)', async ({ request }) => {
     const minPrice = 10000;
     const maxPrice = 5000000;
@@ -52,6 +57,8 @@ test.describe('API - Bộ lọc và sắp xếp sản phẩm', () => {
     });
     expect(resMin.status()).toBe(200);
 
+    await new Promise((resolve) => setTimeout(resolve, 250));
+
     const resMax = await request.get('/products', {
       params: {
         'filters[maxPrice]': '500000',
@@ -67,6 +74,8 @@ test.describe('API - Bộ lọc và sắp xếp sản phẩm', () => {
       },
     });
     expect(response.status()).toBe(400);
+
+    await new Promise((resolve) => setTimeout(resolve, 250));
 
     const responseNegative = await request.get('/products', {
       params: {
