@@ -8,6 +8,8 @@ interface WishlistTabProps {
     pagination: { page: number; pageSize: number; totalItems: number; totalPages: number } | undefined;
     currentPage: number;
     onPageChange: (page: number) => void;
+    onRemoveFavorite?: (productId: string) => Promise<boolean | void>;
+    removingId?: string | null;
 }
 
 const formatPrice = (price: number) =>
@@ -33,6 +35,8 @@ export const WishlistTab = ({
     pagination,
     currentPage,
     onPageChange,
+    onRemoveFavorite,
+    removingId,
 }: WishlistTabProps) => {
     if (isLoading) return <WishlistSkeleton />;
 
@@ -85,11 +89,31 @@ export const WishlistTab = ({
                                         -{discount}%
                                     </span>
                                 )}
-                                <div className="absolute top-2 right-2 w-6 h-6 bg-white/90 rounded-full flex items-center justify-center shadow-sm">
-                                    <svg className="w-3.5 h-3.5 text-market-primary" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                    </svg>
-                                </div>
+                                <button
+                                    type="button"
+                                    aria-label="Bỏ yêu thích sản phẩm"
+                                    title="Bỏ yêu thích sản phẩm"
+                                    disabled={removingId === item.id}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (onRemoveFavorite && removingId !== item.id) {
+                                            onRemoveFavorite(item.id);
+                                        }
+                                    }}
+                                    className="absolute top-2 right-2 w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow-sm hover:scale-110 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer z-10"
+                                >
+                                    {removingId === item.id ? (
+                                        <svg className="w-3.5 h-3.5 text-market-primary animate-spin" viewBox="0 0 24 24" fill="none">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-3.5 h-3.5 text-market-primary" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                    )}
+                                </button>
                             </div>
 
                             <div className="p-3">
