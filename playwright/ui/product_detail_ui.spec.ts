@@ -69,6 +69,36 @@ test.describe('Giao diện - Chi tiết sản phẩm', () => {
     await expect(page.getByRole('button', { name: 'Thêm vào giỏ', exact: true })).toBeVisible({ timeout: 10000 });
   });
 
+  test('Truy cập trực tiếp URL sản phẩm dạng UUID v4 thực tế trong DB không bị lỗi chuyển hướng (MKP-049)', async ({ page }) => {
+    if (!sampleProductId) test.skip();
+
+    // Sản phẩm UUID v4 thực tế trong DB: "Phễu đan tre" (tên có chữ "P")
+    const targetSlug = `/pheu-dan-tre-p${sampleProductId}`;
+    let requestedProductId = '';
+
+    page.on('request', (req) => {
+      const url = req.url();
+      if (url.includes('/products/')) {
+        const parts = url.split('/products/');
+        if (parts[1]) {
+          requestedProductId = parts[1].split('?')[0];
+        }
+      }
+    });
+
+    await page.goto(targetSlug, { waitUntil: 'domcontentloaded' });
+
+    // Đảm bảo không bị chuyển hướng về trang chủ
+    await expect(page).toHaveURL(new RegExp(targetSlug));
+
+    // Đảm bảo API nhận đúng UUID thực tế
+    expect(requestedProductId).toBe(sampleProductId);
+
+    // Trang chi tiết hiển thị đúng tên và nút mua hàng từ dữ liệu thật
+    await expect(page.locator('h1').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: 'Thêm vào giỏ', exact: true })).toBeVisible({ timeout: 10000 });
+  });
+
   test('Truy cập URL tái hiện issue MKP-049 với UUID chuẩn gọi đúng API ID (MKP-049)', async ({ page }) => {
     const issueUrl = '/tuong-phat-di-lac-dang-vang-p335e38eb-62b1-4c6e-8ee5-87ad183f06c1';
     let apiRequestedId = '';
