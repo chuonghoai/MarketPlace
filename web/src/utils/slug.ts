@@ -17,9 +17,12 @@ export function buildProductUrl(product: { id: string; name: string }): string {
     return `/${slug}-p${product.id}`;
 }
 
-export function extractProductIdFromSlug(urlParam: string | undefined): string | null {
-    if (!urlParam) return null;
-    const match = urlParam.match(/-p([a-zA-Z0-9-]+)$/);
+const PRODUCT_ID_REGEX =
+    /-p([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|prod[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})$/i;
+
+export function extractProductIdFromSlug(urlParam: string | undefined | null): string | null {
+    if (!urlParam || typeof urlParam !== 'string') return null;
+    const match = urlParam.match(PRODUCT_ID_REGEX);
     if (match && match[1]) {
         return match[1];
     }
