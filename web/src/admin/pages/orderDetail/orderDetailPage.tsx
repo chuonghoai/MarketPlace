@@ -3,6 +3,7 @@ import { useOrderDetailController } from './orderDetail.controller';
 import { EOrderStatus } from '../../../features/order/enums/orderStatus.enum';
 import { formatCurrency, formatDate, getStatusColor } from './utils/helpers';
 import { OrderActions } from './components/OrderActions';
+import { OrderReturnRequestCard } from './components/OrderReturnRequestCard';
 
 const OrderDetailPage: React.FC = () => {
     const { store, handleBack } = useOrderDetailController();
@@ -144,8 +145,27 @@ const OrderDetailPage: React.FC = () => {
                 </div>
 
                 {/* CENTER COLUMN (50%) */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white border border-gray-200 rounded-sm shadow-sm h-full flex flex-col">
+                <div className="lg:col-span-2 space-y-5">
+                    {/* Return Request Information & Media Proof Card */}
+                    {(store.orderDetail.returnRequest || store.orderDetail.orderStatus === EOrderStatus.RETURNED) && (
+                        <OrderReturnRequestCard
+                            returnRequest={
+                                store.orderDetail.returnRequest || {
+                                    id: store.orderDetail.id,
+                                    orderId: store.orderDetail.id,
+                                    type: 'RETURN_REFUND',
+                                    status: store.orderDetail.returnStatus || 'PENDING',
+                                    title: 'Yêu cầu đổi trả đơn hàng',
+                                    reason: store.orderDetail.cancelReason || 'Không có lý do chi tiết',
+                                    proofImages: [],
+                                    proofVideos: [],
+                                    createdAt: store.orderDetail.createdAt,
+                                }
+                            }
+                        />
+                    )}
+
+                    <div className="bg-white border border-gray-200 rounded-sm shadow-sm flex flex-col">
                         <div className="px-4 py-2.5 border-b border-gray-100 bg-gray-50/50">
                             <h2 className="text-xs font-bold text-gray-900 uppercase tracking-wider">Danh sách sản phẩm</h2>
                         </div>

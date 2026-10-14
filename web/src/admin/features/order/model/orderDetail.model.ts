@@ -30,6 +30,23 @@ export interface OrderVoucherItem {
     voucherSnapshot: any;
 }
 
+// Thông tin yêu cầu đổi trả (UC23)
+export interface OrderReturnRequestDetail {
+    id: string;
+    orderId: string;
+    type: 'EXCHANGE' | 'RETURN_REFUND';
+    status: string;
+    title: string;
+    reason: string;
+    proofImages: string[];
+    proofVideos: string[];
+    bankName?: string | null;
+    bankAccountNumber?: string | null;
+    bankAccountHolder?: string | null;
+    refundProofUrl?: string | null;
+    createdAt: string;
+}
+
 // Chi tiết đơn hàng cho admin
 export interface OrderDetail {
     id: string;
@@ -58,4 +75,5 @@ export interface OrderDetail {
     cancelReason?: string;      // Lý do hủy đơn nếu EOrderStatus là CANCELLED hoặc RETURNED
     returnStatus?: string;      // Trạng thái của quy trình đổi trả: PENDING, PICKING_UP, RECEIVED, COMPLETED
     newOrderId?: string;        // Mã đơn hàng thay thế nếu là yêu cầu đổi hàng
+    returnRequest?: OrderReturnRequestDetail;
 }
