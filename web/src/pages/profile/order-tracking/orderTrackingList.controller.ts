@@ -45,7 +45,7 @@ export const useOrderTrackingListController = () => {
             { key: "shipping", label: "Đang giao", count: count?.shipping || 0 },
             { key: "success", label: "Đã giao", count: count?.success || 0 },
             { key: "cancelled", label: "Đã hủy", count: count?.cancelled || 0 },
-            { key: "returned", label: "Yêu cầu trả hàng", count: 0 },
+            { key: "returned", label: "Yêu cầu trả hàng", count: count?.returned || 0 },
         ];
     }, [store.ordersCount]);
 
@@ -57,7 +57,7 @@ export const useOrderTrackingListController = () => {
     // Lọc danh sách đơn theo tab
     const filteredItems = useMemo(() => {
         return store.orders.filter((item) => {
-            if (activeTab === "all") return item.orderStatus === EOrderStatus.PENDING || item.orderStatus === EOrderStatus.PREPARING || item.orderStatus === EOrderStatus.SHIPPING;
+            if (activeTab === "all") return true;
             if (activeTab === "pending") return item.orderStatus === EOrderStatus.PENDING;
             if (activeTab === "preparing") return item.orderStatus === EOrderStatus.PREPARING;
             if (activeTab === "shipping") return item.orderStatus === EOrderStatus.SHIPPING;

@@ -45,7 +45,7 @@ export const OrderTrackingList: React.FC = () => {
                                 }`}
                             >
                                 {tab.label}
-                                {tab.count > 0 && ["all", "pending", "preparing", "shipping"].includes(tab.key) && (
+                                {tab.count > 0 && (
                                     <span
                                         className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
                                             isActive

@@ -15,6 +15,7 @@ import {
   OrderDetailProductItemDto,
   OrderStatusHistoryDto,
   UserUpdateOrderStatusDto,
+  EOrderTrackingFilterStatus,
 } from './dto/orders.dto';
 import { EOrderStatus } from '../checkout/enums/EOrderStatus.enum';
 import { MailService } from '../mails/mail.service';
@@ -61,8 +62,10 @@ export class OrdersService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items');
 
-    if (status) {
+    if (status && status !== EOrderTrackingFilterStatus.ALL) {
       query.andWhere('order.status = :status', { status });
+      query.orderBy('order.createdAt', 'DESC');
+    } else if (status === EOrderTrackingFilterStatus.ALL) {
       query.orderBy('order.createdAt', 'DESC');
     } else {
       query.andWhere('order.status IN (:...statuses)', {
@@ -460,45 +463,41 @@ export class OrdersService {
 
   async getTrackingOrders(
     userId: string,
-    status?: EOrderStatus,
+    status?: EOrderTrackingFilterStatus | string,
   ): Promise<OrderListItemDto[]> {
     const query = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items')
       .where('order.userId = :userId', { userId });
 
-    if (status) {
-      if (status === EOrderStatus.SUCCESS) {
+    const isAll =
+      !status ||
+      status.trim() === '' ||
+      status.toUpperCase() === EOrderTrackingFilterStatus.ALL;
+
+    if (!isAll) {
+      const normalizedStatus = status.toUpperCase();
+      if (
+        normalizedStatus === EOrderStatus.SUCCESS ||
+        normalizedStatus === EOrderStatus.DELIVERED
+      ) {
         query.andWhere('order.status IN (:...statuses)', {
           statuses: [EOrderStatus.SUCCESS, EOrderStatus.DELIVERED],
         });
-      } else if (status === EOrderStatus.CANCELLED) {
+      } else if (normalizedStatus === EOrderStatus.CANCELLED) {
         query.andWhere('order.status IN (:...statuses)', {
           statuses: [EOrderStatus.CANCELLED],
         });
-      } else if (status === EOrderStatus.RETURNED) {
+      } else if (normalizedStatus === EOrderStatus.RETURNED) {
         query.andWhere('order.status IN (:...statuses)', {
           statuses: [EOrderStatus.RETURNED],
         });
       } else {
-        query.andWhere('order.status = :status', { status });
+        query.andWhere('order.status = :status', { status: normalizedStatus });
       }
-      query.orderBy('order.createdAt', 'DESC');
-    } else {
-      // Default tracking (active orders)
-      query.andWhere('order.status IN (:...statuses)', {
-        statuses: [
-          EOrderStatus.PENDING,
-          EOrderStatus.PREPARING,
-          EOrderStatus.SHIPPING,
-        ],
-      });
-      query.orderBy(
-        `FIELD(order.status, '${EOrderStatus.PENDING}', '${EOrderStatus.PREPARING}', '${EOrderStatus.SHIPPING}')`,
-        'ASC',
-      );
-      query.addOrderBy('order.createdAt', 'DESC');
     }
+
+    query.orderBy('order.createdAt', 'DESC');
 
     const orders = await query.getMany();
 
@@ -568,7 +567,13 @@ export class OrdersService {
       if (statusKey === 'cancelled') result.cancelled += count;
     });
 
-    result.all = result.pending + result.preparing + result.shipping;
+    result.all =
+      result.pending +
+      result.preparing +
+      result.shipping +
+      result.success +
+      result.cancelled +
+      result.returned;
     return result;
   }
 
