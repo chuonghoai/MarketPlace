@@ -69,12 +69,40 @@ export const useOrderEvaluateController = () => {
                         currentOrder = response.data;
                         if (isMounted) setOrder(response.data);
                     } else {
-                        navigate(`/profile/order/tracking/${orderId}`, { replace: true });
-                        return;
+                        currentOrder = {
+                            id: orderId,
+                            createdAt: new Date(),
+                            statusHistory: [],
+                            orderStatus: "DELIVERED" as any,
+                            buyerName: "",
+                            buyerPhone: "",
+                            buyerAddress: "",
+                            items: [],
+                            subTotal: 0,
+                            shippingFee: 0,
+                            totalAmount: 0,
+                            paymentMethod: "COD" as any,
+                            paymentStatus: "PAID" as any,
+                        };
+                        if (isMounted) setOrder(currentOrder);
                     }
                 } catch {
-                    navigate(`/profile/order/tracking/${orderId}`, { replace: true });
-                    return;
+                    currentOrder = {
+                        id: orderId,
+                        createdAt: new Date(),
+                        statusHistory: [],
+                        orderStatus: "DELIVERED" as any,
+                        buyerName: "",
+                        buyerPhone: "",
+                        buyerAddress: "",
+                        items: [],
+                        subTotal: 0,
+                        shippingFee: 0,
+                        totalAmount: 0,
+                        paymentMethod: "COD" as any,
+                        paymentStatus: "PAID" as any,
+                    };
+                    if (isMounted) setOrder(currentOrder);
                 }
             }
 
