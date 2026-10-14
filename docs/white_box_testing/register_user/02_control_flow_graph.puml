@@ -1,5 +1,4 @@
-@startuml 02_control_flow_graph
-
+@startuml
 skinparam nodesep 15
 skinparam ranksep 25
 
@@ -29,30 +28,63 @@ usecase "22" as n22
 usecase "23" as n23
 usecase "Exit" as end_node
 
+start_node -[hidden]down-> n1
+n1 -[hidden]down-> n2
+n2 -[hidden]down-> n4
+n4 -[hidden]down-> n5
+n5 -[hidden]down-> n7
+n7 -[hidden]down-> n10
+n10 -[hidden]down-> n12
+n12 -[hidden]down-> n14
+n14 -[hidden]down-> n15
+n15 -[hidden]down-> n16
+n16 -[hidden]down-> n18
+n18 -[hidden]down-> n19
+n19 -[hidden]down-> n20
+n20 -[hidden]down-> n21
+n21 -[hidden]down-> n22
+n22 -[hidden]down-> n23
+n23 -[hidden]down-> end_node
+
+n4 -[hidden]right-> n3
+n7 -[hidden]right-> n6
+n12 -[hidden]right-> n11
+n14 -[hidden]right-> n13
+n18 -[hidden]right-> n17
+
 start_node --> n1
 n1 --> n2
-n2 --> n3 : True
-n2 --> n4 : False
+
+n2 --> n4
+n2 --> n3
 n3 --> end_node
+
 n4 --> n5
-n5 --> n6 : True
-n5 --> n7 : False
+
+n5 --> n7
+n5 --> n6
 n6 --> end_node
-n7 --> n8 : True
-n7 --> n10 : False
+
+n7 --> n8
+n7 --> n10
 n8 --> n9
 n9 --> end_node
-n10 --> n11 : True
-n10 --> n12 : False
+
+n10 --> n12
+n10 --> n11
 n11 --> end_node
-n12 --> n13 : True
-n12 --> n14 : False
+
+n12 --> n14
+n12 --> n13
 n13 --> end_node
+
 n14 --> n15
 n15 --> n16
-n16 --> n17 : True
-n16 --> n18 : False
+
+n16 --> n18
+n16 --> n17
 n17 --> end_node
+
 n18 --> n19
 n19 --> n20
 n20 --> n21
