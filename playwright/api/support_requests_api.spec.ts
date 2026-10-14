@@ -8,6 +8,11 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   let createdRequestId: string;
   let staffId: string;
 
+  const authHeader = (token: string) => ({
+    Authorization: `Bearer ${token}`,
+    Cookie: `accessToken=${token}`,
+  });
+
   test.beforeAll(async ({ request }) => {
     clientToken = await getAuthToken(request, TEST_USERS.client);
     adminToken = await getAuthToken(request, TEST_USERS.admin);
@@ -15,7 +20,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
 
     // Lấy staffId của đúng tài khoản staff đang dùng trong test (staff1@marketnest.vn)
     const staffRes = await request.get('/staffs', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: authHeader(adminToken),
     });
     if (staffRes.ok()) {
       const staffBody = await staffRes.json();
@@ -35,7 +40,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
 
   test('Khách hàng tạo yêu cầu hỗ trợ thành công (POST /support-requests)', async ({ request }) => {
     const response = await request.post('/support-requests', {
-      headers: { Authorization: `Bearer ${clientToken}` },
+      headers: authHeader(clientToken),
       data: {
         title: 'Playwright API Test - Cần hỗ trợ thanh toán',
         content: 'Nội dung chi tiết yêu cầu hỗ trợ được tạo từ Playwright API test.',
@@ -54,7 +59,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
 
   test('Báo lỗi 400 khi thiếu tiêu đề hoặc nội dung yêu cầu', async ({ request }) => {
     const response = await request.post('/support-requests', {
-      headers: { Authorization: `Bearer ${clientToken}` },
+      headers: authHeader(clientToken),
       data: {
         title: '',
         content: '',
@@ -66,7 +71,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
 
   test('Khách hàng xem danh sách yêu cầu của chính mình (GET /support-requests/my)', async ({ request }) => {
     const response = await request.get('/support-requests/my', {
-      headers: { Authorization: `Bearer ${clientToken}` },
+      headers: authHeader(clientToken),
     });
 
     expect(response.status()).toBe(200);
@@ -79,7 +84,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
 
   test('Admin xem danh sách tất cả yêu cầu hỗ trợ (GET /support-requests)', async ({ request }) => {
     const response = await request.get('/support-requests', {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: authHeader(adminToken),
     });
 
     expect(response.status()).toBe(200);
@@ -90,7 +95,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
 
   test('Khách hàng không có quyền xem danh sách tất cả yêu cầu (GET /support-requests)', async ({ request }) => {
     const response = await request.get('/support-requests', {
-      headers: { Authorization: `Bearer ${clientToken}` },
+      headers: authHeader(clientToken),
     });
 
     expect(response.status()).toBe(403);
@@ -100,7 +105,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
     test.skip(!createdRequestId || !staffId, 'Cần createdRequestId và staffId để chạy test');
 
     const response = await request.patch(`/support-requests/${createdRequestId}/assign`, {
-      headers: { Authorization: `Bearer ${adminToken}` },
+      headers: authHeader(adminToken),
       data: {
         staffId: staffId,
       },
@@ -117,7 +122,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
     test.skip(!createdRequestId, 'Cần createdRequestId');
 
     const response = await request.patch(`/support-requests/${createdRequestId}/assign`, {
-      headers: { Authorization: `Bearer ${clientToken}` },
+      headers: authHeader(clientToken),
       data: { staffId: staffId || 'some-id' },
     });
 
@@ -128,7 +133,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
     test.skip(!createdRequestId, 'Cần createdRequestId');
 
     const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
-      headers: { Authorization: `Bearer ${staffToken}` },
+      headers: authHeader(staffToken),
       data: {
         content: 'Chào bạn, tôi là nhân viên hỗ trợ. Tôi đang xử lý vấn đề của bạn.',
       },
@@ -141,7 +146,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
 
     // Kiểm tra chi tiết request đã chuyển sang IN_PROGRESS
     const detailRes = await request.get(`/support-requests/${createdRequestId}`, {
-      headers: { Authorization: `Bearer ${staffToken}` },
+      headers: authHeader(staffToken),
     });
     expect(detailRes.status()).toBe(200);
     const detailBody = await detailRes.json();
@@ -153,7 +158,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
     test.skip(!createdRequestId, 'Cần createdRequestId');
 
     const response = await request.patch(`/support-requests/${createdRequestId}/resolve`, {
-      headers: { Authorization: `Bearer ${staffToken}` },
+      headers: authHeader(staffToken),
     });
 
     expect(response.status()).toBe(200);
@@ -163,11 +168,56 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
     expect(body.data.resolvedAt).toBeDefined();
   });
 
+  test('MKP-069: Nhân viên gửi tin nhắn vào ticket RESOLVED không làm mở lại ticket (vẫn giữ RESOLVED)', async ({ request }) => {
+    test.skip(!createdRequestId, 'Cần createdRequestId');
+
+    const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
+      headers: authHeader(staffToken),
+      data: { content: 'Ghi chú thêm từ nhân viên hỗ trợ khi ticket đang RESOLVED' },
+    });
+
+    expect([200, 201]).toContain(response.status());
+
+    // Trạng thái ticket vẫn phải là RESOLVED
+    const detailRes = await request.get(`/support-requests/${createdRequestId}`, {
+      headers: authHeader(clientToken),
+    });
+    expect(detailRes.status()).toBe(200);
+    const detailBody = await detailRes.json();
+    expect(detailBody.data.status).toBe('RESOLVED');
+  });
+
+  test('MKP-069: Khách hàng gửi tin nhắn mới khi ticket đang RESOLVED -> tự động chuyển trạng thái sang IN_PROGRESS', async ({ request }) => {
+    test.skip(!createdRequestId, 'Cần createdRequestId');
+
+    const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
+      headers: authHeader(clientToken),
+      data: { content: 'Tôi vẫn gặp vấn đề này, nhờ hỗ trợ kiểm tra lại giúp tôi' },
+    });
+
+    expect([200, 201]).toContain(response.status());
+    const body = await response.json();
+    expect(body.success).toBe(true);
+
+    // Xác nhận chi tiết ticket đã được cập nhật sang IN_PROGRESS
+    const detailRes = await request.get(`/support-requests/${createdRequestId}`, {
+      headers: authHeader(clientToken),
+    });
+    expect(detailRes.status()).toBe(200);
+    const detailBody = await detailRes.json();
+    expect(detailBody.data.status).toBe('IN_PROGRESS');
+
+    // Nhân viên đánh dấu đã giải quyết lại để chuẩn bị cho các test tiếp theo
+    await request.patch(`/support-requests/${createdRequestId}/resolve`, {
+      headers: authHeader(staffToken),
+    });
+  });
+
   test('Khách hàng đóng yêu cầu hỗ trợ thành công (PATCH /support-requests/:id/close)', async ({ request }) => {
     test.skip(!createdRequestId, 'Cần createdRequestId');
 
     const response = await request.patch(`/support-requests/${createdRequestId}/close`, {
-      headers: { Authorization: `Bearer ${clientToken}` },
+      headers: authHeader(clientToken),
     });
 
     expect(response.status()).toBe(200);
@@ -181,7 +231,7 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
     test.skip(!createdRequestId, 'Cần createdRequestId');
 
     const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
-      headers: { Authorization: `Bearer ${clientToken}` },
+      headers: authHeader(clientToken),
       data: { content: 'Tin nhắn này không được gửi vì ticket đã đóng' },
     });
 

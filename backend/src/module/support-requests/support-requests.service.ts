@@ -3,9 +3,10 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { SupportRequest } from './entities/support-request.entity';
 import { SupportRequestMessage } from './entities/support-request-message.entity';
 import { Staff } from '../staffs/entities/staff.entity';
@@ -27,6 +28,8 @@ export class SupportRequestsService {
     private readonly staffRepo: Repository<Staff>,
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
+    @Optional()
+    private readonly dataSource?: DataSource,
   ) {}
 
   async getStaffByUserId(userId: string): Promise<Staff | null> {
@@ -299,10 +302,14 @@ export class SupportRequestsService {
         );
       }
       isAssignedStaff = true;
+    } else {
+      throw new ForbiddenException('Quyền hạn không hợp lệ');
     }
 
-    let updatedRequest: SupportRequest | null = null;
     const isStaffOrAdmin = isAssignedStaff || user.role === EUserRole.ADMIN;
+    const isCustomer = !isStaffOrAdmin && request.requesterId === user.id;
+
+    let needsRequestUpdate = false;
 
     // Khi staff hoặc admin gửi tin nhắn đầu tiên thì set firstResponseAt và chuyển sang IN_PROGRESS
     if (isStaffOrAdmin && !request.firstResponseAt) {
@@ -313,24 +320,67 @@ export class SupportRequestsService {
       ) {
         request.status = ESupportRequestStatus.IN_PROGRESS;
       }
-      updatedRequest = await this.requestRepo.save(request);
+      needsRequestUpdate = true;
+    } else if (isCustomer && request.status === ESupportRequestStatus.RESOLVED) {
+      // MKP-069: Reopen resolved ticket when customer sends a new message
+      request.status = ESupportRequestStatus.IN_PROGRESS;
+      needsRequestUpdate = true;
     }
 
-    const message = this.messageRepo.create({
-      requestId: request.id,
-      senderId: user.id,
-      content: dto.content,
-    });
+    let updatedRequest: SupportRequest | null = null;
+    let savedMessageId: string;
 
-    const savedMessage = await this.messageRepo.save(message);
+    if (this.dataSource) {
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      try {
+        if (needsRequestUpdate) {
+          updatedRequest = await queryRunner.manager.save(SupportRequest, request);
+        }
+
+        const message = queryRunner.manager.create(SupportRequestMessage, {
+          requestId: request.id,
+          senderId: user.id,
+          content: dto.content,
+        });
+
+        const savedMessage = await queryRunner.manager.save(
+          SupportRequestMessage,
+          message,
+        );
+        savedMessageId = savedMessage.id;
+
+        await queryRunner.commitTransaction();
+      } catch (err) {
+        await queryRunner.rollbackTransaction();
+        throw err;
+      } finally {
+        await queryRunner.release();
+      }
+    } else {
+      if (needsRequestUpdate) {
+        updatedRequest = await this.requestRepo.save(request);
+      }
+
+      const message = this.messageRepo.create({
+        requestId: request.id,
+        senderId: user.id,
+        content: dto.content,
+      });
+
+      const savedMessage = await this.messageRepo.save(message);
+      savedMessageId = savedMessage.id;
+    }
 
     const foundMessage = await this.messageRepo.findOne({
-      where: { id: savedMessage.id },
+      where: { id: savedMessageId },
       relations: ['sender'],
     });
 
     if (foundMessage && updatedRequest) {
       (foundMessage as any).updatedRequest = updatedRequest;
+      foundMessage.request = updatedRequest;
     }
 
     return foundMessage as SupportRequestMessage;
