@@ -80,6 +80,15 @@ export const ArtisanDetailPage = () => {
       alert('Vui lòng nhập họ tên nghệ danh.');
       return;
     }
+    if (formData.birthDate) {
+      const selectedDate = new Date(formData.birthDate);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (selectedDate > today) {
+        alert('Ngày sinh không thể nằm trong tương lai.');
+        return;
+      }
+    }
     setSaving(true);
     try {
       const payload = {
@@ -245,6 +254,7 @@ export const ArtisanDetailPage = () => {
                   value={formData.birthDate || ''}
                   onChange={handleChange}
                   readOnly={!isEditing}
+                  max={new Date().toISOString().split('T')[0]}
                   className={`w-full focus:outline-none text-text-ink transition-colors ${isEditing
                     ? 'px-4 py-2.5 rounded-lg border border-border-medium bg-surface-container focus:border-primary'
                     : 'bg-transparent border-transparent px-0 font-medium'
