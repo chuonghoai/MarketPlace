@@ -105,6 +105,11 @@ function AppRoutes() {
                             <Route path=":orderId" element={<OrderTrackingDetail />} />
                             <Route path=":orderId/evaluate" element={<OrderEvaluatePage />} />
                         </Route>
+                        <Route path="orders">
+                            <Route index element={<OrderTrackingList />} />
+                            <Route path=":orderId" element={<OrderTrackingDetail />} />
+                            <Route path=":orderId/evaluate" element={<OrderEvaluatePage />} />
+                        </Route>
                         <Route path="devices" element={<DeviceManagementPage />} />
                         <Route path="support" element={<UserSupportPage />} />
                     </Route>

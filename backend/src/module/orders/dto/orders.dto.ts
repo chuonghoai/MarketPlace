@@ -6,8 +6,8 @@ import { EOrderReturnStatus } from '../enums/order-return.enum';
 
 export class GetOrdersFilterDto {
   @IsOptional()
-  @IsEnum(EOrderStatus)
-  status?: EOrderStatus;
+  @IsString()
+  status?: string;
 }
 
 export class UpdateOrderStatusDto {
