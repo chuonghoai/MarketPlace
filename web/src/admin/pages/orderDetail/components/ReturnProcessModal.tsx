@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { OrderDetail } from '../../../features/order/model/orderDetail.model';
 import { orderService } from '../../../features/order/services/order.service';
 import { useToast } from '../../../../components/toast/toast';
+import { MediaLightboxModal } from './MediaLightboxModal';
 
 interface ReturnProcessModalProps {
   isOpen: boolean;
@@ -24,6 +25,11 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [activeReq, setActiveReq] = useState<any>(null);
   const [refundProofUrl, setRefundProofUrl] = useState('');
+  const [selectedMedia, setSelectedMedia] = useState<{
+    url: string;
+    type: 'image' | 'video';
+    title?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -225,20 +231,42 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
 
               {/* Minh chứng ảnh */}
               {activeReq.proofImages && activeReq.proofImages.length > 0 && (
-                <div className="pt-1">
-                  <span className="text-[11px] font-semibold text-stone-500 block mb-1">Ảnh minh chứng:</span>
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="pt-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-stone-500 dark:text-stone-400">
+                      Ảnh minh chứng ({activeReq.proofImages.length}):
+                    </span>
+                    <span className="text-[10px] text-stone-400">Click để phóng to</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
                     {activeReq.proofImages.map((img: string, idx: number) => (
-                      <a
+                      <div
                         key={idx}
-                        href={img}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2 py-1 bg-white dark:bg-stone-900 rounded border border-stone-300 dark:border-stone-700 text-blue-600 dark:text-blue-400 text-[11px] flex items-center gap-1 hover:underline truncate max-w-[200px]"
+                        onClick={() =>
+                          setSelectedMedia({
+                            url: img,
+                            type: 'image',
+                            title: `Ảnh minh chứng #${idx + 1}`,
+                          })
+                        }
+                        className="group relative w-14 h-14 rounded-lg overflow-hidden border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 cursor-pointer shadow-sm hover:border-amber-500 transition-all shrink-0"
+                        title={`Xem ảnh #${idx + 1}`}
                       >
-                        <span className="material-symbols-outlined text-xs">image</span>
-                        Ảnh {idx + 1}
-                      </a>
+                        <img
+                          src={img}
+                          alt={`Minh chứng ${idx + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          onError={(e) => {
+                            (e.target as HTMLElement).setAttribute(
+                              'src',
+                              'https://via.placeholder.com/150?text=Loi+Anh'
+                            );
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <span className="material-symbols-outlined text-sm">zoom_in</span>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -246,20 +274,27 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
 
               {/* Minh chứng video (UC23 - Mục 1.4) */}
               {activeReq.proofVideos && activeReq.proofVideos.length > 0 && (
-                <div className="pt-1">
-                  <span className="text-[11px] font-semibold text-stone-500 block mb-1">Video minh chứng:</span>
-                  <div className="flex flex-wrap gap-1.5">
+                <div className="pt-1 space-y-1">
+                  <span className="text-[11px] font-semibold text-stone-500 dark:text-stone-400 block">
+                    Video minh chứng ({activeReq.proofVideos.length}):
+                  </span>
+                  <div className="flex flex-wrap gap-2">
                     {activeReq.proofVideos.map((vid: string, idx: number) => (
-                      <a
+                      <div
                         key={idx}
-                        href={vid}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2 py-1 bg-blue-50 dark:bg-blue-950/40 rounded border border-blue-200 dark:border-blue-900/50 text-blue-700 dark:text-blue-300 text-[11px] flex items-center gap-1 hover:underline truncate max-w-[200px]"
+                        onClick={() =>
+                          setSelectedMedia({
+                            url: vid,
+                            type: 'video',
+                            title: `Video minh chứng #${idx + 1}`,
+                          })
+                        }
+                        className="px-2.5 py-1.5 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-900/50 text-blue-700 dark:text-blue-300 text-[11px] font-medium flex items-center gap-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer transition-colors shadow-sm"
+                        title={`Phát video #${idx + 1}`}
                       >
-                        <span className="material-symbols-outlined text-xs">videocam</span>
-                        Video {idx + 1}
-                      </a>
+                        <span className="material-symbols-outlined text-sm text-blue-600">play_circle</span>
+                        <span>Video #{idx + 1}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -559,6 +594,16 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
           )}
         </div>
       </div>
+
+      {selectedMedia && (
+        <MediaLightboxModal
+          isOpen={!!selectedMedia}
+          onClose={() => setSelectedMedia(null)}
+          mediaUrl={selectedMedia.url}
+          mediaType={selectedMedia.type}
+          title={selectedMedia.title}
+        />
+      )}
     </div>
   );
 };

@@ -243,6 +243,21 @@ export class OrdersService {
     if (returnReq) {
       dto.returnStatus = returnReq.status;
       dto.newOrderId = returnReq.newOrderId || undefined;
+      dto.returnRequest = {
+        id: returnReq.id,
+        orderId: returnReq.orderId,
+        type: returnReq.type,
+        status: returnReq.status,
+        title: returnReq.title,
+        reason: returnReq.reason,
+        proofImages: returnReq.proofImages || [],
+        proofVideos: returnReq.proofVideos || [],
+        bankName: returnReq.bankName,
+        bankAccountNumber: returnReq.bankAccountNumber,
+        bankAccountHolder: returnReq.bankAccountHolder,
+        refundProofUrl: returnReq.refundProofUrl,
+        createdAt: returnReq.createdAt,
+      };
     }
     return dto;
   }
