@@ -1,0 +1,79 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase " " as n1
+usecase " " as n2
+usecase " " as n3
+usecase " " as n4
+usecase " " as n5
+usecase " " as n6
+usecase " " as n7
+usecase " " as n8
+usecase " " as n9
+usecase " " as n10
+usecase " " as n11
+usecase " " as n12
+usecase " " as n13
+usecase "d(productId)" as n14
+usecase "u(productId)" as n15
+usecase " " as n16
+usecase " " as n17
+usecase " " as n18
+usecase " " as n19
+usecase "u(productId)" as n20
+usecase " " as n21
+usecase "Exit" as end_node
+note right of end_node : k(productId)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+n3 --> n4
+
+n4 --> n5 : true
+n4 --> n14 : false
+
+n5 --> n6
+
+n6 --> n4 : true
+n6 --> n7 : false
+
+n7 --> n4 : true
+n7 --> n8 : false
+
+n8 --> n9
+n9 --> n10
+n10 --> n11
+n11 --> n12
+n12 --> n13
+n13 --> n4
+
+n14 --> n15 : true
+n14 --> n21 : false
+
+n15 --> n16
+
+n16 --> n17 : true
+n16 --> n19 : false
+
+n17 --> n18 : true
+n17 --> n19 : false
+
+n18 --> n20
+n19 --> n20
+
+n20 --> n14
+
+n21 --> end_node
+
+@enduml
+
+' Báo cáo liveness biến productId:
+' - Definition tại n14: d(productId) khi duyệt từng productId trong Set productIdsToUpdate.
+' - Use tại n15: u(productId) khi truy vấn AVG rating của productId.
+' - Use tại n20: u(productId) khi cập nhật rating mới cho sản phẩm có id là productId.
+' - Kill tại Exit: k(productId).
+' Chuỗi thao tác dữ liệu: ~d(productId) -> [d(productId) -> [u(productId)]*]* -> k(productId) -> ~k(productId).
+' Kết luận: Chuỗi thao tác hợp lệ, không xuất hiện bất thường (anomaly).

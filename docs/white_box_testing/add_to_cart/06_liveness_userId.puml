@@ -1,0 +1,38 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "d(userId)" as n1
+usecase "u(userId)" as n2
+usecase " " as n3
+usecase " " as n4
+usecase "u(userId)" as n5
+usecase " " as n6
+usecase "u(userId)" as n7
+usecase "Exit" as end_node
+note right of end_node : k(userId)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+
+n3 --> n4 : true
+n3 --> n5 : false
+
+n4 --> n6
+n5 --> n6
+
+n6 --> n7
+n7 --> end_node
+
+@enduml
+
+' Báo cáo liveness biến userId:
+' - Definition tại n1: d(userId) khi nhận tham số vào hàm.
+' - Use tại n2: u(userId) khi tìm kiếm CartItem theo điều kiện { user: { id: userId } }.
+' - Use tại n5: u(userId) khi khởi tạo CartItem mới { user: { id: userId } }.
+' - Use tại n7: u(userId) khi gọi getCartCount(userId).
+' - Kill tại Exit: k(userId).
+' Chuỗi thao tác dữ liệu: ~d(userId) -> d(userId) -> [u(userId)]+ -> k(userId) -> ~k(userId).
+' Kết luận: Chuỗi thao tác hợp lệ, không xuất hiện bất thường (anomaly).

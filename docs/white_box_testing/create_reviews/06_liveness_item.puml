@@ -1,0 +1,79 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase " " as n1
+usecase " " as n2
+usecase " " as n3
+usecase "d(item)" as n4
+usecase "u(item)" as n5
+usecase " " as n6
+usecase " " as n7
+usecase "u(item)" as n8
+usecase " " as n9
+usecase " " as n10
+usecase " " as n11
+usecase " " as n12
+usecase " " as n13
+usecase " " as n14
+usecase " " as n15
+usecase " " as n16
+usecase " " as n17
+usecase " " as n18
+usecase " " as n19
+usecase " " as n20
+usecase " " as n21
+usecase "Exit" as end_node
+note right of end_node : k(item)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+n3 --> n4
+
+n4 --> n5 : true
+n4 --> n14 : false
+
+n5 --> n6
+
+n6 --> n4 : true
+n6 --> n7 : false
+
+n7 --> n4 : true
+n7 --> n8 : false
+
+n8 --> n9
+n9 --> n10
+n10 --> n11
+n11 --> n12
+n12 --> n13
+n13 --> n4
+
+n14 --> n15 : true
+n14 --> n21 : false
+
+n15 --> n16
+
+n16 --> n17 : true
+n16 --> n19 : false
+
+n17 --> n18 : true
+n17 --> n19 : false
+
+n18 --> n20
+n19 --> n20
+
+n20 --> n14
+
+n21 --> end_node
+
+@enduml
+
+' Báo cáo liveness biến item:
+' - Definition tại n4: d(item) khi trích xuất từng phần tử từ request.reviews trong vòng lặp.
+' - Use tại n5: u(item) khi lấy item.orderItemId để truy vấn DB.
+' - Use tại n8: u(item) khi đọc item.comment, item.rating, item.orderItemId để tạo bản ghi review.
+' - Kill tại Exit: k(item).
+' Chuỗi thao tác dữ liệu: ~d(item) -> [d(item) -> [u(item)]*]* -> k(item) -> ~k(item).
+' Kết luận: Chuỗi thao tác hợp lệ, không xuất hiện bất thường (anomaly).

@@ -1,0 +1,63 @@
+@startuml 02_control_flow_graph
+
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+usecase "2" as n2
+usecase "3" as n3
+usecase "4" as n4
+usecase "5" as n5
+usecase "6" as n6
+usecase "7" as n7
+usecase "8" as n8
+usecase "9" as n9
+usecase "10" as n10
+usecase "11" as n11
+usecase "12" as n12
+usecase "13" as n13
+usecase "14" as n14
+usecase "15" as n15
+usecase "16" as n16
+usecase "17" as n17
+usecase "18" as n18
+usecase "19" as n19
+usecase "20" as n20
+usecase "21" as n21
+usecase "22" as n22
+usecase "23" as n23
+usecase "Exit" as end_node
+
+start_node --> n1
+n1 --> n2
+n2 --> n3 : True
+n2 --> n4 : False
+n3 --> end_node
+n4 --> n5
+n5 --> n6 : True
+n5 --> n7 : False
+n6 --> end_node
+n7 --> n8 : True
+n7 --> n10 : False
+n8 --> n9
+n9 --> end_node
+n10 --> n11 : True
+n10 --> n12 : False
+n11 --> end_node
+n12 --> n13 : True
+n12 --> n14 : False
+n13 --> end_node
+n14 --> n15
+n15 --> n16
+n16 --> n17 : True
+n16 --> n18 : False
+n17 --> end_node
+n18 --> n19
+n19 --> n20
+n20 --> n21
+n21 --> n22
+n22 --> n23
+n23 --> end_node
+
+@enduml
