@@ -89,9 +89,8 @@ export class WalletsService {
   async topup(
     userId: string,
     amount: number,
-    paymentMethod: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL' = 'DIRECT',
+    paymentMethod: 'VNPAY' | 'MOMO' | 'PAYPAL',
     ipAddr = '127.0.0.1',
-    description = 'Nạp tiền vào ví điện tử',
   ) {
     if (!amount || amount < 10000) {
       throw new BadRequestException('Số tiền nạp tối thiểu là 10.000 ₫');
@@ -130,6 +129,14 @@ export class WalletsService {
       };
     }
 
+    throw new BadRequestException('Phương thức thanh toán không hợp lệ');
+  }
+
+  async directCredit(
+    userId: string,
+    amount: number,
+    description = 'Nạp tiền vào ví điện tử',
+  ) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
