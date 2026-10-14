@@ -18,6 +18,7 @@ export const useAddNewAddressController = (isOpen: boolean, onSuccess?: (newAddr
     const [isVerifying, setIsVerifying] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [phoneError, setPhoneError] = useState('');
 
     const [provinces, setProvinces] = useState<ProvinceModel[]>([]);
     const [districts, setDistricts] = useState<DistrictModel[]>([]);
@@ -32,6 +33,7 @@ export const useAddNewAddressController = (isOpen: boolean, onSuccess?: (newAddr
             setLocation(null);
             setIsVerified(false);
             setIsVerifying(false);
+            setPhoneError('');
 
             userService.getProvinces()
                 .then(data => setProvinces(data))
@@ -43,7 +45,15 @@ export const useAddNewAddressController = (isOpen: boolean, onSuccess?: (newAddr
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
-        if (['street'].includes(field)) setIsVerified(false);
+        if (field === 'phoneNumber') {
+            const trimmed = value.trim();
+            if (trimmed && !/^(0[3|5|7|8|9])+([0-9]{8})$/.test(trimmed)) {
+                setPhoneError('Số điện thoại không hợp lệ (yêu cầu 10 chữ số, bắt đầu bằng 0)');
+            } else {
+                setPhoneError('');
+            }
+        }
+        if (['street', 'phoneNumber'].includes(field)) setIsVerified(false);
     };
 
     const handleSelectAddressField = (fieldCode: string, fieldName: string, id: number, name: string) => {
@@ -66,6 +76,12 @@ export const useAddNewAddressController = (isOpen: boolean, onSuccess?: (newAddr
         const { fullName, phoneNumber, provinceName, districtName, wardName, street } = formData;
         if (!fullName || !phoneNumber || !provinceName || !districtName || !wardName || !street) {
             toast("Vui lòng điền đầy đủ thông tin địa chỉ trước khi xác minh!", 'warning');
+            return;
+        }
+
+        if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(phoneNumber.trim())) {
+            setPhoneError('Số điện thoại không hợp lệ (yêu cầu 10 chữ số, bắt đầu bằng 0)');
+            toast("Số điện thoại không hợp lệ", 'warning');
             return;
         }
 
@@ -93,6 +109,12 @@ export const useAddNewAddressController = (isOpen: boolean, onSuccess?: (newAddr
     const handleSaveAddress = async () => {
         if (!isVerified || !location) return;
 
+        if (!/^(0[3|5|7|8|9])+([0-9]{8})$/.test(formData.phoneNumber.trim())) {
+            setPhoneError('Số điện thoại không hợp lệ (yêu cầu 10 chữ số, bắt đầu bằng 0)');
+            toast("Số điện thoại không hợp lệ", 'warning');
+            return;
+        }
+
         setIsSaving(true);
         try {
             const payload = {
@@ -119,6 +141,7 @@ export const useAddNewAddressController = (isOpen: boolean, onSuccess?: (newAddr
     return {
         formData, location,
         isVerifying, isVerified, isSaving,
+        phoneError,
         provinces, districts, wards,
         handleInputChange, handleSelectAddressField,
         handleVerifyMap, handleMarkerDragEnd, handleSaveAddress
