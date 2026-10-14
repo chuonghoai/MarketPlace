@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { reviewService } from "../../../features/review/services/review.service";
+import { orderService } from "../../../features/order/tracking/services/order.service";
 import { useToast } from "../../../components/toast/toast";
 import type { OrderTrackingDetail } from "../../../features/order/tracking/model/orderDetail.model";
 import type { OrderReviewItem } from "../../../features/review/models/review.model";
@@ -39,54 +40,80 @@ export const useOrderEvaluateController = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
 
-    const order = location.state?.order as OrderTrackingDetail | undefined;
+    const initialOrder = location.state?.order as OrderTrackingDetail | undefined;
     const focusItemId = location.state?.focusItemId as string | undefined;
 
+    const [order, setOrder] = useState<OrderTrackingDetail | undefined>(initialOrder);
     const [reviews, dispatch] = useReducer(reviewReducer, []);
     const [readOnlyReviews, setReadOnlyReviews] = useState<OrderReviewItem[]>([]);
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingInitial, setIsLoadingInitial] = useState(true);
 
-    // Init state
+    // Init state with fallback fetch when order is not provided in location.state
     useEffect(() => {
-        if (!order || !orderId) {
-            navigate(`/profile/order/tracking/${orderId || ""}`, { replace: true });
+        if (!orderId) {
+            navigate("/profile/order/tracking", { replace: true });
             return;
         }
 
-        const fetchOrderReviews = async () => {
+        let isMounted = true;
+
+        const initData = async () => {
+            let currentOrder = initialOrder;
+
+            if (!currentOrder) {
+                try {
+                    const response = await orderService.getOrderDetailById(orderId);
+                    if (response.success && response.data) {
+                        currentOrder = response.data;
+                        if (isMounted) setOrder(response.data);
+                    } else {
+                        navigate(`/profile/order/tracking/${orderId}`, { replace: true });
+                        return;
+                    }
+                } catch {
+                    navigate(`/profile/order/tracking/${orderId}`, { replace: true });
+                    return;
+                }
+            }
+
             try {
                 const response = await reviewService.getOrderReviews(orderId);
-                if (response.success && response.data) {
+                if (response.success && response.data && isMounted) {
                     setReadOnlyReviews(response.data.reviews);
                 }
-            } catch (error) {
-                // 
+            } catch {
+                //
             } finally {
-                setIsLoadingInitial(false);
+                if (isMounted) setIsLoadingInitial(false);
+            }
+
+            if (currentOrder && isMounted) {
+                const initialItems: ReviewStateItem[] = currentOrder.items
+                    .filter((item) => !item.isReviewed)
+                    .map((item) => ({
+                        orderItemId: item.orderItemId,
+                        rating: 0,
+                        comment: "",
+                    }));
+
+                dispatch({ type: "INIT", items: initialItems });
+
+                if (focusItemId) {
+                    setSelectedItemId(focusItemId);
+                } else if (currentOrder.items.length > 0) {
+                    setSelectedItemId(currentOrder.items[0].orderItemId);
+                }
             }
         };
 
-        fetchOrderReviews();
+        initData();
 
-        // Khởi tạo state cho các sản phẩm chưa đánh giá
-        const initialItems: ReviewStateItem[] = order.items
-            .filter((item) => !item.isReviewed)
-            .map((item) => ({
-                orderItemId: item.orderItemId,
-                rating: 0,
-                comment: "",
-            }));
-
-        dispatch({ type: "INIT", items: initialItems });
-
-        if (focusItemId) {
-            setSelectedItemId(focusItemId);
-        } else if (order.items.length > 0) {
-            setSelectedItemId(order.items[0].orderItemId);
-        }
-    }, [order, orderId, navigate, focusItemId]);
+        return () => {
+            isMounted = false;
+        };
+    }, [orderId, navigate, focusItemId]);
 
     const setRating = useCallback((orderItemId: string, rating: number) => {
         dispatch({ type: "SET_RATING", orderItemId, rating });
