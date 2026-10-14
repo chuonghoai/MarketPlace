@@ -152,9 +152,18 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                     </button>
                 )}
 
+                {(order.orderStatus === EOrderStatus.SUCCESS || order.orderStatus === EOrderStatus.DELIVERED) && (
+                    <Link
+                        to={`/profile/order/tracking/${order.id}/evaluate`}
+                        className="flex-1 md:flex-initial px-4 py-2 text-sm font-medium text-market-primary bg-market-primary/10 border border-market-primary/20 rounded-lg hover:bg-market-primary/20 transition-colors text-center"
+                    >
+                        Đánh giá
+                    </Link>
+                )}
+
                 <Link
                     to={`/profile/order/tracking/${order.id}`}
-                    className="w-full md:w-auto px-4 py-2 text-sm font-medium text-white bg-market-primary rounded-lg hover:bg-market-primary/90 transition-colors shadow-sm text-center"
+                    className={`${order.orderStatus === EOrderStatus.SUCCESS || order.orderStatus === EOrderStatus.DELIVERED ? "flex-1 md:flex-initial" : "w-full md:w-auto"} px-4 py-2 text-sm font-medium text-white bg-market-primary rounded-lg hover:bg-market-primary/90 transition-colors shadow-sm text-center`}
                 >
                     Xem chi tiết
                 </Link>
