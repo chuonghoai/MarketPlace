@@ -6,6 +6,7 @@ import {
   type SupportRequest,
 } from '../../features/support/models/support.model';
 import { tSupport } from '../../features/support/constants/supportL10n';
+import { useToast } from '../../components/toast/toast';
 
 const STATUS_BADGE_STYLE: Record<ESupportRequestStatus, string> = {
   [ESupportRequestStatus.OPEN]:
@@ -27,10 +28,13 @@ export const UserSupportPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>('');
 
+  const { toast } = useToast();
+
   // Create Modal state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createTitle, setCreateTitle] = useState('');
   const [createContent, setCreateContent] = useState('');
+  const [titleError, setTitleError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Reply state
@@ -126,9 +130,26 @@ export const UserSupportPage: React.FC = () => {
     scrollToBottom();
   }, [selectedRequest?.messages]);
 
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setCreateTitle(val);
+    if (val.length > 255) {
+      setTitleError(tSupport('titleMaxLengthError'));
+    } else if (titleError) {
+      setTitleError(null);
+    }
+  };
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!createTitle.trim() || !createContent.trim()) return;
+
+    if (createTitle.length > 255) {
+      const errorMsg = tSupport('titleMaxLengthError');
+      setTitleError(errorMsg);
+      toast(errorMsg, 'error');
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -136,16 +157,43 @@ export const UserSupportPage: React.FC = () => {
         title: createTitle.trim(),
         content: createContent.trim(),
       });
+
+      if (!res.success) {
+        const resWithErr = res as { message?: string; error?: { message?: string } };
+        const errorMsg = resWithErr.message || resWithErr.error?.message || tSupport('errorOccurred');
+        toast(errorMsg, 'error');
+        if (
+          errorMsg.includes('255') ||
+          errorMsg.toLowerCase().includes('tiêu đề') ||
+          errorMsg.toLowerCase().includes('title')
+        ) {
+          setTitleError(errorMsg);
+        }
+        return;
+      }
+
+      toast(tSupport('createSuccess'), 'success');
       setIsCreateOpen(false);
       setCreateTitle('');
       setCreateContent('');
+      setTitleError(null);
       await fetchRequests();
       if (res.data) {
         fetchDetail(res.data.id);
       }
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      alert(msg || tSupport('errorOccurred'));
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err as { message?: string })?.message;
+      const errorMsg = msg || tSupport('errorOccurred');
+      toast(errorMsg, 'error');
+      if (
+        errorMsg.includes('255') ||
+        errorMsg.toLowerCase().includes('tiêu đề') ||
+        errorMsg.toLowerCase().includes('title')
+      ) {
+        setTitleError(errorMsg);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -184,8 +232,10 @@ export const UserSupportPage: React.FC = () => {
       setTimeout(scrollToBottom, 50);
       await fetchRequests();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      alert(msg || tSupport('errorOccurred'));
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err as { message?: string })?.message;
+      toast(msg || tSupport('errorOccurred'), 'error');
     } finally {
       setSendingReply(false);
     }
@@ -196,12 +246,19 @@ export const UserSupportPage: React.FC = () => {
     if (!window.confirm(tSupport('confirmCloseRequest'))) return;
 
     try {
-      await supportService.close(selectedRequest.id);
+      const res = await supportService.close(selectedRequest.id);
+      if (!res.success) {
+        toast(res.message || tSupport('errorOccurred'), 'error');
+        return;
+      }
+      toast(tSupport('closeSuccess'), 'success');
       await fetchDetail(selectedRequest.id);
       await fetchRequests();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      alert(msg || tSupport('errorOccurred'));
+      const msg =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        (err as { message?: string })?.message;
+      toast(msg || tSupport('errorOccurred'), 'error');
     }
   };
 
@@ -235,7 +292,10 @@ export const UserSupportPage: React.FC = () => {
           </p>
         </div>
         <button
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => {
+            setIsCreateOpen(true);
+            setTitleError(null);
+          }}
           className="btn-primary px-4 py-2 text-sm font-semibold rounded-lg flex items-center gap-2 shadow-sm"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>
@@ -449,7 +509,10 @@ export const UserSupportPage: React.FC = () => {
                 {tSupport('createRequest')}
               </h3>
               <button
-                onClick={() => setIsCreateOpen(false)}
+                onClick={() => {
+                  setIsCreateOpen(false);
+                  setTitleError(null);
+                }}
                 className="text-text-muted hover:text-text-ink dark:hover:text-stone-200 p-1 rounded-md"
               >
                 <span className="material-symbols-outlined">close</span>
@@ -465,10 +528,19 @@ export const UserSupportPage: React.FC = () => {
                   type="text"
                   required
                   value={createTitle}
-                  onChange={(e) => setCreateTitle(e.target.value)}
+                  onChange={handleTitleChange}
                   placeholder={tSupport('requestTitlePlaceholder')}
-                  className="w-full input-field px-3.5 py-2 text-sm rounded-lg dark:bg-stone-800 dark:text-stone-100 dark:border-stone-700"
+                  aria-invalid={!!titleError}
+                  aria-describedby={titleError ? "title-error" : undefined}
+                  className={`w-full input-field px-3.5 py-2 text-sm rounded-lg dark:bg-stone-800 dark:text-stone-100 dark:border-stone-700 ${
+                    titleError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
+                  }`}
                 />
+                {titleError && (
+                  <p id="title-error" role="alert" className="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {titleError}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -488,7 +560,10 @@ export const UserSupportPage: React.FC = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-subtle dark:border-stone-800">
                 <button
                   type="button"
-                  onClick={() => setIsCreateOpen(false)}
+                  onClick={() => {
+                    setIsCreateOpen(false);
+                    setTitleError(null);
+                  }}
                   className="px-4 py-2 text-sm text-text-muted dark:text-stone-400 hover:bg-surface-container dark:hover:bg-stone-800 rounded-lg"
                 >
                   {tSupport('cancel')}
