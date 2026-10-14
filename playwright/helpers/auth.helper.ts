@@ -26,7 +26,7 @@ export async function getAuthToken(
     return tokenCache.get(cacheKey)!;
   }
 
-  const response = await request.post('/auth/login', {
+  const response = await request.post('http://127.0.0.1:3000/auth/login', {
     data: credentials,
   });
 
