@@ -127,4 +127,21 @@ describe('WalletsService.verifyVnpaySignature', () => {
       }),
     ).toBe(false);
   });
+});
+
+describe('WalletsService.topup', () => {
+  const service = new WalletsService(
+    {} as any,
+    {} as any,
+    {} as any,
+    {} as any,
+    {} as any,
+  );
+
+  it('rejects unsupported payment methods with BadRequestException', async () => {
+    const { BadRequestException } = require('@nestjs/common');
+    await expect(
+      service.topup('user-1', 50000, 'DIRECT' as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
 });
