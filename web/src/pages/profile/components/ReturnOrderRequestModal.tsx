@@ -31,13 +31,11 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
     const [proofImageUrl, setProofImageUrl] = useState("");
     const [proofImages, setProofImages] = useState<string[]>([]);
     const [isUploadingImage, setIsUploadingImage] = useState(false);
-    const imageFileInputRef = useRef<HTMLInputElement>(null);
 
     // Minh chứng video (UC23 - Mục 1.4)
     const [proofVideoUrl, setProofVideoUrl] = useState("");
     const [proofVideos, setProofVideos] = useState<string[]>([]);
     const [isUploadingVideo, setIsUploadingVideo] = useState(false);
-    const videoFileInputRef = useRef<HTMLInputElement>(null);
 
     // Kiểm tra ví điện tử & thông tin tài khoản ngân hàng nếu chưa có ví (UC23 - Mục 1.2 & 1.11)
     const [hasWallet, setHasWallet] = useState<boolean | null>(null);
@@ -95,40 +93,52 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
 
     if (!open) return null;
 
-    const handleUploadImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-        setIsUploadingImage(true);
-        try {
-            const uploaded = await mediaService.uploadMultipleFiles(Array.from(files), 'returns');
-            if (uploaded && uploaded.length > 0) {
-                const newUrls = uploaded.map((u) => u.url).filter(Boolean);
-                setProofImages((prev) => [...prev, ...newUrls]);
+    const handleOpenImageUpload = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.multiple = true;
+        input.onchange = async (e: any) => {
+            const files = e.target?.files;
+            if (!files || files.length === 0) return;
+            setIsUploadingImage(true);
+            try {
+                const uploaded = await mediaService.uploadMultipleFiles(Array.from(files), 'returns');
+                if (uploaded && uploaded.length > 0) {
+                    const newUrls = uploaded.map((u) => u.url).filter(Boolean);
+                    setProofImages((prev) => [...prev, ...newUrls]);
+                }
+            } catch (err) {
+                console.error("Lỗi upload ảnh minh chứng:", err);
+            } finally {
+                setIsUploadingImage(false);
             }
-        } catch (err) {
-            console.error("Lỗi upload ảnh minh chứng:", err);
-        } finally {
-            setIsUploadingImage(false);
-            if (e.target) e.target.value = '';
-        }
+        };
+        input.click();
     };
 
-    const handleUploadVideoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-        setIsUploadingVideo(true);
-        try {
-            const uploaded = await mediaService.uploadMultipleFiles(Array.from(files), 'returns');
-            if (uploaded && uploaded.length > 0) {
-                const newUrls = uploaded.map((u) => u.url).filter(Boolean);
-                setProofVideos((prev) => [...prev, ...newUrls]);
+    const handleOpenVideoUpload = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "video/*";
+        input.multiple = true;
+        input.onchange = async (e: any) => {
+            const files = e.target?.files;
+            if (!files || files.length === 0) return;
+            setIsUploadingVideo(true);
+            try {
+                const uploaded = await mediaService.uploadMultipleFiles(Array.from(files), 'returns');
+                if (uploaded && uploaded.length > 0) {
+                    const newUrls = uploaded.map((u) => u.url).filter(Boolean);
+                    setProofVideos((prev) => [...prev, ...newUrls]);
+                }
+            } catch (err) {
+                console.error("Lỗi upload video minh chứng:", err);
+            } finally {
+                setIsUploadingVideo(false);
             }
-        } catch (err) {
-            console.error("Lỗi upload video minh chứng:", err);
-        } finally {
-            setIsUploadingVideo(false);
-            if (e.target) e.target.value = '';
-        }
+        };
+        input.click();
     };
 
     const handleAddImage = () => {
@@ -385,21 +395,13 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
                                 </label>
                                 <button
                                     type="button"
-                                    onClick={() => imageFileInputRef.current?.click()}
+                                    onClick={handleOpenImageUpload}
                                     disabled={isUploadingImage}
                                     className="px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1 transition-colors disabled:opacity-50"
                                 >
                                     <span className="material-symbols-outlined text-sm">cloud_upload</span>
-                                    {isUploadingImage ? "Đang tải ảnh..." : "Tải ảnh từ máy"}
+                                    {isUploadingImage ? "Đang tải ảnh..." : "Tải lên trực tiếp"}
                                 </button>
-                                <input
-                                    type="file"
-                                    ref={imageFileInputRef}
-                                    accept="image/*"
-                                    multiple
-                                    onChange={handleUploadImageFile}
-                                    className="hidden"
-                                />
                             </div>
                             <div className="flex gap-2">
                                 <input
@@ -452,21 +454,13 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
                                 </label>
                                 <button
                                     type="button"
-                                    onClick={() => videoFileInputRef.current?.click()}
+                                    onClick={handleOpenVideoUpload}
                                     disabled={isUploadingVideo}
                                     className="px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 flex items-center gap-1 transition-colors disabled:opacity-50"
                                 >
                                     <span className="material-symbols-outlined text-sm">cloud_upload</span>
-                                    {isUploadingVideo ? "Đang tải video..." : "Tải video từ máy"}
+                                    {isUploadingVideo ? "Đang tải video..." : "Tải video"}
                                 </button>
-                                <input
-                                    type="file"
-                                    ref={videoFileInputRef}
-                                    accept="video/*"
-                                    multiple
-                                    onChange={handleUploadVideoFile}
-                                    className="hidden"
-                                />
                             </div>
                             <div className="flex gap-2">
                                 <input
