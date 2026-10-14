@@ -25,6 +25,7 @@ export const AddNewAddressModal: React.FC<AddNewAddressModalProps> = ({ isOpen, 
 
     const {
         formData, location, isVerifying, isVerified, isSaving,
+        phoneError,
         provinces, districts, wards,
         handleInputChange, handleSelectAddressField,
         handleVerifyMap, handleMarkerDragEnd, handleSaveAddress
@@ -58,7 +59,16 @@ export const AddNewAddressModal: React.FC<AddNewAddressModalProps> = ({ isOpen, 
                         </div>
                         <div>
                             <label className="block font-body-sm text-text-muted mb-1">Số điện thoại</label>
-                            <input type="text" className="input-field w-full px-3 py-2 bg-surface" placeholder="0912345678" value={formData.phoneNumber} onChange={(e) => handleInputChange('phoneNumber', e.target.value)} />
+                            <input
+                                type="text"
+                                className={`input-field w-full px-3 py-2 bg-surface ${phoneError ? 'border-red-500 focus:border-red-500' : ''}`}
+                                placeholder="0912345678"
+                                value={formData.phoneNumber}
+                                onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                            />
+                            {phoneError && (
+                                <p className="text-xs text-red-500 mt-1">{phoneError}</p>
+                            )}
                         </div>
 
                         <div className="sm:col-span-2 pt-2 border-t border-dashed border-border-medium">
