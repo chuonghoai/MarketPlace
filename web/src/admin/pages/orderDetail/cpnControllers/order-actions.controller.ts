@@ -73,13 +73,31 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
     const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
     const handleOpenReturnModal = () => setIsReturnModalOpen(true);
     const handleCloseReturnModal = () => setIsReturnModalOpen(false);
-    const handleReturnSuccess = () => {
-        setIsReturnModalOpen(false);
-        setIsReturnCompleted(true);
+    const handleReturnSuccess = (isFinished = false) => {
+        if (isFinished) {
+            setIsReturnModalOpen(false);
+            setIsReturnCompleted(true);
+        }
         // Refresh order
         orderService.getOrderDetail(order.id).then((res) => {
-            if (res.success && res.data) onUpdateSuccess(res.data);
+            if (res.success && res.data) {
+                onUpdateSuccess(res.data);
+                if (res.data.returnStatus === 'COMPLETED') {
+                    setIsReturnCompleted(true);
+                }
+            }
         });
+        orderService.getReturnRequests(1, 1, undefined, order.id).then((res) => {
+            const req = res.data?.items?.find((r: any) => r.orderId === order.id);
+            if (req) {
+                if (req.status === 'COMPLETED') {
+                    setIsReturnCompleted(true);
+                }
+                if (req.newOrderId) {
+                    setNewOrderId(req.newOrderId);
+                }
+            }
+        }).catch(() => {});
     };
 
     // Xử lý đổi trả (UC23)

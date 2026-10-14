@@ -7,7 +7,7 @@ interface ReturnProcessModalProps {
   isOpen: boolean;
   onClose: () => void;
   order: OrderDetail;
-  onSuccess: () => void;
+  onSuccess: (isFinished?: boolean) => void;
 }
 
 export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
@@ -72,7 +72,7 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
         });
         if (res.success) {
           toast(`Đã tạo đơn hàng mới #${res.data?.newOrderId || ''} để đổi cho khách`, 'success');
-          onSuccess();
+          onSuccess(true);
           onClose();
         } else {
           toast(res.message || 'Lỗi khi tạo đơn đổi mới', 'error');
@@ -85,7 +85,7 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
           note: `Đã xác nhận đổi hàng mới: ${adminNote || 'Đang chuẩn bị sản phẩm thay thế'}`,
         });
         toast('Đã xác nhận đổi món hàng mới', 'success');
-        onSuccess();
+        onSuccess(true);
         onClose();
       }
     } catch {
@@ -116,7 +116,7 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
             setStep('REFUND');
           }
           setAdminNote('');
-          onSuccess();
+          onSuccess(false);
         } else if (step === 'REFUND') {
           // Bấm nút hoàn tiền
           const isBankRefund = !!activeReq.bankAccountNumber;
@@ -129,7 +129,7 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
               'success',
             );
             setActiveReq((prev: any) => ({ ...prev, status: 'COMPLETED' }));
-            onSuccess();
+            onSuccess(true);
             onClose();
           } else {
             toast(res.message || 'Lỗi khi hoàn tiền', 'error');
@@ -137,7 +137,7 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
         }
       } else {
         toast(`Đã hoàn tất xử lý hoàn trả cho đơn hàng #${order.id}`, 'success');
-        onSuccess();
+        onSuccess(true);
         onClose();
       }
     } catch {
