@@ -37,9 +37,32 @@ test.describe('API - Thống kê KPI nhân viên (Staff KPI)', () => {
     expect(typeof summary.totalAssigned).toBe('number');
     expect(typeof summary.totalResolved).toBe('number');
     expect(typeof summary.overallResolveRate).toBe('number');
+    expect(typeof summary.overallSlaMetRate).toBe('number');
+    expect(Number.isNaN(summary.overallSlaMetRate)).toBe(false);
+    expect(Number.isFinite(summary.overallSlaMetRate)).toBe(true);
+    expect(summary.overallSlaMetRate).toBeGreaterThanOrEqual(0);
+    expect(summary.overallSlaMetRate).toBeLessThanOrEqual(100);
     expect(Array.isArray(timeSeries)).toBe(true);
     expect(pagination).toBeDefined();
     expect(pagination.page).toBe(1);
+  });
+
+  test('Test F - KPI API trả về cấu trúc summary đầy đủ kèm overallSlaMetRate hợp lệ (MKP-076)', async ({ request }) => {
+    const response = await request.get(`/kpi/staffs?startDate=${validStartDate}&endDate=${validEndDate}`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    expect(body.success).toBe(true);
+    const summary = body.data?.summary;
+    expect(summary).toBeDefined();
+    expect(typeof summary.overallSlaMetRate).toBe('number');
+    expect(Number.isNaN(summary.overallSlaMetRate)).toBe(false);
+    expect(Number.isFinite(summary.overallSlaMetRate)).toBe(true);
+    expect(summary.overallSlaMetRate).toBeGreaterThanOrEqual(0);
+    expect(summary.overallSlaMetRate).toBeLessThanOrEqual(100);
+    expect(typeof summary.slaThresholdMinutes).toBe('number');
   });
 
   test('Admin lọc KPI theo staffId cụ thể thành công (GET /kpi/staffs?staffId=...)', async ({ request }) => {

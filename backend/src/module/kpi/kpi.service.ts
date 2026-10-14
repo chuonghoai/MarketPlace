@@ -256,13 +256,19 @@ export class KpiService {
           )
         : 0;
 
-    const staffsWithSla = allItems.filter((i) => i.totalAssigned > 0);
+    const totalSlaMetTickets = rawStats.reduce(
+      (acc, cur) => acc + (Number(cur.slaMetCount) || 0),
+      0,
+    );
+    const totalEligibleRespondedTickets = rawStats.reduce(
+      (acc, cur) => acc + (Number(cur.respondedCount) || 0),
+      0,
+    );
+
     const overallSlaMetRate =
-      staffsWithSla.length > 0
+      totalEligibleRespondedTickets > 0
         ? Math.round(
-            (staffsWithSla.reduce((acc, cur) => acc + cur.slaMetRate, 0) /
-              staffsWithSla.length) *
-              10,
+            (totalSlaMetTickets / totalEligibleRespondedTickets) * 100 * 10,
           ) / 10
         : 0;
 
