@@ -1,12 +1,34 @@
 import { IsEnum, IsOptional, IsString, IsNotEmpty } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { EOrderStatus } from '../../checkout/enums/EOrderStatus.enum';
 import { EPaymentMethod } from '../../checkout/enums/EPaymentMethod.enum';
 import { EPaymentStatus } from '../../checkout/enums/EPaymentStatus.enum';
+import { EOrderReturnStatus } from '../enums/order-return.enum';
+
+export enum EOrderTrackingFilterStatus {
+  ALL = 'ALL',
+  PENDING = 'PENDING',
+  PREPARING = 'PREPARING',
+  SHIPPING = 'SHIPPING',
+  DELIVERED = 'DELIVERED',
+  SUCCESS = 'SUCCESS',
+  CANCELLED = 'CANCELLED',
+  RETURNED = 'RETURNED',
+}
 
 export class GetOrdersFilterDto {
   @IsOptional()
-  @IsEnum(EOrderStatus)
-  status?: EOrderStatus;
+  @Transform(({ value }) => {
+    if (!value || typeof value !== 'string' || value.trim() === '') {
+      return undefined;
+    }
+    return value.trim().toUpperCase();
+  })
+  @IsEnum(EOrderTrackingFilterStatus, {
+    message:
+      'status must be one of the following values: ALL, PENDING, PREPARING, SHIPPING, DELIVERED, SUCCESS, CANCELLED, RETURNED',
+  })
+  status?: EOrderTrackingFilterStatus;
 }
 
 export class UpdateOrderStatusDto {
@@ -42,6 +64,7 @@ export class OrderListItemDto {
   buyerPhone: string;
   paymentMethod: EPaymentMethod;
   paymentStatus: EPaymentStatus;
+  statusHistory?: any;
 }
 
 export class OrderStatusHistoryDto {
@@ -89,4 +112,6 @@ export class OrderDetailDto {
   paymentMethod: EPaymentMethod;
   paymentStatus: EPaymentStatus;
   cancelReason?: string;
+  returnStatus?: EOrderReturnStatus;
+  newOrderId?: string;
 }

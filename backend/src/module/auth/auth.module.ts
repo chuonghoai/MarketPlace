@@ -9,11 +9,12 @@ import { ConfigService } from '@nestjs/config';
 import { ENV_VARS } from 'src/constants/env.constants';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
+import { UserDevice } from '../users/entities/user-device.entity';
 import { MailModule } from '../mails/mail.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, UserDevice]),
     PassportModule,
     MailModule,
     CacheModule.register(),
@@ -21,9 +22,13 @@ import { MailModule } from '../mails/mail.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>(ENV_VARS.JWT_ACCESS_SECRET);
-        if (!secret) throw new Error('JWT_ACCESS_SECRET is required in environment');
-        const expiresIn = configService.get<string>(ENV_VARS.JWT_ACCESS_EXPIRES_IN);
-        if (!expiresIn) throw new Error('JWT_ACCESS_EXPIRES_IN is required in environment');
+        if (!secret)
+          throw new Error('JWT_ACCESS_SECRET is required in environment');
+        const expiresIn = configService.get<string>(
+          ENV_VARS.JWT_ACCESS_EXPIRES_IN,
+        );
+        if (!expiresIn)
+          throw new Error('JWT_ACCESS_EXPIRES_IN is required in environment');
         return {
           secret,
           signOptions: {
@@ -37,4 +42,4 @@ import { MailModule } from '../mails/mail.module';
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })
-export class AuthModule { }
+export class AuthModule {}

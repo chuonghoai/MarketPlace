@@ -1,5 +1,6 @@
 import React from 'react';
 import { EPaymentMethod } from '../../../features/order/enums/paymentMethod.enum';
+import { tWallet } from '../../../features/wallet/constants/walletL10n';
 
 interface OrderSummaryProps {
     subTotal: number;
@@ -8,7 +9,14 @@ interface OrderSummaryProps {
     discountAmount?: number;
     shippingDiscountAmount?: number;
     appliedVouchers?: any[];
-    selectedPaymentMethod: EPaymentMethod; // Đổi type sang enum
+    selectedPaymentMethod: EPaymentMethod;
+    walletInfo?: {
+        balance: number;
+        status: string;
+        isUsable: boolean;
+    };
+    useWallet: boolean;
+    onToggleWallet: (use: boolean) => void;
     onOpenPaymentModal: () => void;
     onOpenVoucherModal: () => void;
     onOrderSubmit: () => void;
@@ -24,12 +32,27 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
     appliedVouchers,
     totalAmount,
     selectedPaymentMethod,
+    walletInfo,
+    useWallet,
+    onToggleWallet,
     onOpenPaymentModal,
     onOpenVoucherModal,
     onOrderSubmit,
     isCheckingOut,
     onRemoveVoucher
 }) => {
+    const walletBalance = walletInfo ? Number(walletInfo.balance) : 0;
+    const isWalletLocked = walletInfo?.status === 'LOCKED';
+    const isWalletZero = walletBalance <= 0;
+    const canUseWallet = !isWalletLocked && !isWalletZero;
+
+    const walletDeduction = (useWallet && canUseWallet)
+        ? Math.min(walletBalance, totalAmount)
+        : 0;
+
+    const finalPayAmount = Math.max(0, totalAmount - walletDeduction);
+    const isFullyPaidByWallet = useWallet && canUseWallet && finalPayAmount === 0;
+
     const getPaymentMethodInfo = (method: EPaymentMethod) => {
         switch (method) {
             case EPaymentMethod.COD:
@@ -51,6 +74,11 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                 return {
                     icon: <img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Paypal_2014_logo.png" alt="PayPal" className="w-5 h-5 object-contain rounded-sm shrink-0" />,
                     text: "Ví điện tử PayPal"
+                };
+            case EPaymentMethod.WALLET:
+                return {
+                    icon: <span className="material-symbols-outlined text-primary-container shrink-0 text-xl">account_balance_wallet</span>,
+                    text: tWallet('checkoutFullPaidByWallet')
                 };
             default:
                 return {
@@ -88,18 +116,79 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                                 <span className="font-medium">-{shippingDiscountAmount!.toLocaleString('vi-VN')} ₫</span>
                             </div>
                         )}
+                        {walletDeduction > 0 && (
+                            <div className="flex justify-between items-center text-primary-container">
+                                <span className="flex items-center gap-1.5 font-medium">
+                                    <span className="material-symbols-outlined text-base">account_balance_wallet</span>
+                                    {tWallet('checkoutWalletDeduction')}
+                                </span>
+                                <span className="font-medium font-mono">-{walletDeduction.toLocaleString('vi-VN')} ₫</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex justify-between items-end pt-1">
-                        <span className="text-[16px] font-semibold text-[#1C1917]">Tổng cộng</span>
+                        <span className="text-[16px] font-semibold text-[#1C1917]">
+                            {walletDeduction > 0 ? tWallet('checkoutRemainingNeedPay') : 'Tổng cộng'}
+                        </span>
                         <div className="text-right">
-                            <span className="font-['Lora',serif] text-[24px] sm:text-[28px] text-market-primary font-bold leading-none">{totalAmount.toLocaleString('vi-VN')} ₫</span>
+                            <span className="font-['Lora',serif] text-[24px] sm:text-[28px] text-market-primary font-bold leading-none">
+                                {finalPayAmount.toLocaleString('vi-VN')} ₫
+                            </span>
                             <p className="text-[13px] text-[#A8A29E] mt-1 font-medium italic">(Đã bao gồm VAT)</p>
                         </div>
                     </div>
 
+                    {/* Wallet toggle card */}
+                    <div className={`p-4 rounded-xl border transition-all ${
+                        useWallet && canUseWallet 
+                            ? 'bg-[#FFFBF5] border-[#FDBA74]' 
+                            : 'bg-white border-[#E7E5E4]'
+                    }`}>
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                                <span className={`material-symbols-outlined text-2xl ${
+                                    useWallet && canUseWallet ? 'text-[#C2410C]' : 'text-stone-400'
+                                }`}>
+                                    account_balance_wallet
+                                </span>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <p className="font-semibold text-sm text-[#1C1917]">
+                                            {tWallet('checkoutUseWallet')}
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-stone-500 mt-0.5">
+                                        {tWallet('checkoutWalletBalance')} <span className="font-mono font-semibold text-[#1C1917]">{walletBalance.toLocaleString('vi-VN')} ₫</span>
+                                    </p>
+                                    {isWalletLocked && (
+                                        <p className="text-xs text-red-600 font-medium mt-1 flex items-center gap-1">
+                                            <span className="material-symbols-outlined text-xs">lock</span>
+                                            {tWallet('checkoutWalletLocked')}
+                                        </p>
+                                    )}
+                                    {isWalletZero && !isWalletLocked && (
+                                        <p className="text-xs text-stone-400 mt-0.5">
+                                            {tWallet('checkoutWalletZero')}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                                <input
+                                    type="checkbox"
+                                    checked={useWallet && canUseWallet}
+                                    disabled={!canUseWallet}
+                                    onChange={(e) => onToggleWallet(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-10 h-6 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#C2410C] disabled:opacity-40 disabled:cursor-not-allowed"></div>
+                            </label>
+                        </div>
+                    </div>
+
                     {/* Voucher button: open modal choosing voucher */}
-                    <div className="pt-2">
+                    <div className="pt-1">
                         {appliedVouchers && appliedVouchers.length > 0 && (
                             <div className="mb-4 space-y-2">
                                 <div className="font-caption text-xs font-bold text-text-muted uppercase tracking-wider mb-2">Voucher đã áp dụng</div>
@@ -141,24 +230,45 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                         </button>
                     </div>
 
-                    {/* Payment method button: open modal choosing payment method */}
-                    <div className="bg-[#FDF6EC] p-4 rounded-[8px] border border-[#FDBA74] flex justify-between items-center gap-3">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            {paymentInfo.icon}
-                            <span className="text-[14px] font-medium text-[#1C1917] truncate" title={paymentInfo.text}>
-                                {paymentInfo.text}
-                            </span>
+                    {/* Payment method section */}
+                    {isFullyPaidByWallet ? (
+                        <div className="bg-emerald-50 p-4 rounded-[8px] border border-emerald-300 flex items-center gap-3">
+                            <span className="material-symbols-outlined text-emerald-600 text-2xl shrink-0">check_circle</span>
+                            <div>
+                                <span className="text-[14px] font-semibold text-emerald-800 block">
+                                    {tWallet('checkoutFullPaidByWallet')}
+                                </span>
+                                <span className="text-xs text-emerald-700">
+                                    Đơn hàng sẽ được thanh toán trực tiếp từ số dư ví
+                                </span>
+                            </div>
                         </div>
-                        <button
-                            type="button"
-                            className="text-[13px] font-semibold text-market-primary hover:text-[#9A3412] hover:underline shrink-0 ml-1 whitespace-nowrap transition-colors"
-                            onClick={onOpenPaymentModal}
-                        >
-                            Thay đổi
-                        </button>
-                    </div>
+                    ) : (
+                        <div>
+                            {walletDeduction > 0 && (
+                                <p className="text-xs text-stone-500 mb-1.5 font-medium">
+                                    Phương thức thanh toán cho phần còn thiếu:
+                                </p>
+                            )}
+                            <div className="bg-[#FDF6EC] p-4 rounded-[8px] border border-[#FDBA74] flex justify-between items-center gap-3">
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    {paymentInfo.icon}
+                                    <span className="text-[14px] font-medium text-[#1C1917] truncate" title={paymentInfo.text}>
+                                        {paymentInfo.text}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="text-[13px] font-semibold text-market-primary hover:text-[#9A3412] hover:underline shrink-0 ml-1 whitespace-nowrap transition-colors"
+                                    onClick={onOpenPaymentModal}
+                                >
+                                    Thay đổi
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-                    <div className="pt-4">
+                    <div className="pt-2">
                         <button
                             disabled={isCheckingOut}
                             className="w-full bg-market-primary text-white py-3.5 rounded-[4px] font-semibold text-[16px] tracking-wide flex justify-center items-center gap-2 hover:bg-[#9A3412] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
@@ -171,7 +281,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
                                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                     </svg>
-                                    Đặt hàng
+                                    {isFullyPaidByWallet ? tWallet('checkoutPayByWallet') : 'Đặt hàng'}
                                 </>
                             )}
                         </button>

@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import type { User } from "../../../features/user/models/user.model";
 import { authService } from "../../../features/auth/services/auth.service";
 import { useToast } from "../../../components/toast/toast";
+import { tSupport } from "../../../features/support/constants/supportL10n";
 
 interface UserInfoSidebarProps {
     user: User | null;
@@ -63,6 +64,36 @@ export const UserInfoSidebar = ({
                 </svg>
             ),
         },
+        {
+            id: "wallet",
+            label: "Ví điện tử",
+            path: "/profile/wallet",
+            icon: (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            ),
+        },
+        {
+            id: "support",
+            label: tSupport("title"),
+            path: "/profile/support",
+            icon: (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            ),
+        },
+        {
+            id: "devices",
+            label: "Thiết bị đăng nhập",
+            path: "/profile/devices",
+            icon: (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+            ),
+        },
     ];
 
     const actionItems: ActionItem[] = [
@@ -85,7 +116,7 @@ export const UserInfoSidebar = ({
                 </svg>
             ),
             action: () => {
-                authService.logout(),
+                authService.logout();
                 toast("Đăng xuất thành công", "info");
                 navigate("/login");
             },

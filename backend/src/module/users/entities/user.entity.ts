@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { EUserRole } from '../../users/enums/user.enum';
 import { Favorite } from '../../products/entities/favorite.entity';
 import { Address } from './address-users.entity';

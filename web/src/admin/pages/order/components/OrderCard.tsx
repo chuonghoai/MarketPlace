@@ -24,9 +24,9 @@ export const OrderCard = ({ order }: { order: OrderItem }) => {
                                 {order.id}
                             </span>
                             <span
-                                className={`shrink-0 px-2.5 py-0.5 rounded-sm font-body text-[11px] font-bold uppercase tracking-wider ${STATUS_CONFIG[order.orderStatus].color}`}
+                                className={`shrink-0 px-2.5 py-0.5 rounded-sm font-body text-[11px] font-bold uppercase tracking-wider ${(STATUS_CONFIG[order.orderStatus] || { color: 'bg-stone-100 text-stone-700' }).color}`}
                             >
-                                {STATUS_CONFIG[order.orderStatus].label}
+                                {(STATUS_CONFIG[order.orderStatus] || { label: order.orderStatus }).label}
                             </span>
                         </div>
                         <h3 className="cursor-text font-headline text-[16px] md:text-[20px] font-semibold text-text-ink leading-tight mb-2 md:mb-3 truncate">

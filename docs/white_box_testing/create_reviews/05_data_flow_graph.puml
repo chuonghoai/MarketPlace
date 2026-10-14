@@ -1,0 +1,92 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+note right of n1 : d(userId)\nd(request)
+usecase "2" as n2
+note right of n2 : d(submittedCount)
+usecase "3" as n3
+note right of n3 : d(productIdsToUpdate)
+usecase "4" as n4
+note right of n4 : u(request)\nd(item)
+usecase "5" as n5
+note right of n5 : u(item)\nd(orderItem)
+usecase "6" as n6
+note right of n6 : u(orderItem)
+usecase "7" as n7
+note right of n7 : u(orderItem)
+usecase "8" as n8
+note right of n8 : u(item)\nu(userId)\nu(orderItem)\nd(review)
+usecase "9" as n9
+note right of n9 : u(review)
+usecase "10" as n10
+note right of n10 : d(orderItem)
+usecase "11" as n11
+note right of n11 : u(orderItem)
+usecase "12" as n12
+note right of n12 : u(productIdsToUpdate)\nu(orderItem)
+usecase "13" as n13
+note right of n13 : u(submittedCount)\nd(submittedCount)
+usecase "14" as n14
+note right of n14 : u(productIdsToUpdate)\nd(productId)
+usecase "15" as n15
+note right of n15 : u(productId)\nd(result)
+usecase "16" as n16
+note right of n16 : u(result)
+usecase "17" as n17
+note right of n17 : u(result)
+usecase "18" as n18
+note right of n18 : u(result)\nd(avg)
+usecase "19" as n19
+note right of n19 : d(avg)
+usecase "20" as n20
+note right of n20 : u(productId)\nu(avg)
+usecase "21" as n21
+note right of n21 : u(submittedCount)
+usecase "Exit" as end_node
+note right of end_node : k(userId)\nk(request)\nk(submittedCount)\nk(productIdsToUpdate)\nk(item)\nk(orderItem)\nk(review)\nk(productId)\nk(result)\nk(avg)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+n3 --> n4
+
+n4 --> n5 : true
+n4 --> n14 : false
+
+n5 --> n6
+
+n6 --> n4 : true
+n6 --> n7 : false
+
+n7 --> n4 : true
+n7 --> n8 : false
+
+n8 --> n9
+n9 --> n10
+n10 --> n11
+n11 --> n12
+n12 --> n13
+n13 --> n4
+
+n14 --> n15 : true
+n14 --> n21 : false
+
+n15 --> n16
+
+n16 --> n17 : true
+n16 --> n19 : false
+
+n17 --> n18 : true
+n17 --> n19 : false
+
+n18 --> n20
+n19 --> n20
+
+n20 --> n14
+
+n21 --> end_node
+
+@enduml

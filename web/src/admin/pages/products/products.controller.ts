@@ -12,7 +12,7 @@ export const useProductController = () => {
     const store = useProductStore();
     const { toast } = useToast();
 
-    // === Fetch danh mục (categories) ===
+    // Fetch danh mục
     const fetchCategories = useCallback(async () => {
         try {
             const response = await categoryService.getAllCategories();
@@ -24,7 +24,7 @@ export const useProductController = () => {
         }
     }, [store.setCategories]);
 
-    // === Fetch danh sách sản phẩm ===
+    // Fetch sản phẩm
     const fetchProducts = useCallback(async () => {
         store.setLoading(true);
         store.setError(null);
@@ -54,7 +54,7 @@ export const useProductController = () => {
         }
     }, [store.page, store.pageSize, store.filters]);
 
-    // === Fetch chi tiết 1 sản phẩm (cho Edit/Detail page) ===
+    // Fetch chi tiết sản phẩm
     const fetchProductById = useCallback(async (id: string): Promise<Product | null> => {
         try {
             const response = await productService.fetchProductById(id);
@@ -68,7 +68,7 @@ export const useProductController = () => {
         }
     }, []);
 
-    // === Fetch reviews của sản phẩm ===
+    // Fetch đánh giá
     const fetchProductReviews = useCallback(async (id: string): Promise<Review | null> => {
         try {
             const response = await reviewService.getReviewsByProductId(id);
@@ -82,12 +82,12 @@ export const useProductController = () => {
         }
     }, []);
 
-    // === Phân trang ===
+    // Phân trang
     const handlePageChange = (newPage: number) => {
         store.setPagination(newPage, store.pageSize, store.totalItems, store.totalPages);
     };
 
-    // === Xóa sản phẩm ===
+    // Xóa sản phẩm
     const handleDeleteProduct = async (id: string) => {
         if (!window.confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
         const success = await productService.removeProduct(id);
@@ -98,7 +98,7 @@ export const useProductController = () => {
         }
     };
 
-    // === Lưu sản phẩm (tạo mới hoặc cập nhật) ===
+    // Lưu sản phẩm
     const handleSaveProduct = async (
         formData: ProductFormData,
         editingProductId?: string
@@ -149,6 +149,7 @@ export const useProductController = () => {
                 dimensions: formData.dimensions ? [formData.dimensions.length, formData.dimensions.width, formData.dimensions.height] : undefined,
                 weight: formData.weight,
                 careInstructions: formData.careInstructions,
+                artisanId: formData.artisanId,
             };
 
             const success = await productService.saveProduct(productData, editingProductId);

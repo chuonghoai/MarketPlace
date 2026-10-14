@@ -18,11 +18,14 @@ export class ReviewsService {
   ) {}
 
   async getReviewsByProductId(productId: string) {
-    const product = await this.productRepository.findOne({ where: { id: productId }, select: ['rating'] });
+    const product = await this.productRepository.findOne({
+      where: { id: productId },
+      select: ['rating'],
+    });
     const reviews = await this.reviewRepository.find({
       where: { product: { id: productId } },
       relations: ['user'],
-      order: { createdAt: 'DESC' }
+      order: { createdAt: 'DESC' },
     });
 
     const totalReview = reviews.length;
@@ -31,7 +34,7 @@ export class ReviewsService {
     return {
       totalReview,
       averageRating,
-      reviews: reviews.map(r => ({
+      reviews: reviews.map((r) => ({
         reviewId: r.id,
         userId: r.user?.id || '',
         userName: r.user?.fullName || r.user?.email || 'Người dùng',
@@ -39,7 +42,7 @@ export class ReviewsService {
         rating: r.rating,
         content: r.content,
         createdAt: r.createdAt,
-      }))
+      })),
     };
   }
 
@@ -47,47 +50,49 @@ export class ReviewsService {
     const items = await this.orderItemRepository.find({
       where: { orderId },
     });
-    const orderItemIds = items.map(i => i.id);
-    
+    const orderItemIds = items.map((i) => i.id);
+
     let reviews: Review[] = [];
     if (orderItemIds.length > 0) {
       reviews = await this.reviewRepository.find({
-        where: { orderItemId: In(orderItemIds) }
+        where: { orderItemId: In(orderItemIds) },
       });
     }
 
     return {
       orderId,
-      reviews: reviews.map(r => ({
+      reviews: reviews.map((r) => ({
         orderItemId: r.orderItemId,
-        productId: items.find(i => i.id === r.orderItemId)?.productId || '',
+        productId: items.find((i) => i.id === r.orderItemId)?.productId || '',
         rating: r.rating,
         content: r.content,
-        createdAt: r.createdAt
-      }))
+        createdAt: r.createdAt,
+      })),
     };
   }
 
   async createReviews(userId: string, request: CreateReviewRequestDto) {
     let submittedCount = 0;
     const productIdsToUpdate = new Set<string>();
-    
+
     for (const item of request.reviews) {
-      const orderItem = await this.orderItemRepository.findOne({ where: { id: item.orderItemId } });
+      const orderItem = await this.orderItemRepository.findOne({
+        where: { id: item.orderItemId },
+      });
       if (!orderItem || orderItem.isReviewed) continue;
-      
+
       const review = this.reviewRepository.create({
         content: item.comment,
         rating: item.rating,
         user: { id: userId },
         product: { id: orderItem.productId },
-        orderItemId: item.orderItemId
+        orderItemId: item.orderItemId,
       });
       await this.reviewRepository.save(review);
-      
+
       orderItem.isReviewed = true;
       await this.orderItemRepository.save(orderItem);
-      
+
       productIdsToUpdate.add(orderItem.productId);
       submittedCount++;
     }
@@ -99,8 +104,11 @@ export class ReviewsService {
         .where('product.id = :productId', { productId })
         .select('AVG(review.rating)', 'avgRating')
         .getRawOne();
-      
-      const avg = result && result.avgRating ? Number(Number(result.avgRating).toFixed(1)) : 0;
+
+      const avg =
+        result && result.avgRating
+          ? Number(Number(result.avgRating).toFixed(1))
+          : 0;
       await this.productRepository.update(productId, { rating: avg });
     }
 

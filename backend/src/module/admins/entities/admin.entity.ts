@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 
 @Entity('admins')
@@ -11,7 +18,7 @@ export class Admin {
   user: User;
 
   @Column({ nullable: true })
-  department: string; 
+  department: string;
 
   @CreateDateColumn()
   createdAt: Date;

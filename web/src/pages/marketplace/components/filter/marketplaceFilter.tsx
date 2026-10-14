@@ -5,6 +5,7 @@ export const MarketplaceFilter = () => {
     const {
         categories,
         localFilters,
+        priceError,
         handleSortChange,
         handleCategoryToggle,
         handlePriceChange,
@@ -78,18 +79,27 @@ export const MarketplaceFilter = () => {
                         type="text"
                         placeholder="Tối thiểu"
                         value={localFilters.minPrice}
+                        aria-invalid={priceError ? "true" : "false"}
+                        aria-describedby={priceError ? "price-range-error" : undefined}
                         onChange={(e) => handlePriceChange('minPrice', e.target.value)}
-                        className="w-full bg-white border-[1.5px] border-[#D6D3D1] rounded-[4px] h-[42px] px-3 text-[14px] outline-none focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 transition-all"
+                        className={`w-full bg-white border-[1.5px] rounded-[4px] h-[42px] px-3 text-[14px] outline-none focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 transition-all ${priceError ? 'border-market-error' : 'border-[#D6D3D1]'}`}
                     />
                     <span className="text-[#A8A29E]">-</span>
                     <input
                         type="text"
                         placeholder="Tối đa"
                         value={localFilters.maxPrice}
+                        aria-invalid={priceError ? "true" : "false"}
+                        aria-describedby={priceError ? "price-range-error" : undefined}
                         onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
-                        className="w-full bg-white border-[1.5px] border-[#D6D3D1] rounded-[4px] h-[42px] px-3 text-[14px] outline-none focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 transition-all"
+                        className={`w-full bg-white border-[1.5px] rounded-[4px] h-[42px] px-3 text-[14px] outline-none focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 transition-all ${priceError ? 'border-market-error' : 'border-[#D6D3D1]'}`}
                     />
                 </div>
+                {priceError && (
+                    <p id="price-range-error" role="alert" className="text-market-error text-[12px] mt-2 font-semibold">
+                        {priceError}
+                    </p>
+                )}
             </div>
 
             <button

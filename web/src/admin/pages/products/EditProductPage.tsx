@@ -39,7 +39,7 @@ export const EditProductPage = () => {
 
     const handleSave = async (data: ProductFormData) => {
         const success = await handleSaveProduct(data, id);
-        if (success) navigate('/admin/products');
+        if (success) navigate(`/admin/products/${id}`);
     };
 
     if (loadingProduct) {
@@ -57,7 +57,7 @@ export const EditProductPage = () => {
                 <p className="font-body text-lg text-text-muted mt-2">{product.name}</p>
             </div>
             <div className="bg-surface-card border border-border-subtle rounded-xl shadow-sm overflow-hidden">
-                <ProductForm categories={categories} onSave={handleSave} editingProduct={product} saving={saving} onCancel={() => navigate('/admin/products')} />
+                <ProductForm categories={categories} onSave={handleSave} editingProduct={product} saving={saving} onCancel={() => navigate(`/admin/products/${id}`)} />
             </div>
         </div>
     );

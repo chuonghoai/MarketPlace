@@ -1,5 +1,15 @@
-import { IsEnum, IsNumber, IsOptional, IsString, IsDateString } from 'class-validator';
-import { DistributionType, VoucherStatus, VoucherType } from '../entities/voucher.entity';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsDateString,
+} from 'class-validator';
+import {
+  DistributionType,
+  VoucherStatus,
+  VoucherType,
+} from '../entities/voucher.entity';
 import { Type } from 'class-transformer';
 
 export class GetVouchersQueryDto {

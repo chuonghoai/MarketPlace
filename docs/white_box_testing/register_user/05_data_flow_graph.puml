@@ -1,0 +1,81 @@
+@startuml 05_data_flow_graph
+
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+note right of n1 : d(email)\nd(password)\nd(confirmPassword)\nd(otp)
+usecase "2" as n2
+note right of n2 : u(password)\nu(confirmPassword)
+usecase "3" as n3
+usecase "4" as n4
+note right of n4 : u(email)\nd(record)
+usecase "5" as n5
+note right of n5 : u(record)
+usecase "6" as n6
+usecase "7" as n7
+note right of n7 : u(record)
+usecase "8" as n8
+note right of n8 : u(email)
+usecase "9" as n9
+usecase "10" as n10
+note right of n10 : u(record)\nu(otp)
+usecase "11" as n11
+usecase "12" as n12
+note right of n12 : u(record)
+usecase "13" as n13
+usecase "14" as n14
+note right of n14 : u(email)
+usecase "15" as n15
+note right of n15 : u(email)\nd(existingUser)
+usecase "16" as n16
+note right of n16 : u(existingUser)
+usecase "17" as n17
+usecase "18" as n18
+note right of n18 : u(password)\nd(hashedPassword)
+usecase "19" as n19
+note right of n19 : u(email)\nu(hashedPassword)\nd(newUser)
+usecase "20" as n20
+note right of n20 : u(newUser)\nd(savedUser)
+usecase "21" as n21
+note right of n21 : u(savedUser)\nd(payload)
+usecase "22" as n22
+note right of n22 : u(payload)\nd(accessToken)
+usecase "23" as n23
+note right of n23 : u(accessToken)\nu(savedUser)\nu(email)
+usecase "Exit" as end_node
+note right of end_node : k(email)\nk(password)\nk(confirmPassword)\nk(otp)\nk(record)\nk(existingUser)\nk(hashedPassword)\nk(newUser)\nk(savedUser)\nk(payload)\nk(accessToken)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3 : True
+n2 --> n4 : False
+n3 --> end_node
+n4 --> n5
+n5 --> n6 : True
+n5 --> n7 : False
+n6 --> end_node
+n7 --> n8 : True
+n7 --> n10 : False
+n8 --> n9
+n9 --> end_node
+n10 --> n11 : True
+n10 --> n12 : False
+n11 --> end_node
+n12 --> n13 : True
+n12 --> n14 : False
+n13 --> end_node
+n14 --> n15
+n15 --> n16
+n16 --> n17 : True
+n16 --> n18 : False
+n17 --> end_node
+n18 --> n19
+n19 --> n20
+n20 --> n21
+n21 --> n22
+n22 --> n23
+n23 --> end_node
+
+@enduml

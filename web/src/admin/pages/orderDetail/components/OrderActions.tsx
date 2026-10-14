@@ -1,7 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import type { OrderDetail } from '../../../features/order/model/orderDetail.model';
 import { useOrderActionsController } from '../cpnControllers/order-actions.controller';
 import { CancelOrderModal } from './CancelOrderModal';
+import { ReturnProcessModal } from './ReturnProcessModal';
 import { EOrderStatus } from '../../../../features/order/enums/orderStatus.enum';
 
 interface OrderActionsProps {
@@ -21,10 +23,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
 
     let actions = null;
 
-    /**
-     * Nếu đơn hàng = pending
-     * Hiện 2 nút "Hủy đơn hàng" và "Xác nhận đơn hàng"
-     */
+    // Đơn pending: Hủy hoặc Xác nhận đơn
     if (order.orderStatus === EOrderStatus.PENDING) {
         actions = (
             <div className="flex items-center gap-2">
@@ -45,10 +44,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 </button>
             </div>
         );
-        /**
-         * Nếu đơn hàng = preparing
-         * Hiện nút "Giao cho ĐVVC"
-         */
+        // Đơn preparing: Giao cho ĐVVC
     } else if (order.orderStatus === EOrderStatus.PREPARING) {
         actions = (
             <button
@@ -60,10 +56,7 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 Giao Cho ĐVVC
             </button>
         );
-        /**
-         * Nếu đơn hàng = shipping
-         * Hiện 2 nút "Mở điều hướng" và "Hoàn tất đơn hàng"
-         */
+        // Đơn shipping: Mở điều hướng hoặc Hoàn tất đơn
     } else if (order.orderStatus === EOrderStatus.SHIPPING) {
         actions = (
             <div className="flex items-center gap-2">
@@ -88,21 +81,55 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 </button>
             </div>
         );
-        /**
-         * Nếu đơn hàng = returned
-         * Hiện nút "Xử lý hoàn trả"
-         */
+        // Đơn returned: Xử lý hoàn trả (ẩn nút khi đã hoàn tất quy trình hoàn trả)
     } else if (order.orderStatus === EOrderStatus.RETURNED) {
-        actions = (
-            <button
-                onClick={orderActionController.handleProcessReturn}
-                disabled={orderActionController.isLoading}
-                className="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 border border-orange-600 rounded-sm hover:bg-orange-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
-            >
-                {orderActionController.isLoading && renderSpinner()}
-                Xử Lý Hoàn Trả
-            </button>
-        );
+        const isReturnFinished =
+            orderActionController.isReturnCompleted ||
+            order.returnStatus === 'COMPLETED' ||
+            order.statusHistory?.some(
+                (h) =>
+                    h.note &&
+                    (h.note.includes('Hoàn tiền') ||
+                     h.note.includes('đổi hàng mới') ||
+                     h.note.includes('Đã hoàn tất'))
+            );
+
+        const targetNewOrderId =
+            orderActionController.newOrderId ||
+            order.newOrderId ||
+            (() => {
+                const h = (order.statusHistory || []).find(
+                    item => item.note && (item.note.includes('Đơn hàng mới: #') || item.note.includes('đổi hàng mới'))
+                );
+                if (h && h.note) {
+                    const m = h.note.match(/#([a-zA-Z0-9-]+)/);
+                    return m ? m[1] : undefined;
+                }
+                return undefined;
+            })();
+
+        if (targetNewOrderId) {
+            actions = (
+                <Link
+                    to={`/admin/orders/${targetNewOrderId}`}
+                    className="px-3.5 py-1.5 text-sm font-semibold text-white bg-blue-600 border border-blue-600 rounded-sm hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                    <span className="material-symbols-outlined text-base">swap_horiz</span>
+                    Xem Đơn Đổi Mới #{targetNewOrderId}
+                </Link>
+            );
+        } else if (!isReturnFinished) {
+            actions = (
+                <button
+                    onClick={orderActionController.handleProcessReturn}
+                    disabled={orderActionController.isLoading}
+                    className="px-3 py-1.5 text-sm font-medium text-white bg-orange-600 border border-orange-600 rounded-sm hover:bg-orange-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                >
+                    {orderActionController.isLoading && renderSpinner()}
+                    Xử Lý Hoàn Trả
+                </button>
+            );
+        }
     }
 
     return (
@@ -113,6 +140,12 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
                 onClose={orderActionController.handleCloseCancelModal}
                 onConfirm={orderActionController.handleConfirmCancel}
                 isLoading={orderActionController.isLoading}
+            />
+            <ReturnProcessModal
+                isOpen={orderActionController.isReturnModalOpen}
+                onClose={orderActionController.handleCloseReturnModal}
+                order={order}
+                onSuccess={orderActionController.handleReturnSuccess}
             />
         </>
     );

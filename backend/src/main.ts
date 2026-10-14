@@ -6,6 +6,34 @@ import { LoggingInterceptor } from './core/common/interceptors/logging.intercept
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import { exec } from 'child_process';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from './module/users/entities/user.entity';
+import { EUserRole } from './module/users/enums/user.enum';
+import * as bcrypt from 'bcrypt';
+
+async function seedUsers(app: NestExpressApplication) {
+  const userRepository = app.get(getRepositoryToken(User));
+  const usersToCreate = [
+    { email: 'admin@example.com', role: EUserRole.ADMIN },
+    { email: 'staff@example.com', role: EUserRole.STAFF },
+    { email: 'client@example.com', role: EUserRole.USER },
+  ];
+
+  for (const u of usersToCreate) {
+    const exists = await userRepository.findOne({ where: { email: u.email } });
+    if (!exists) {
+      const hashedPassword = await bcrypt.hash('password123', 10);
+      const newUser = userRepository.create({
+        email: u.email,
+        password: hashedPassword,
+        fullName: u.role,
+        role: u.role,
+      });
+      await userRepository.save(newUser);
+      console.log(`[Seeder] Created ${u.role} user: ${u.email}`);
+    }
+  }
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -16,15 +44,24 @@ async function bootstrap() {
 
   const activeEnv = process.env.APP_ENV;
   if (!activeEnv) {
-    throw new Error('APP_ENV is required in environment variables (dev or prod)');
+    throw new Error(
+      'APP_ENV is required in environment variables (dev or prod)',
+    );
   }
-  console.log(`[Bootstrap] Starting MarketNest Backend in [${activeEnv.toUpperCase()}] mode (NODE_ENV: ${process.env.NODE_ENV})...`);
+  console.log(
+    `[Bootstrap] Starting MarketNest Backend in [${activeEnv.toUpperCase()}] mode (NODE_ENV: ${process.env.NODE_ENV})...`,
+  );
 
   const rawCors = process.env.CORS_ALLOWED_ORIGINS;
   if (!rawCors) {
-    throw new Error('CORS_ALLOWED_ORIGINS is required in environment variables');
+    throw new Error(
+      'CORS_ALLOWED_ORIGINS is required in environment variables',
+    );
   }
-  const allowedOrigins = rawCors.split(',').map((o) => o.trim()).filter(Boolean);
+  const allowedOrigins = rawCors
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
 
   app.enableCors({
     origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
@@ -41,9 +78,14 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new LoggingInterceptor());
 
+  await seedUsers(app);
+
   const ngrokCmd = process.env.CMD_NGROK;
   if (ngrokCmd) {
-    const killCmd = process.platform === 'win32' ? 'taskkill /f /im ngrok.exe' : 'killall ngrok';
+    const killCmd =
+      process.platform === 'win32'
+        ? 'taskkill /f /im ngrok.exe'
+        : 'killall ngrok';
     exec(killCmd, () => {
       console.log(`[Ngrok] Starting ngrok: ${ngrokCmd}`);
       const ngrokProcess = exec(ngrokCmd);
@@ -64,7 +106,8 @@ async function bootstrap() {
     throw new Error('PORT is required in environment variables');
   }
   await app.listen(port, '0.0.0.0');
-  console.log(`[Bootstrap] MarketNest Backend is running at http://localhost:${port} [${activeEnv.toUpperCase()}]`);
+  console.log(
+    `[Bootstrap] MarketNest Backend is running at http://localhost:${port} [${activeEnv.toUpperCase()}]`,
+  );
 }
 bootstrap();
-

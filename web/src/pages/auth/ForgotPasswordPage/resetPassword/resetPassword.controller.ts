@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { AuthService } from "../../../../features/auth/services/auth.service";
 import type { ResetPasswordRequest } from "../../../../features/auth/dto/forgotPassword.type";
 import { useToast } from "../../../../components/toast/toast";
@@ -10,8 +10,9 @@ export const useResetPasswordController = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
+    const [searchParams] = useSearchParams();
 
-    const email: string = location.state?.email ?? "";
+    const email: string = location.state?.email ?? searchParams.get("email") ?? "";
 
     const {
         register,

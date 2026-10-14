@@ -1,5 +1,10 @@
-import type { SellerInfo } from "../../seller/models/seller.model";
 import type { ProductItem } from "./product.model";
+
+export interface ArtisanInfo {
+    id: string;
+    name: string;
+    avatarUrl?: string | null;
+}
 
 /**
  * Product's specifications
@@ -20,5 +25,5 @@ export interface ProductDetail extends ProductItem {
     careInstructions?: string;
 
     isFavorite?: boolean;
-    sellerInfo: SellerInfo;
+    artisanInfo?: ArtisanInfo | null;
 }

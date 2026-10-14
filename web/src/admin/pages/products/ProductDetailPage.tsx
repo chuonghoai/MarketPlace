@@ -148,6 +148,30 @@ export const ProductDetailPage = () => {
                                 materials={product.materials}
                             />
                         </div>
+
+                        {product.artisanInfo && (
+                            <div className="pt-4 border-t border-border-subtle mt-4">
+                                <p className="font-body text-sm font-semibold text-text-muted mb-3">Sản phẩm thuộc nghệ danh</p>
+                                <div 
+                                    className="flex items-center gap-3 p-3 rounded-lg border border-border-subtle bg-surface-container/30 cursor-pointer hover:bg-surface-container transition-colors w-fit"
+                                    onClick={() => navigate(`/admin/artisans/${product.artisanInfo?.id}`)}
+                                >
+                                    <div className="w-12 h-12 rounded-full overflow-hidden bg-surface-container flex-shrink-0">
+                                        {product.artisanInfo.avatarUrl ? (
+                                            <img src={product.artisanInfo.avatarUrl} alt={product.artisanInfo.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-primary-container/20 text-primary-container font-bold">
+                                                {product.artisanInfo.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <p className="font-body text-base font-semibold text-text-ink">{product.artisanInfo.name}</p>
+                                        <p className="text-xs text-text-muted mt-0.5">Nhấn để xem chi tiết</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

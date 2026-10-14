@@ -375,42 +375,30 @@ function ProductPage() {
                         )}
 
                         {/* ── Meet the Maker ── */}
-                        <div className="border-t border-[#E7E5E4] mt-8 md:mt-10 pt-6 md:pt-8">
-                            <h2 className="font-['Lora',serif] text-[20px] md:text-[22px] font-semibold text-[#1C1917] mb-4 md:mb-5">
-                                Gặp gỡ nghệ nhân
-                            </h2>
-                            <div className="flex items-start gap-4 group cursor-pointer">
-                                <div className="w-16 h-16 rounded-full overflow-hidden border border-[#E7E5E4] shrink-0 bg-[#F5F5F4]">
-                                    <img
-                                        src={product.sellerInfo.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.sellerInfo.name)}&background=F5F5F4&color=1C1917`}
-                                        alt={product.sellerInfo.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-['Open_Sans',sans-serif] text-[16px] font-semibold text-[#1e1b17] group-hover:text-[#9b2f00] transition-colors">
-                                        {product.sellerInfo.name}
-                                    </h3>
-                                    <div className="flex items-center gap-3 mt-1 text-[13px] text-[#59413a]">
-                                        {product.sellerInfo.averageRating !== undefined && (
-                                            <span className="flex items-center gap-1 text-[#D97706] font-semibold">
-                                                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
-                                                {product.sellerInfo.averageRating}
-                                            </span>
-                                        )}
-                                        {product.sellerInfo.averageRating !== undefined && product.sellerInfo.totalProducts !== undefined && (
-                                            <span className="text-[#D6D3D1]">|</span>
-                                        )}
-                                        {product.sellerInfo.totalProducts !== undefined && (
-                                            <span>{product.sellerInfo.totalProducts} tác phẩm</span>
-                                        )}
+                        {product.artisanInfo && (
+                            <div className="border-t border-[#E7E5E4] mt-8 md:mt-10 pt-6 md:pt-8">
+                                <h2 className="font-['Lora',serif] text-[20px] md:text-[22px] font-semibold text-[#1C1917] mb-4 md:mb-5">
+                                    Gặp gỡ nghệ nhân
+                                </h2>
+                                <div className="flex items-start gap-4 group cursor-pointer">
+                                    <div className="w-16 h-16 rounded-full overflow-hidden border border-[#E7E5E4] shrink-0 bg-[#F5F5F4]">
+                                        <img
+                                            src={product.artisanInfo.avatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(product.artisanInfo.name)}&background=F5F5F4&color=1C1917`}
+                                            alt={product.artisanInfo.name}
+                                            className="w-full h-full object-cover"
+                                        />
                                     </div>
-                                    <button className="mt-2 text-[13px] text-[#9b2f00] hover:text-[#c2410c] underline underline-offset-4 transition-colors">
-                                        Xem hồ sơ nghệ nhân →
-                                    </button>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-['Open_Sans',sans-serif] text-[16px] font-semibold text-[#1e1b17] group-hover:text-[#9b2f00] transition-colors mt-2">
+                                            {product.artisanInfo.name}
+                                        </h3>
+                                        <button className="mt-2 text-[13px] text-[#9b2f00] hover:text-[#c2410c] underline underline-offset-4 transition-colors">
+                                            Xem hồ sơ nghệ nhân →
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
 

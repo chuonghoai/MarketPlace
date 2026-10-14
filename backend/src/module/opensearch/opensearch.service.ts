@@ -13,11 +13,17 @@ export class OpensearchService implements OnModuleInit {
 
   async onModuleInit() {
     const node = this.configService.get<string>(ENV_VARS.OPENSEARCH_NODE);
-    const username = this.configService.get<string>(ENV_VARS.OPENSEARCH_USERNAME);
-    const password = this.configService.get<string>(ENV_VARS.OPENSEARCH_PASSWORD);
+    const username = this.configService.get<string>(
+      ENV_VARS.OPENSEARCH_USERNAME,
+    );
+    const password = this.configService.get<string>(
+      ENV_VARS.OPENSEARCH_PASSWORD,
+    );
 
     if (!node || !username || !password) {
-      this.logger.warn('OpenSearch configuration is missing in .env. Skipping connection.');
+      this.logger.warn(
+        'OpenSearch configuration is missing in .env. Skipping connection.',
+      );
       return;
     }
 
@@ -47,8 +53,10 @@ export class OpensearchService implements OnModuleInit {
 
   private async initIndex() {
     try {
-      const { body: indexExists } = await this.client.indices.exists({ index: this.INDEX_NAME });
-      
+      const { body: indexExists } = await this.client.indices.exists({
+        index: this.INDEX_NAME,
+      });
+
       if (!indexExists) {
         await this.client.indices.create({
           index: this.INDEX_NAME,
@@ -80,7 +88,10 @@ export class OpensearchService implements OnModuleInit {
         this.logger.log(`Created index: ${this.INDEX_NAME}`);
       }
     } catch (error) {
-      this.logger.error(`Error checking/creating index ${this.INDEX_NAME}:`, error.message);
+      this.logger.error(
+        `Error checking/creating index ${this.INDEX_NAME}:`,
+        error.message,
+      );
     }
   }
 
@@ -121,7 +132,10 @@ export class OpensearchService implements OnModuleInit {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to update product ${id} in OpenSearch`, error.message);
+      this.logger.error(
+        `Failed to update product ${id} in OpenSearch`,
+        error.message,
+      );
     }
   }
 
@@ -133,7 +147,10 @@ export class OpensearchService implements OnModuleInit {
         id,
       });
     } catch (error) {
-      this.logger.error(`Failed to delete product ${id} from OpenSearch`, error.message);
+      this.logger.error(
+        `Failed to delete product ${id} from OpenSearch`,
+        error.message,
+      );
     }
   }
 
@@ -158,7 +175,10 @@ export class OpensearchService implements OnModuleInit {
       const hits = body.hits.hits;
       return hits.map((hit: any) => hit._id);
     } catch (error) {
-      this.logger.error('Failed to search products in OpenSearch:', error.message);
+      this.logger.error(
+        'Failed to search products in OpenSearch:',
+        error.message,
+      );
       return [];
     }
   }

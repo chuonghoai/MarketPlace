@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import type { OrderTrackingDetail } from "../../../../features/order/tracking/model/orderDetail.model";
 import { EOrderStatus } from "../../../../features/order/enums/orderStatus.enum";
 
@@ -10,7 +11,51 @@ interface ShippingInfoCardProps {
 
 export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCancelClick, onReturnClick }) => {
     const canCancel = order.orderStatus === EOrderStatus.PENDING;
-    const canReturn = order.orderStatus === EOrderStatus.SUCCESS;
+
+    const hasReturnHistory =
+        order.orderStatus === EOrderStatus.RETURNED ||
+        (order.statusHistory || []).some(
+            h =>
+                h.status === EOrderStatus.RETURNED ||
+                (h.note &&
+                    (h.note.includes("yêu cầu Trả hàng") ||
+                        h.note.includes("yêu cầu Đổi món") ||
+                        h.note.includes("yêu cầu đổi trả")))
+        );
+
+    const isReturnFinished =
+        order.returnStatus === 'COMPLETED' ||
+        (order.statusHistory || []).some(
+            (h) =>
+                h.note &&
+                (h.note.includes('Hoàn tiền') ||
+                    h.note.includes('đổi hàng mới') ||
+                    h.note.includes('Đã hoàn tất'))
+        );
+
+    const replacementOrderId =
+        order.newOrderId ||
+        (() => {
+            const h = (order.statusHistory || []).find(
+                item => item.note && (item.note.includes('Đơn hàng mới: #') || item.note.includes('đổi hàng mới'))
+            );
+            if (h && h.note) {
+                const m = h.note.match(/#([a-zA-Z0-9-]+)/);
+                return m ? m[1] : undefined;
+            }
+            return undefined;
+        })();
+
+    // Ràng buộc UC23: trong vòng 7 ngày kể từ khi đơn kết thúc và chưa có yêu cầu đổi trả
+    const isWithin7Days = (() => {
+        if (order.orderStatus !== EOrderStatus.SUCCESS || hasReturnHistory) return false;
+        const successHistory = order.statusHistory?.slice().reverse().find(h => h.status === EOrderStatus.SUCCESS);
+        const deliveredDate = successHistory ? new Date(successHistory.timestamp) : new Date(order.createdAt);
+        const diffDays = (Date.now() - deliveredDate.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+    })();
+
+    const canReturn = isWithin7Days && !hasReturnHistory;
 
     return (
         <div className="flex flex-col gap-6">
@@ -106,7 +151,7 @@ export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCan
                 </div>
 
                 {/* Action Buttons */}
-                {(canCancel || canReturn) && (
+                {(canCancel || canReturn || hasReturnHistory) && (
                     <div className="mt-6 flex flex-col gap-3">
                         {canCancel && (
                             <button
@@ -121,8 +166,47 @@ export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCan
                                 onClick={onReturnClick}
                                 className="w-full min-h-11 flex items-center justify-center font-medium text-white bg-market-warning hover:bg-amber-600 rounded-xl transition-colors shadow-sm"
                             >
-                                Yêu cầu trả hàng
+                                Yêu cầu đổi trả / Hoàn tiền
                             </button>
+                        )}
+                        {hasReturnHistory && (
+                            isReturnFinished ? (
+                                <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200 text-sm flex flex-col gap-2.5">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="material-symbols-outlined text-emerald-600 shrink-0">check_circle</span>
+                                        <div>
+                                            <div className="font-semibold text-xs uppercase tracking-wide">Đổi trả thành công</div>
+                                            <div className="text-xs text-emerald-700 dark:text-emerald-300/80 mt-0.5">
+                                                Yêu cầu đổi trả / hoàn tiền đã được xử lý hoàn tất.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {replacementOrderId && (
+                                        <Link
+                                            to={`/profile/order/tracking/${replacementOrderId}`}
+                                            className="w-full py-2 px-3 bg-white dark:bg-stone-900 border border-emerald-300 dark:border-emerald-700 rounded-lg text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-emerald-100/50 dark:hover:bg-emerald-900/40 transition-colors shadow-xs"
+                                        >
+                                            <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                            Xem đơn hàng đổi mới #{replacementOrderId}
+                                        </Link>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 text-sm flex items-center gap-2.5">
+                                    <span className="material-symbols-outlined text-amber-600 shrink-0">assignment_return</span>
+                                    <div>
+                                        <div className="font-semibold text-xs uppercase tracking-wide">Đang xử lý đổi trả</div>
+                                        <div className="text-xs text-amber-700 dark:text-amber-300/80 mt-0.5">
+                                            Đơn hàng đang có yêu cầu đổi trả / hoàn tiền được xử lý.
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        )}
+                        {order.orderStatus === EOrderStatus.SUCCESS && !isWithin7Days && !hasReturnHistory && (
+                            <div className="p-3 text-xs text-stone-500 bg-stone-50 rounded-xl border border-stone-200 text-center">
+                                Đã hết hạn yêu cầu đổi trả (quá 7 ngày)
+                            </div>
                         )}
                     </div>
                 )}

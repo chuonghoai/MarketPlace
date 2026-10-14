@@ -7,13 +7,17 @@ export class RedisService implements OnModuleDestroy {
   private readonly redis: Redis;
   private readonly logger = new Logger(RedisService.name);
 
+  public getClient(): Redis {
+    return this.redis;
+  }
+
   constructor(private configService: ConfigService) {
     const redisUri = this.configService.get<string>('REDIS_URI');
     if (!redisUri) {
       throw new Error('REDIS_URI is not defined in environment variables');
     }
     this.redis = new Redis(redisUri);
-    
+
     this.redis.on('connect', () => {
       this.logger.log('Connected to Redis/Valkey successfully.');
     });
@@ -27,20 +31,12 @@ export class RedisService implements OnModuleDestroy {
     this.redis.disconnect();
   }
 
-  /**
-   * Set stock to Redis only if key does not exist (SETNX)
-   */
+  // Ghi tồn kho vào Redis nếu key chưa tồn tại (SETNX)
   async setStockNx(productId: string, stock: number) {
     await this.redis.setnx(`product_stock:${productId}`, stock);
   }
 
-  /**
-   * Deduct stock atomically using Lua script.
-   * Returns: 
-   * 1  - Success
-   * 0  - Insufficient stock
-   * -1 - Key not found
-   */
+  // Trừ tồn kho bằng Lua script (1: thành công, 0: không đủ hàng, -1: không tìm thấy)
   async deductStock(productId: string, quantity: number): Promise<number> {
     const script = `
       local stockKey = KEYS[1]
@@ -60,17 +56,20 @@ export class RedisService implements OnModuleDestroy {
         return 0
       end
     `;
-    
-    const result = await this.redis.eval(script, 1, `product_stock:${productId}`, quantity);
+
+    const result = await this.redis.eval(
+      script,
+      1,
+      `product_stock:${productId}`,
+      quantity,
+    );
     return result as number;
   }
 
-  /**
-   * Restore stock if transaction fails
-   */
+  // Hoàn tồn kho khi giao dịch thất bại
   async restoreStock(items: { productId: string; quantity: number }[]) {
     if (!items || items.length === 0) return;
-    
+
     const pipeline = this.redis.pipeline();
     for (const item of items) {
       pipeline.incrby(`product_stock:${item.productId}`, item.quantity);

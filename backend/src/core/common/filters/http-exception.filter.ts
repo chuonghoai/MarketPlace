@@ -1,4 +1,10 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Response } from 'express';
 
 @Catch(HttpException)
@@ -9,7 +15,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const exceptionResponse: any = exception.getResponse();
 
-    if (exceptionResponse && exceptionResponse.success === false && exceptionResponse.error) {
+    if (
+      exceptionResponse &&
+      exceptionResponse.success === false &&
+      exceptionResponse.error
+    ) {
       return response.status(status).json(exceptionResponse);
     }
 
@@ -20,7 +30,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(status).json({
       success: false,
       error: {
-        code: status === HttpStatus.BAD_REQUEST ? 'VALIDATION_ERROR' : 'SYSTEM_ERROR',
+        code:
+          status === HttpStatus.BAD_REQUEST
+            ? 'VALIDATION_ERROR'
+            : 'SYSTEM_ERROR',
         message: message,
       },
     });

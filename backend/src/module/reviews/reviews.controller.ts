@@ -1,4 +1,14 @@
-import { Controller, Get, Param, HttpCode, HttpStatus, Post, Body, UseGuards, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
 import { CreateReviewRequestDto } from './dto/reviews.dto';
@@ -11,7 +21,10 @@ export class ReviewsController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
-  async createReviews(@Body() request: CreateReviewRequestDto, @Req() req: any) {
+  async createReviews(
+    @Body() request: CreateReviewRequestDto,
+    @Req() req: any,
+  ) {
     const data = await this.reviewsService.createReviews(req.user.id, request);
     return { success: true, message: 'Đánh giá thành công', data };
   }

@@ -12,13 +12,17 @@ import { MainLayout } from "../components/layout/MainLayout";
 import MarketplacePage from "../pages/marketplace/marketplacePage";
 import ProductPage from "../pages/product/productPage";
 import CheckoutPage from "../pages/order-checkout/checkoutPage";
+import AuctionsCustomerPage from "../pages/auctions/AuctionsCustomerPage";
+import AuctionBiddingRoomPage from "../pages/auctions/AuctionBiddingRoomPage";
 import { ProfileLayout } from "../pages/profile/layouts/ProfileLayout";
 import ProfileDashboardPage from "../pages/profile/dashboard/ProfileDashboardPage";
 import { OrderTrackingList } from "../pages/profile/order-tracking/OrderTrackingList";
 import { OrderTrackingDetail } from "../pages/profile/order-tracking-detail/OrderTrackingDetail";
 import AddressManagementPage from "../pages/profile/addresses/AddressManagementPage";
 import { OrderEvaluatePage } from "../pages/profile/order-evaluate/OrderEvaluatePage";
+import WalletPage from "../pages/profile/wallet/WalletPage";
 import CartPage from "../pages/cart/CartPage";
+import DeviceManagementPage from "../pages/profile/devices/DeviceManagementPage";
 import AuthGuard from "../core/auth/auth.guard";
 import { AdminLayout } from "../admin/layout/AdminLayout";
 import { DashboardPage } from "../admin/pages/overview/DashboardPage";
@@ -33,6 +37,16 @@ import OrderPage from "../admin/pages/order/orderPage";
 import OrderDetailPage from "../admin/pages/orderDetail/orderDetailPage";
 import { VouchersPage } from "../admin/pages/voucher/VouchersPage";
 import { VoucherStatsPage } from "../admin/pages/voucher/VoucherStatsPage";
+import { AuctionsPage } from "../admin/pages/auctions/AuctionsPage";
+import { ArtisanPage } from "../admin/pages/artisans/ArtisanPage";
+import { ArtisanDetailPage } from "../admin/pages/artisans/ArtisanDetailPage";
+import { AdminWithdrawalsPage } from "../admin/pages/wallets/AdminWithdrawalsPage";
+import { StaffPage } from "../admin/pages/staff/StaffPage";
+import { SettingsPage } from "../admin/pages/settings/SettingsPage";
+import UserSupportPage from "../pages/support/UserSupportPage";
+import AdminSupportPage from "../admin/pages/support/AdminSupportPage";
+import StaffKpiPage from "../admin/pages/kpi/StaffKpiPage";
+import MyKpiPage from "../admin/pages/kpi/MyKpiPage";
 
 function AppRoutes() {
     return (
@@ -48,6 +62,14 @@ function AppRoutes() {
                     <Route path="product/:id" element={<ProductPage />} />
                     <Route path="product/:slug/:id" element={<ProductPage />} />
                     <Route path=":productSlug" element={<ProductPage />} />
+
+                    {/* AUCTIONS */}
+                    <Route path="auctions" element={<AuctionsCustomerPage />} />
+                    <Route path="auctions/:id" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.USER, EUserRole.ADMIN, EUserRole.STAFF]}>
+                            <AuctionBiddingRoomPage />
+                        </AuthGuard>
+                    } />
 
                     {/* CART */}
                     <Route path="cart" element={
@@ -77,11 +99,19 @@ function AppRoutes() {
                         <Route index element={<Navigate to="/profile/dashboard" replace />} />
                         <Route path="dashboard" element={<ProfileDashboardPage />} />
                         <Route path="addresses" element={<AddressManagementPage />} />
+                        <Route path="wallet" element={<WalletPage />} />
                         <Route path="order/tracking">
                             <Route index element={<OrderTrackingList />} />
                             <Route path=":orderId" element={<OrderTrackingDetail />} />
                             <Route path=":orderId/evaluate" element={<OrderEvaluatePage />} />
                         </Route>
+                        <Route path="orders">
+                            <Route index element={<OrderTrackingList />} />
+                            <Route path=":orderId" element={<OrderTrackingDetail />} />
+                            <Route path=":orderId/evaluate" element={<OrderEvaluatePage />} />
+                        </Route>
+                        <Route path="devices" element={<DeviceManagementPage />} />
+                        <Route path="support" element={<UserSupportPage />} />
                     </Route>
                 </Route>
 
@@ -92,15 +122,41 @@ function AppRoutes() {
                     </AuthGuard>
                 }>
                     <Route index element={<Navigate to="/admin/overview" replace />} />
-                    <Route path="overview" element={<DashboardPage />} />
+                    <Route path="overview" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.ADMIN]}>
+                            <DashboardPage />
+                        </AuthGuard>
+                    } />
+                    <Route path="kpi" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.ADMIN]}>
+                            <StaffKpiPage />
+                        </AuthGuard>
+                    } />
+                    <Route path="kpi/me" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.STAFF]}>
+                            <MyKpiPage />
+                        </AuthGuard>
+                    } />
+                    <Route path="support" element={<AdminSupportPage />} />
                     <Route path="products" element={<ProductsPage />} />
                     <Route path="products/create" element={<CreateProductPage />} />
                     <Route path="products/:id" element={<ProductDetailPage />} />
                     <Route path="products/:id/edit" element={<EditProductPage />} />
                     <Route path="orders" element={<OrderPage />} />
                     <Route path="orders/:id" element={<OrderDetailPage />} />
+                    <Route path="auctions" element={<AuctionsPage />} />
                     <Route path="vouchers" element={<VouchersPage />} />
                     <Route path="vouchers/stats" element={<VoucherStatsPage />} />
+                    <Route path="artisans" element={<ArtisanPage />} />
+                    <Route path="artisans/create" element={<ArtisanDetailPage />} />
+                    <Route path="artisans/:id" element={<ArtisanDetailPage />} />
+                    <Route path="wallets/withdrawals" element={<AdminWithdrawalsPage />} />
+                    <Route path="staff" element={
+                        <AuthGuard requireAuth={true} allowedRoles={[EUserRole.ADMIN]}>
+                            <StaffPage />
+                        </AuthGuard>
+                    } />
+                    <Route path="settings" element={<SettingsPage />} />
                 </Route>
 
                 {/* AUTH */}

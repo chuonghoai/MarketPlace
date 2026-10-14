@@ -1,0 +1,41 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase " " as n1
+usecase "d(item)" as n2
+usecase "u(item)" as n3
+usecase "u(item)\nd(item)" as n4
+usecase "d(item)" as n5
+usecase "u(item)" as n6
+usecase " " as n7
+usecase "Exit" as end_node
+note right of end_node : k(item)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+
+n3 --> n4 : true
+n3 --> n5 : false
+
+n4 --> n6
+n5 --> n6
+
+n6 --> n7
+n7 --> end_node
+
+@enduml
+
+' Báo cáo liveness biến item:
+' - Definition tại n2: d(item) khi nhận kết quả findOne từ cartItemRepository.
+' - Use tại n3: u(item) khi kiểm tra điều kiện if (item).
+' - Nhánh True:
+'     + Use và Re-definition tại n4: u(item), d(item) khi thực hiện item.quantity += quantity.
+' - Nhánh False:
+'     + Definition tại n5: d(item) khi tạo đối tượng mới cartItemRepository.create.
+' - Use tại n6: u(item) khi lưu đối tượng vào database qua cartItemRepository.save(item).
+' - Kill tại Exit: k(item).
+' Chuỗi thao tác dữ liệu: ~d(item) -> d(item) -> u(item) -> [u(item) -> d(item) | d(item)] -> u(item) -> k(item) -> ~k(item).
+' Kết luận: Chuỗi thao tác hợp lệ, không xuất hiện bất thường (anomaly).

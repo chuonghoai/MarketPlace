@@ -70,9 +70,7 @@ export const useOrderEvaluateController = () => {
 
         fetchOrderReviews();
 
-        /**
-         * Init state cho các item chưa đánh giá
-         */
+        // Khởi tạo state cho các sản phẩm chưa đánh giá
         const initialItems: ReviewStateItem[] = order.items
             .filter((item) => !item.isReviewed)
             .map((item) => ({
@@ -98,9 +96,7 @@ export const useOrderEvaluateController = () => {
         dispatch({ type: "SET_COMMENT", orderItemId, comment });
     }, []);
 
-    /**
-     * Valid review: Chỉ submit đánh giá có rating > 0 (đối với sản phẩm chưa được đánh giá)
-     */
+    // Chỉ gửi đánh giá có rating > 0
     const validReviewsToSubmit = reviews.filter((r) => r.rating > 0);
     const canSubmit = validReviewsToSubmit.length > 0;
 

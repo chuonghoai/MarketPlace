@@ -12,7 +12,7 @@ export class ProductService {
         this.productRepository = productRepository;
     }
 
-    // === Fetch ===
+    // Fetch
 
     async fetchProducts(query: GetProductsQuery): Promise<ApiResponse<Product[]>> {
         try {
@@ -39,7 +39,7 @@ export class ProductService {
         }
     }
 
-    // === CRUD ===
+    // CRUD
 
     async removeProduct(id: string): Promise<boolean> {
         try {
@@ -68,7 +68,7 @@ export class ProductService {
 
 }
 
-// === Khởi tạo instance — chọn Mock hoặc Api dựa trên USE_MOCK ===
+// Khởi tạo instance (Mock hoặc API theo USE_MOCK)
 export const productService = new ProductService(
     USE_MOCK ? new ProductMockRepository() : new ProductApiRepository()
 );

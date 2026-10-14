@@ -8,10 +8,8 @@ import { Product } from '../products/entities/product.entity';
 import { Category } from '../categories/entities/category.entity';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Order, OrderItem, Product, Category]),
-    ],
-    controllers: [DashboardController],
-    providers: [DashboardService],
+  imports: [TypeOrmModule.forFeature([Order, OrderItem, Product, Category])],
+  controllers: [DashboardController],
+  providers: [DashboardService],
 })
 export class DashboardModule {}

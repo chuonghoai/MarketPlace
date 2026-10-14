@@ -3,4 +3,5 @@ export enum EPaymentMethod {
   MOMO = 'MOMO',
   VNPAY = 'VNPAY',
   PAYPAL = 'PAYPAL',
+  WALLET = 'WALLET',
 }

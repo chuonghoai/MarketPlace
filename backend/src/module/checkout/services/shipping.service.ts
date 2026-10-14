@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { calculateDynamicOptimalBox, ProductInput } from '../../../utils/packing.util';
+import {
+  calculateDynamicOptimalBox,
+  ProductInput,
+} from '../../../utils/packing.util';
 
 const from_province_id = 202;
 const from_district_id = 3695;
@@ -13,7 +16,7 @@ export class ShippingService {
     weight: number,
     length: number,
     width: number,
-    height: number
+    height: number,
   ): Promise<number> {
     try {
       const payload = {
@@ -25,22 +28,30 @@ export class ShippingService {
         length: length,
         width: width,
         height: height,
-        source: "5sao"
+        source: '5sao',
       };
 
-      const response = await fetch("https://fe-online-gateway.ghn.vn/shiip/public-api/order/calculate-fee", {
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
+      const response = await fetch(
+        'https://fe-online-gateway.ghn.vn/shiip/public-api/order/calculate-fee',
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+          method: 'POST',
         },
-        body: JSON.stringify(payload),
-        method: "POST",
-      });
+      );
       const data = await response.json();
       if (data.code === 200 && data.data) {
         return data.data.fee;
       }
-      console.warn('GHN returned error or no fee:', data, 'Payload sent:', payload);
+      console.warn(
+        'GHN returned error or no fee:',
+        data,
+        'Payload sent:',
+        payload,
+      );
       return 30000;
     } catch (error) {
       console.error('GHN Shipping Fee Error:', error);
@@ -48,15 +59,21 @@ export class ShippingService {
     }
   }
 
-  calculateOptimalBox(items: { quantity: number; productId: string }[], productMap: Map<string, any>) {
-    let boxLength = 10, boxWidth = 10, boxHeight = 10, boxWeight = 500;
-    
+  calculateOptimalBox(
+    items: { quantity: number; productId: string }[],
+    productMap: Map<string, any>,
+  ) {
+    let boxLength = 10,
+      boxWidth = 10,
+      boxHeight = 10,
+      boxWeight = 500;
+
     if (!items || items.length === 0) {
       return { boxLength, boxWidth, boxHeight, boxWeight };
     }
 
     const packingInputs: ProductInput[] = items
-      .map(item => {
+      .map((item) => {
         const product = productMap.get(item.productId);
         if (!product) return null;
         return {
@@ -65,18 +82,18 @@ export class ShippingService {
           width: product.dimensions?.[1] || 10,
           height: product.dimensions?.[2] || 10,
           weight: (product.weight || 0.5) * 1000,
-          quantity: item.quantity
+          quantity: item.quantity,
         };
       })
       .filter(Boolean) as ProductInput[];
 
     const packingResult = calculateDynamicOptimalBox(packingInputs, 2);
-    
+
     if (packingResult.success) {
-      boxLength = (packingResult as any).dimensions.length;
-      boxWidth = (packingResult as any).dimensions.width;
-      boxHeight = (packingResult as any).dimensions.height;
-      boxWeight = (packingResult as any).totalWeight;
+      boxLength = packingResult.dimensions.length;
+      boxWidth = packingResult.dimensions.width;
+      boxHeight = packingResult.dimensions.height;
+      boxWeight = packingResult.totalWeight;
     }
 
     return { boxLength, boxWidth, boxHeight, boxWeight, packingResult };

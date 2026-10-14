@@ -1,0 +1,146 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+note right of n1 : d(userId)\nd(amount)\nd(paymentMethod)\nd(ipAddr)\nd(description)
+usecase "2" as n2
+note right of n2 : u(amount)
+usecase "3" as n3
+note right of n3 : u(amount)
+usecase "4" as n4
+usecase "5" as n5
+note right of n5 : u(paymentMethod)
+usecase "6" as n6
+note right of n6 : u(userId)\nd(txRef)
+usecase "7" as n7
+note right of n7 : u(txRef)\nu(amount)\nu(ipAddr)\nd(paymentUrl)
+usecase "8" as n8
+note right of n8 : u(paymentUrl)\nu(txRef)\nu(amount)
+usecase "9" as n9
+note right of n9 : u(paymentMethod)
+usecase "10" as n10
+note right of n10 : u(userId)\nd(txRef)
+usecase "11" as n11
+note right of n11 : u(txRef)\nu(amount)\nd(paymentUrl)
+usecase "12" as n12
+note right of n12 : u(paymentUrl)\nu(txRef)\nu(amount)
+usecase "13" as n13
+note right of n13 : u(paymentMethod)
+usecase "14" as n14
+note right of n14 : u(userId)\nd(txRef)
+usecase "15" as n15
+note right of n15 : u(txRef)\nu(amount)\nd(paymentUrl)
+usecase "16" as n16
+note right of n16 : u(paymentUrl)\nu(txRef)\nu(amount)
+usecase "17" as n17
+note right of n17 : d(queryRunner)
+usecase "18" as n18
+note right of n18 : u(queryRunner)
+usecase "19" as n19
+note right of n19 : u(queryRunner)
+usecase "20" as n20
+note right of n20 : u(userId)\nu(queryRunner)
+usecase "21" as n21
+note right of n21 : u(queryRunner)\nu(userId)\nd(wallet)
+usecase "22" as n22
+note right of n22 : u(wallet)
+usecase "23" as n23
+usecase "24" as n24
+note right of n24 : u(wallet)
+usecase "25" as n25
+usecase "26" as n26
+note right of n26 : u(wallet)\nd(balanceBefore)
+usecase "27" as n27
+note right of n27 : u(balanceBefore)\nu(amount)\nd(balanceAfter)
+usecase "28" as n28
+note right of n28 : u(wallet)\nu(balanceAfter)\nd(wallet)
+usecase "29" as n29
+note right of n29 : u(queryRunner)\nu(wallet)
+usecase "30" as n30
+note right of n30 : u(queryRunner)\nu(wallet)\nu(amount)\nu(balanceBefore)\nu(balanceAfter)\nu(description)\nd(tx)
+usecase "31" as n31
+note right of n31 : u(queryRunner)\nu(tx)
+usecase "32" as n32
+note right of n32 : u(queryRunner)
+usecase "33" as n33
+note right of n33 : u(balanceAfter)\nu(tx)
+usecase "34" as n34
+note right of n34 : d(err)
+usecase "35" as n35
+note right of n35 : u(queryRunner)
+usecase "36" as n36
+note right of n36 : u(err)
+usecase "37" as n37
+note right of n37 : u(queryRunner)
+usecase "Exit" as end_node
+note right of end_node : k(userId)\nk(amount)\nk(paymentMethod)\nk(ipAddr)\nk(description)\nk(txRef)\nk(paymentUrl)\nk(queryRunner)\nk(wallet)\nk(balanceBefore)\nk(balanceAfter)\nk(tx)\nk(err)
+
+start_node --> n1
+n1 --> n2
+
+n2 --> n4 : true
+n2 --> n3 : false
+
+n3 --> n4 : true
+n3 --> n5 : false
+
+n4 --> end_node
+
+n5 --> n6 : true
+n5 --> n9 : false
+
+n6 --> n7
+n7 --> n8
+n8 --> end_node
+
+n9 --> n10 : true
+n9 --> n13 : false
+
+n10 --> n11
+n11 --> n12
+n12 --> end_node
+
+n13 --> n14 : true
+n13 --> n17 : false
+
+n14 --> n15
+n15 --> n16
+n16 --> end_node
+
+n17 --> n18
+n18 --> n19
+n19 --> n20
+n20 --> n21
+
+n21 --> n22 : success
+n21 --> n34 : db_exception
+
+n22 --> n23 : true
+n22 --> n24 : false
+
+n23 --> n34 : exception
+
+n24 --> n25 : true
+n24 --> n26 : false
+
+n25 --> n34 : exception
+
+n26 --> n27
+n27 --> n28
+n28 --> n29
+n29 --> n30
+n30 --> n31
+n31 --> n32
+n32 --> n33
+
+n33 --> n37
+
+n34 --> n35
+n35 --> n36
+n36 --> n37
+
+n37 --> end_node
+
+@enduml

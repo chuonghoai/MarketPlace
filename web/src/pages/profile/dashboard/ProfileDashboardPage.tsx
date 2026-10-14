@@ -30,6 +30,8 @@ const ProfileDashboardPage = () => {
                     pagination={controller.wishlistPagination}
                     currentPage={controller.wishlistPage}
                     onPageChange={controller.handleWishlistPageChange}
+                    onRemoveFavorite={controller.handleRemoveFavorite}
+                    removingId={controller.removingFavoriteId}
                 />
             </div>
         </div>

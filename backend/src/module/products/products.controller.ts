@@ -1,6 +1,21 @@
-import { Controller, Get, Param, Req, Query, HttpCode, HttpStatus, Body, Delete, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Req,
+  Query,
+  HttpCode,
+  HttpStatus,
+  Body,
+  Delete,
+  Put,
+} from '@nestjs/common';
 import { ProductsService } from './products.service';
-import { GetAllProductDto, CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import {
+  GetAllProductDto,
+  CreateProductDto,
+  UpdateProductDto,
+} from './dto/product.dto';
 import { JwtAuthGuard } from '../../core/security/jwt/jwt-auth.guard';
 import { UseGuards, Post } from '@nestjs/common';
 import { OptionalJwtAuthGuard } from '../../core/security/jwt/optional-jwt-auth.guard';
@@ -10,7 +25,7 @@ import { EUserRole } from '../users/enums/user.enum';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) { }
+  constructor(private readonly productsService: ProductsService) {}
 
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
@@ -49,7 +64,11 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(EUserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
-  async updateProduct(@Param('id') id: string, @Body() dto: UpdateProductDto, @Req() req: any) {
+  async updateProduct(
+    @Param('id') id: string,
+    @Body() dto: UpdateProductDto,
+    @Req() req: any,
+  ) {
     const data = await this.productsService.updateProduct(id, dto);
     return { success: true, message: 'Cập nhật sản phẩm thành công', data };
   }

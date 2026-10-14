@@ -26,26 +26,40 @@ export class AdminsService implements OnApplicationBootstrap {
 
   private async seedAdmin() {
     const adminMail = this.configService.get<string>(ENV_VARS.ADMIN_MAIL);
-    const adminPassword = this.configService.get<string>(ENV_VARS.ADMIN_PASSWORD);
-    
+    const adminPassword = this.configService.get<string>(
+      ENV_VARS.ADMIN_PASSWORD,
+    );
+
     if (!adminMail || !adminPassword) {
-      this.logger.warn('ADMIN_MAIL or ADMIN_PASSWORD is not set in .env. Skipping admin seeding.');
+      this.logger.warn(
+        'ADMIN_MAIL or ADMIN_PASSWORD is not set in .env. Skipping admin seeding.',
+      );
       return;
     }
 
-    let adminUser = await this.userRepository.findOne({ where: { email: adminMail } });
+    let adminUser = await this.userRepository.findOne({
+      where: { email: adminMail },
+    });
 
     if (!adminUser) {
       this.logger.log('Admin user not found. Creating default admin...');
       const hashedPassword = await bcrypt.hash(adminPassword, 10);
-      
-      const adminFullName = this.configService.get<string>(ENV_VARS.ADMIN_FULL_NAME);
+
+      const adminFullName = this.configService.get<string>(
+        ENV_VARS.ADMIN_FULL_NAME,
+      );
       if (!adminFullName) {
-        throw new Error('ADMIN_FULL_NAME is not defined in environment variables');
+        throw new Error(
+          'ADMIN_FULL_NAME is not defined in environment variables',
+        );
       }
-      const adminAvatarUrl = this.configService.get<string>(ENV_VARS.ADMIN_AVATAR_URL);
+      const adminAvatarUrl = this.configService.get<string>(
+        ENV_VARS.ADMIN_AVATAR_URL,
+      );
       if (!adminAvatarUrl) {
-        throw new Error('ADMIN_AVATAR_URL is not defined in environment variables');
+        throw new Error(
+          'ADMIN_AVATAR_URL is not defined in environment variables',
+        );
       }
 
       adminUser = this.userRepository.create({
@@ -63,11 +77,12 @@ export class AdminsService implements OnApplicationBootstrap {
         department: 'Management',
       });
       await this.adminRepository.save(adminProfile);
-      
+
       this.logger.log('Default admin created successfully.');
     } else {
-      
-      const adminProfile = await this.adminRepository.findOne({ where: { user: { id: adminUser.id } } });
+      const adminProfile = await this.adminRepository.findOne({
+        where: { user: { id: adminUser.id } },
+      });
       if (!adminProfile) {
         const newProfile = this.adminRepository.create({
           user: adminUser,

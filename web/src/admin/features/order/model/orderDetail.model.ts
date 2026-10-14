@@ -2,28 +2,15 @@ import type { EOrderStatus } from "../../../../features/order/enums/orderStatus.
 import type { EPaymentMethod } from "../../../../features/order/enums/paymentMethod.enum";
 import type { EPaymentStatus } from "../../../../features/order/enums/paymentStatus.enum";
 
-/**
- * Lịch sử cập nhật trạng thái đơn hàng
- */
+// Lịch sử cập nhật trạng thái đơn hàng
 export interface OrderStatusHistory {
     status: EOrderStatus;
     timestamp: string;        // Ngày cập nhật
-    /**
-     * Ghi chú:
-     *  - PENDING: Khách hàng đặt hàng
-     *  - PREPARING: Shop đã xác nhận đơn
-     *  - SHIPPING: Đã giao cho ĐVVC
-     *  - DELIVERED: Giao hàng thành công
-     *  - SUCCESS: Hoàn tất đơn hàng
-     *  - CANCELLED: Đơn hàng đã bị hủy
-     *  - RETURNED: Khách hàng đã yêu cầu hoàn trả
-     */
+    // Ghi chú trạng thái đơn hàng
     note?: string;
 }
 
-/**
- * Chi tiết từng sản phẩm trong đơn hàng
- */
+// Chi tiết từng sản phẩm trong đơn hàng
 export interface OrderDetailProductItem {
     productId: string;
     productName: string;
@@ -43,9 +30,7 @@ export interface OrderVoucherItem {
     voucherSnapshot: any;
 }
 
-/**
- * Chi tiết đơn hàng cho admin quản lý
- */
+// Chi tiết đơn hàng cho admin
 export interface OrderDetail {
     id: string;
     createdAt: string;
@@ -71,4 +56,6 @@ export interface OrderDetail {
     paymentStatus: EPaymentStatus;
 
     cancelReason?: string;      // Lý do hủy đơn nếu EOrderStatus là CANCELLED hoặc RETURNED
+    returnStatus?: string;      // Trạng thái của quy trình đổi trả: PENDING, PICKING_UP, RECEIVED, COMPLETED
+    newOrderId?: string;        // Mã đơn hàng thay thế nếu là yêu cầu đổi hàng
 }

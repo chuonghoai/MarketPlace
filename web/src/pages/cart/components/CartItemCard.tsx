@@ -79,12 +79,20 @@ export const CartItemCard: React.FC<Props> = ({
 
         {/* Controls */}
         <div className="mt-4 sm:mt-auto pt-3 sm:pt-4 flex flex-wrap sm:flex-nowrap items-center justify-between border-t border-[#D6D3D1] border-dashed sm:border-none gap-3 sm:gap-4">
-          <QuantitySelector 
-            quantity={quantity}
-            disabled={isLoading}
-            onDecrease={() => onUpdateQuantity(product.id, quantity - 1)}
-            onIncrease={() => onUpdateQuantity(product.id, quantity + 1)}
-          />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-3">
+            <QuantitySelector 
+              quantity={quantity}
+              disabled={isLoading}
+              max={product.stock}
+              onDecrease={() => onUpdateQuantity(product.id, quantity - 1)}
+              onIncrease={() => onUpdateQuantity(product.id, quantity + 1)}
+            />
+            {typeof product.stock === 'number' && product.stock > 0 && quantity >= product.stock && (
+              <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                (Tối đa: {product.stock})
+              </span>
+            )}
+          </div>
 
           <button 
             disabled={isLoading}

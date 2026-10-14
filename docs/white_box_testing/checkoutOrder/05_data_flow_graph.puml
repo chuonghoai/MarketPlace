@@ -1,0 +1,360 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+usecase "2" as n2
+usecase "3" as n3
+usecase "4" as n4
+usecase "5" as n5
+usecase "6" as n6
+usecase "7" as n7
+usecase "8" as n8
+usecase "9" as n9
+usecase "10" as n10
+usecase "11" as n11
+usecase "12" as n12
+usecase "13" as n13
+usecase "14" as n14
+usecase "15" as n15
+usecase "16" as n16
+usecase "17" as n17
+usecase "18" as n18
+usecase "19" as n19
+usecase "20" as n20
+usecase "21" as n21
+usecase "22" as n22
+usecase "23" as n23
+usecase "24" as n24
+usecase "25" as n25
+usecase "26" as n26
+usecase "27" as n27
+usecase "28" as n28
+usecase "29" as n29
+usecase "30" as n30
+usecase "31" as n31
+usecase "32" as n32
+usecase "33" as n33
+usecase "34" as n34
+usecase "35" as n35
+usecase "36" as n36
+usecase "37" as n37
+usecase "38" as n38
+usecase "39" as n39
+usecase "40" as n40
+usecase "41" as n41
+usecase "42" as n42
+usecase "43" as n43
+usecase "44" as n44
+usecase "45" as n45
+usecase "46" as n46
+usecase "47" as n47
+usecase "48" as n48
+usecase "49" as n49
+usecase "50" as n50
+usecase "51" as n51
+usecase "52" as n52
+usecase "53" as n53
+usecase "54" as n54
+usecase "55" as n55
+usecase "56" as n56
+usecase "57" as n57
+usecase "58" as n58
+usecase "59" as n59
+usecase "60" as n60
+usecase "61" as n61
+usecase "62" as n62
+usecase "63" as n63
+usecase "64" as n64
+usecase "65" as n65
+usecase "66" as n66
+usecase "67" as n67
+usecase "68" as n68
+usecase "69" as n69
+usecase "70" as n70
+usecase "71" as n71
+usecase "72" as n72
+usecase "73" as n73
+usecase "74" as n74
+usecase "75" as n75
+usecase "76" as n76
+usecase "77" as n77
+usecase "78" as n78
+usecase "79" as n79
+usecase "80" as n80
+usecase "81" as n81
+usecase "82" as n82
+usecase "83" as n83
+usecase "84" as n84
+usecase "85" as n85
+usecase "86" as n86
+usecase "87" as n87
+usecase "88" as n88
+usecase "89" as n89
+usecase "90" as n90
+usecase "91" as n91
+usecase "92" as n92
+usecase "93" as n93
+usecase "94" as n94
+usecase "95" as n95
+usecase "96" as n96
+usecase "97" as n97
+usecase "98" as n98
+usecase "99" as n99
+usecase "100" as n100
+usecase "101" as n101
+usecase "102" as n102
+usecase "103" as n103
+usecase "104" as n104
+usecase "105" as n105
+usecase "106" as n106
+usecase "107" as n107
+usecase "108" as n108
+usecase "109" as n109
+usecase "110" as n110
+usecase "111" as n111
+usecase "112" as n112
+usecase "113" as n113
+usecase "114" as n114
+usecase "115" as n115
+usecase "116" as n116
+usecase "117" as n117
+usecase "118" as n118
+usecase "119" as n119
+usecase "120" as n120
+usecase "121" as n121
+usecase "122" as n122
+usecase "123" as n123
+usecase "124" as n124
+usecase "125" as n125
+usecase "126" as n126
+usecase "127" as n127
+usecase "128" as n128
+usecase "129" as n129
+usecase "130" as n130
+usecase "131" as n131
+usecase "132" as n132
+usecase "133" as n133
+usecase "134" as n134
+usecase "135" as n135
+usecase "136" as n136
+usecase "137" as n137
+usecase "138" as n138
+usecase "139" as n139
+usecase "140" as n140
+usecase "141" as n141
+usecase "142" as n142
+usecase "143" as n143
+usecase "144" as n144
+usecase "145" as n145
+usecase "146" as n146
+usecase "Exit" as end_node
+
+note right of start_node: d(createOrderDto)\nd(userId)
+note right of n2 : u(createOrderDto)
+note right of n5 : u(createOrderDto)\nu(userId)
+note right of n8 : u(createOrderDto)
+note right of n13 : u(createOrderDto)
+note right of n22 : u(createOrderDto)
+note right of n33 : u(createOrderDto)
+note right of n35 : u(userId)
+note right of n104 : u(createOrderDto)
+note right of n133 : u(createOrderDto)
+note right of n136 : u(createOrderDto)
+note right of n139 : u(createOrderDto)
+note right of n142 : u(userId)
+note right of n143 : u(userId)
+
+start_node --> n1
+n1 --> n2
+n2 --> n4 : true
+n2 --> n3 : false
+n3 --> n4 : true
+n3 --> n5 : false
+n4 --> end_node
+n5 --> n6
+n6 --> n7 : true
+n6 --> n8 : false
+n7 --> end_node
+n8 --> n9
+n9 --> n10
+n10 --> n11
+n11 --> n12
+n12 --> n13
+n13 --> n14 : true
+n13 --> n22 : false
+n14 --> n15
+n15 --> n16 : true
+n15 --> n17 : false
+n16 --> end_node
+n17 --> n18 : true
+n17 --> n19 : false
+n18 --> end_node
+n19 --> n20
+n20 --> n21
+n21 --> n13
+n22 --> n23
+n23 --> n24 : true
+n23 --> n25 : false
+n24 --> n25
+n25 --> n26
+n26 --> n27
+n27 --> n28
+n28 --> n29
+n29 --> n30 : true
+n29 --> n83 : false
+n30 --> n31 : true
+n30 --> n83 : false
+n31 --> n32
+n32 --> n33
+n33 --> n34 : true
+n33 --> n43 : false
+n34 --> n35
+n35 --> n36
+n36 --> n37
+n37 --> n39 : true
+n37 --> n38 : false
+n38 --> n39 : true
+n38 --> n40 : false
+n39 --> n33
+n40 --> n33
+n35 --> n41 : exception
+n41 --> n42
+n42 --> end_node
+n43 --> n44 : true
+n43 --> n45 : false
+n44 --> end_node
+n45 --> n46 : true
+n45 --> n47 : false
+n46 --> end_node
+n47 --> n48
+n48 --> n49
+n49 --> n50 : true
+n49 --> n67 : false
+n50 --> n51 : true
+n50 --> n60 : false
+n52 --> n54 : true
+n52 --> n53 : false
+n53 --> n54 : true
+n53 --> n55 : false
+n54 --> n55
+n55 --> n56 : true
+n55 --> n57 : false
+n56 --> n57
+n57 --> n58
+n58 --> n59
+n59 --> n49
+n60 --> n61 : true
+n60 --> n49 : false
+n61 --> n62
+n62 --> n63 : true
+n62 --> n64 : false
+n63 --> n64
+n64 --> n65
+n65 --> n66
+n66 --> n49
+n67 --> n68 : true
+n67 --> n83 : false
+n68 --> n69 : true
+n68 --> n77 : false
+n70 --> n71
+n71 --> n73 : true
+n71 --> n72 : false
+n72 --> n73 : true
+n72 --> n74 : false
+n73 --> n74
+n74 --> n75 : true
+n74 --> n76 : false
+n75 --> n76
+n76 --> n67
+n77 --> n78 : true
+n77 --> n67 : false
+n78 --> n79
+n79 --> n80 : true
+n79 --> n81 : false
+n80 --> n81
+n81 --> n82
+n82 --> n67
+n83 --> n84
+n84 --> n85
+n85 --> n86 : true
+n85 --> n99 : false
+n86 --> n87
+n87 --> n88 : true
+n87 --> n95 : false
+n88 --> n89
+n89 --> n90
+n90 --> n91
+n91 --> n92 : true
+n91 --> n94 : false
+n92 --> n93
+n93 --> end_node
+n94 --> n85
+n95 --> n96 : true
+n95 --> n98 : false
+n96 --> n97
+n97 --> end_node
+n98 --> n85
+n99 --> n100
+n100 --> n101
+n101 --> n102
+n102 --> n103
+n103 --> n104
+n104 --> n105 : true
+n104 --> n113 : false
+n105 --> n106 : true
+n105 --> n113 : false
+n106 --> n107
+n107 --> n108 : true
+n107 --> n109 : false
+n108 --> n127 : throw
+n109 --> n110 : true
+n109 --> n111 : false
+n110 --> n127 : throw
+n111 --> n112
+n112 --> n105
+n113 --> n114
+n114 --> n115
+n115 --> n116
+n116 --> n117
+n117 --> n118
+n118 --> n119
+n119 --> n120 : true
+n119 --> n123 : false
+n120 --> n121
+n121 --> n122 : true
+n121 --> n119 : false
+n122 --> n127 : throw
+n123 --> n124 : true
+n123 --> n126 : false
+n124 --> n125
+n125 --> n126
+n126 --> n131 : (try ends)
+n127 --> n128
+n128 --> n129
+n129 --> n130
+n130 --> n131 : throw
+n131 --> n132
+n132 --> n133 : success
+n132 --> end_node : thrown
+n133 --> n134 : true
+n133 --> n136 : false
+n134 --> n135
+n135 --> end_node
+n136 --> n137 : true
+n136 --> n139 : false
+n137 --> n138
+n138 --> end_node
+n139 --> n140 : true
+n139 --> n142 : false
+n140 --> n141
+n141 --> end_node
+n142 --> n143
+n143 --> n144
+n144 --> n145 : true
+n144 --> n146 : false
+n145 --> n146
+n146 --> end_node
+
+@enduml

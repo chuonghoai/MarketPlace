@@ -4,6 +4,7 @@ import type { CartItem } from "../models/cart-item.model";
 import { cartService, calcTotal } from "../services/cart.service";
 import { userStorageService } from "../../user/services/userStorage.service";
 import { cartDebouncer } from "../services/cart.debouncer";
+import { useToast } from "../../../components/toast/toast";
 
 interface ICartContextProps {
     items: CartItem[];
@@ -21,6 +22,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [items, setItems] = useState<CartItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const pendingAdditions = useRef<Record<string, number>>({});
+    const { toast } = useToast();
 
     const loadCart = useCallback(async () => {
         if (!userStorageService.getUser()) {
@@ -39,6 +41,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updateQuantity = async (productId: string, quantity: number) => {
         if (quantity < 1) return;
         
+        const currentItem = items.find(item => item.product.id === productId);
+        if (currentItem && typeof currentItem.product.stock === 'number' && quantity > currentItem.product.stock) {
+            toast(`Đã đạt số lượng tồn kho tối đa (${currentItem.product.stock})`, "warning");
+            return;
+        }
+
         setItems(prev => prev.map(item => 
             item.product.id === productId ? { ...item, quantity } : item
         ));
@@ -46,8 +54,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         cartDebouncer.debounce(`update_${productId}`, async () => {
             try {
                 await cartService.updateQuantity(productId, quantity);
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to update cart quantity:", error);
+                const msg = error?.response?.data?.message || "Không thể cập nhật số lượng";
+                toast(msg, "error");
             } finally {
                 await loadCart();
             }
@@ -67,6 +77,15 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const addToCart = async (productId: string, quantity: number) => {
+        const currentItem = items.find(item => item.product.id === productId);
+        const currentQty = currentItem ? currentItem.quantity : 0;
+        const targetQty = currentQty + quantity;
+
+        if (currentItem && typeof currentItem.product.stock === 'number' && targetQty > currentItem.product.stock) {
+            toast(`Số lượng trong giỏ sẽ vượt quá tồn kho khả dụng (còn ${currentItem.product.stock})`, "warning");
+            return;
+        }
+
         setItems(prev => {
             const exists = prev.some(item => item.product.id === productId);
             if (exists) {
@@ -88,8 +107,10 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             try {
                 await cartService.addToCart(productId, finalQty);
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to add to cart:", error);
+                const msg = error?.response?.data?.message || "Không thể thêm vào giỏ hàng";
+                toast(msg, "error");
             } finally {
                 await loadCart();
             }

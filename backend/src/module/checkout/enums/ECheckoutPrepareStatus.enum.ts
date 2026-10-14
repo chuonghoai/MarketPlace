@@ -1,5 +1,5 @@
 export enum ECheckoutPrepareStatus {
-    PREPARING = 'PREPARING',
-    USED = 'USED',
-    EXPIRED = 'EXPIRED'
+  PREPARING = 'PREPARING',
+  USED = 'USED',
+  EXPIRED = 'EXPIRED',
 }

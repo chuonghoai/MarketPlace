@@ -106,7 +106,12 @@ function ResetPasswordPage() {
                                         placeholder="Nhập mã 6 chữ số..."
                                         maxLength={6}
                                         className={`bg-white border-[1.5px] rounded-[4px] h-[42px] px-[14px] text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] tracking-widest ${errors.otp ? "border-market-error" : "border-[#D6D3D1]"}`}
-                                        {...register("otp", { required: "Vui lòng nhập mã OTP" })}
+                                        {...register("otp", { 
+                                            required: "Vui lòng nhập mã OTP",
+                                            onChange: (e) => {
+                                                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                                            }
+                                        })}
                                     />
                                     {errors.otp && (
                                         <p className="text-market-error text-[12px] mt-1.5">{errors.otp.message}</p>

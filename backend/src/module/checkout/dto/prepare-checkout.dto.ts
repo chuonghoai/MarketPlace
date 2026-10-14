@@ -1,33 +1,41 @@
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class PrepareCheckoutItemDto {
-    @IsString()
-    @IsNotEmpty()
-    productId: string;
+  @IsString()
+  @IsNotEmpty()
+  productId: string;
 
-    @IsNumber()
-    @Min(1)
-    quantity: number;
+  @IsNumber()
+  @Min(1)
+  quantity: number;
 }
 
 export class PrepareCheckoutDto {
-    @IsString()
-    @IsOptional()
-    prepareTempId?: string;
+  @IsString()
+  @IsOptional()
+  prepareTempId?: string;
 
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => PrepareCheckoutItemDto)
-    @IsOptional()
-    items?: PrepareCheckoutItemDto[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PrepareCheckoutItemDto)
+  @IsOptional()
+  items?: PrepareCheckoutItemDto[];
 
-    @IsNumber()
-    @IsOptional()
-    addressId?: number;
+  @IsNumber()
+  @IsOptional()
+  addressId?: number;
 
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
-    voucherCodes?: string[];
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  voucherCodes?: string[];
 }

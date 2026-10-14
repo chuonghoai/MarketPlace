@@ -1,0 +1,36 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+note right of n1 : d(userId)\nd(productId)\nd(quantity)
+usecase "2" as n2
+note right of n2 : u(userId)\nu(productId)\nd(item)
+usecase "3" as n3
+note right of n3 : u(item)
+usecase "4" as n4
+note right of n4 : u(quantity)\nu(item)\nd(item)
+usecase "5" as n5
+note right of n5 : u(userId)\nu(productId)\nu(quantity)\nd(item)
+usecase "6" as n6
+note right of n6 : u(item)
+usecase "7" as n7
+note right of n7 : u(userId)
+usecase "Exit" as end_node
+note right of end_node : k(userId)\nk(productId)\nk(quantity)\nk(item)
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+
+n3 --> n4 : true
+n3 --> n5 : false
+
+n4 --> n6
+n5 --> n6
+
+n6 --> n7
+n7 --> end_node
+
+@enduml

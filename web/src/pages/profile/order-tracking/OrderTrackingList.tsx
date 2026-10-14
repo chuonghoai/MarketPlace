@@ -45,7 +45,7 @@ export const OrderTrackingList: React.FC = () => {
                                 }`}
                             >
                                 {tab.label}
-                                {tab.count > 0 && ["all", "pending", "preparing", "shipping"].includes(tab.key) && (
+                                {tab.count > 0 && (
                                     <span
                                         className={`px-1.5 py-0.5 rounded-full text-[10px] leading-none ${
                                             isActive
@@ -132,8 +132,8 @@ export const OrderTrackingList: React.FC = () => {
                     open={true}
                     order={actionState.order}
                     onClose={() => setActionState({ type: null, order: null })}
-                    onSubmit={async (note) => {
-                        await controller.handleReturnOrder(actionState.order!.id, note);
+                    onSubmit={async (data) => {
+                        await controller.handleReturnOrder(actionState.order!.id, data);
                         setActionState({ type: null, order: null });
                     }}
                 />

@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Order } from './order.entity';
 import { Voucher } from '../../vouchers/entities/voucher.entity';
 import { User } from '../../users/entities/user.entity';
@@ -24,9 +31,9 @@ export class OrderVoucher {
   discountAmount: number;
 
   @Column({ type: 'json' })
-  voucherSnapshot: any; 
+  voucherSnapshot: any;
 
-  @ManyToOne(() => Order, order => order.vouchers, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Order, (order) => order.vouchers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'orderId' })
   order: Order;
 

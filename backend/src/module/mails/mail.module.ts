@@ -13,8 +13,8 @@ import { MailService } from './mail.service';
       useFactory: (config: ConfigService) => ({
         transport: {
           host: config.get<string>(ENV_VARS.MAIL_HOST),
-          port: config.get<number>(ENV_VARS.MAIL_PORT),
-          secure: config.get<number>(ENV_VARS.MAIL_PORT) === 465,
+          port: Number(config.get(ENV_VARS.MAIL_PORT)),
+          secure: Number(config.get(ENV_VARS.MAIL_PORT)) === 465,
           auth: {
             user: config.get<string>(ENV_VARS.MAIL_USER),
             pass: config.get<string>(ENV_VARS.MAIL_PASS),

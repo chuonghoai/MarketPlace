@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   HttpCode,
@@ -7,7 +8,9 @@ import {
   UseGuards,
   Request,
   Res,
-  InternalServerErrorException
+  Headers,
+  Param,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -26,20 +29,26 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
     @Body() loginDto: LoginDto,
-    @Res({ passthrough: true }) res: Response
+    @Headers('x-device-id') deviceId: string,
+    @Headers('user-agent') userAgent: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.login(loginDto);
+    const result = await this.authService.login(loginDto, deviceId, userAgent);
 
     if (result.success && result.data?.accessToken) {
-      const expiresStr = this.configService.get<StringValue>(ENV_VARS.JWT_ACCESS_EXPIRES_IN);
+      const expiresStr = this.configService.get<StringValue>(
+        ENV_VARS.JWT_ACCESS_EXPIRES_IN,
+      );
       if (!expiresStr) {
-        throw new InternalServerErrorException('Missing env: JWT_ACCESS_EXPIRES_IN');
+        throw new InternalServerErrorException(
+          'Missing env: JWT_ACCESS_EXPIRES_IN',
+        );
       }
       const isProduction = process.env.NODE_ENV === 'production';
       res.cookie('accessToken', result.data.accessToken, {
@@ -63,14 +72,24 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async register(
     @Body() registerDto: RegisterDto,
-    @Res({ passthrough: true }) res: Response
+    @Headers('x-device-id') deviceId: string,
+    @Headers('user-agent') userAgent: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.register(registerDto);
+    const result = await this.authService.register(
+      registerDto,
+      deviceId,
+      userAgent,
+    );
 
     if (result.success && result.data?.accessToken) {
-      const expiresStr = this.configService.get<StringValue>(ENV_VARS.JWT_ACCESS_EXPIRES_IN);
+      const expiresStr = this.configService.get<StringValue>(
+        ENV_VARS.JWT_ACCESS_EXPIRES_IN,
+      );
       if (!expiresStr) {
-        throw new InternalServerErrorException('Missing env: JWT_ACCESS_EXPIRES_IN');
+        throw new InternalServerErrorException(
+          'Missing env: JWT_ACCESS_EXPIRES_IN',
+        );
       }
       const isProduction = process.env.NODE_ENV === 'production';
       res.cookie('accessToken', result.data.accessToken, {
@@ -93,10 +112,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(
-    @Request() req,
-    @Res({ passthrough: true }) res: Response
-  ) {
+  async logout(@Request() req, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.logout(req.user.id);
 
     const isProduction = process.env.NODE_ENV === 'production';
@@ -107,5 +123,18 @@ export class AuthController {
     });
 
     return result;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('devices')
+  async getDevices(@Request() req) {
+    return this.authService.getDevices(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('devices/:deviceId/revoke')
+  @HttpCode(HttpStatus.OK)
+  async revokeDevice(@Request() req, @Param('deviceId') deviceId: string) {
+    return this.authService.revokeDevice(req.user.id, deviceId);
   }
 }

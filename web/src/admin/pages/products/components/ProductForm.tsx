@@ -6,6 +6,7 @@ import { MaterialTagInput } from './MaterialTagInput';
 import { ProductStatusBadge } from './ProductStatusBadge';
 import { ProductSpecsInfo } from './ProductSpecsInfo';
 import type { Category } from '../../../../features/category/models/category.model';
+import { ArtisanSelectionModal } from './ArtisanSelectionModal';
 
 interface Props {
     categories?: Category[];
@@ -29,6 +30,8 @@ export const ProductForm = ({ categories = [], onSave, editingProduct, saving, o
     const [existingImages, setExistingImages] = useState<string[]>([]);
     const [avatarError, setAvatarError] = useState('');
     const [materials, setMaterials] = useState<string[]>([]);
+    const [showArtisanModal, setShowArtisanModal] = useState(false);
+    const [selectedArtisan, setSelectedArtisan] = useState<{ id: string; name: string; avatarUrl?: string; } | null>(null);
 
     const watchedName = watch('name', '');
     const watchedPrice = watch('price', 0);
@@ -57,17 +60,24 @@ export const ProductForm = ({ categories = [], onSave, editingProduct, saving, o
                 } : undefined,
                 weight: editingProduct.weight,
                 careInstructions: editingProduct.careInstructions || '',
+                artisanId: editingProduct.artisanInfo?.id || '',
             });
             setHasDiscount((editingProduct.originalPrice || 0) > editingProduct.price);
             setAvatarPreview(editingProduct.imageUrl || '');
             setExistingImages(editingProduct.images || []);
             setMaterials(editingProduct.materials || []);
+            setSelectedArtisan(editingProduct.artisanInfo ? {
+                id: editingProduct.artisanInfo.id,
+                name: editingProduct.artisanInfo.name,
+                avatarUrl: editingProduct.artisanInfo.avatarUrl
+            } : null);
         } else {
-            reset({ name: '', price: 0, originalPrice: 0, discountPercentage: 0, stock: 0, categoryId: '', description: '', careInstructions: '' });
+            reset({ name: '', price: 0, originalPrice: 0, discountPercentage: 0, stock: 0, categoryId: '', description: '', careInstructions: '', artisanId: '' });
             setHasDiscount(false);
             setAvatarPreview('');
             setExistingImages([]);
             setMaterials([]);
+            setSelectedArtisan(null);
         }
         setAvatarFile(null);
         setDetailFiles([]);
@@ -101,6 +111,7 @@ export const ProductForm = ({ categories = [], onSave, editingProduct, saving, o
                 : undefined,
             weight: data.weight ? Number(data.weight) : undefined,
             careInstructions: data.careInstructions,
+            artisanId: selectedArtisan?.id || null as any,
             avatarFile, detailImageFiles: detailFiles.length > 0 ? detailFiles : undefined,
             imageUrl: !avatarFile ? (editingProduct?.imageUrl || '') : undefined,
             images: existingImages,
@@ -267,6 +278,40 @@ export const ProductForm = ({ categories = [], onSave, editingProduct, saving, o
                         <MaterialTagInput materials={materials} onChange={setMaterials} />
                     </div>
 
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className={labelClass} style={{ marginBottom: 0 }}>Nghệ danh</label>
+                            {selectedArtisan && (
+                                <button type="button" onClick={() => setSelectedArtisan(null)} className="text-xs font-semibold text-error hover:underline bg-transparent">
+                                    Gỡ liên kết
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                            {selectedArtisan ? (
+                                <div className="flex items-center gap-2 p-2 border border-border-subtle rounded-lg bg-surface-container/20 flex-1">
+                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-container flex-shrink-0">
+                                        {selectedArtisan.avatarUrl ? (
+                                            <img src={selectedArtisan.avatarUrl} alt={selectedArtisan.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center font-bold text-text-muted text-xs">
+                                                {selectedArtisan.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                    </div>
+                                    <span className="font-body text-sm font-semibold text-text-ink truncate">{selectedArtisan.name}</span>
+                                </div>
+                            ) : (
+                                <div className="p-2 border border-dashed border-border-medium rounded-lg bg-surface-container/10 flex-1 text-sm text-text-muted italic">
+                                    Không có nghệ danh nào
+                                </div>
+                            )}
+                            <button type="button" onClick={() => setShowArtisanModal(true)} className="px-3 py-2 border border-border-subtle rounded-lg font-body text-sm font-semibold text-text-muted hover:bg-surface-container whitespace-nowrap">
+                                {selectedArtisan ? 'Đổi' : 'Chọn nghệ danh'}
+                            </button>
+                        </div>
+                    </div>
+
                     <ProductImageUploader
                         avatarPreview={avatarPreview}
                         onAvatarChange={(file, preview) => { setAvatarFile(file); if (avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview); setAvatarPreview(preview); setAvatarError(''); }}
@@ -328,6 +373,19 @@ export const ProductForm = ({ categories = [], onSave, editingProduct, saving, o
                     {saving ? 'Đang lưu...' : 'Lưu lại'}
                 </button>
             </div>
+
+            <ArtisanSelectionModal 
+                isOpen={showArtisanModal}
+                onClose={() => setShowArtisanModal(false)}
+                currentArtisanId={selectedArtisan?.id}
+                onSelect={(artisan) => {
+                    if (artisan) {
+                        setSelectedArtisan({ id: artisan.id, name: artisan.fullName, avatarUrl: artisan.avatar });
+                    } else {
+                        setSelectedArtisan(null);
+                    }
+                }}
+            />
         </div>
     );
 };
