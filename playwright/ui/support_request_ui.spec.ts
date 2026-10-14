@@ -229,4 +229,100 @@ test.describe('MKP-065: Replace Native alert() with Toast Notification on Suppor
     // Danh sách yêu cầu hiển thị ticket vừa tạo
     await expect(page.getByText(uniqueTitle)).toBeVisible({ timeout: 10000 });
   });
+
+  test('Test F — Frontend status refresh (MKP-069): Khách hàng gửi phản hồi trên ticket RESOLVED thấy trạng thái cập nhật ngay sang Đang xử lý mà không cần tải lại trang', async ({ page }) => {
+    const ticketId = 'ticket-resolved-test-f';
+    const mockResolvedTicket = {
+      id: ticketId,
+      title: 'Ticket cần hỗ trợ lại sau khi đã giải quyết',
+      content: 'Nội dung ban đầu của ticket.',
+      status: 'RESOLVED',
+      requesterId: 'client-user-id',
+      createdAt: new Date().toISOString(),
+      messages: [
+        {
+          id: 'msg-init',
+          requestId: ticketId,
+          senderId: 'client-user-id',
+          content: 'Nội dung ban đầu của ticket.',
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          sender: { fullName: 'Khách hàng Test' },
+        },
+        {
+          id: 'msg-staff',
+          requestId: ticketId,
+          senderId: 'staff-user-id',
+          content: 'Chúng tôi đã giải quyết xong vấn đề cho bạn.',
+          createdAt: new Date(Date.now() - 1800000).toISOString(),
+          sender: { fullName: 'Nhân viên hỗ trợ' },
+        },
+      ],
+    };
+
+    let currentStatus = 'RESOLVED';
+
+    await page.route(`**/support-requests/my*`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [{ ...mockResolvedTicket, status: currentStatus }],
+        }),
+      });
+    });
+
+    await page.route(`**/support-requests/${ticketId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { ...mockResolvedTicket, status: currentStatus },
+        }),
+      });
+    });
+
+    await page.route(`**/support-requests/${ticketId}/messages`, async (route) => {
+      currentStatus = 'IN_PROGRESS';
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: {
+            id: 'msg-customer-reopen',
+            requestId: ticketId,
+            senderId: 'client-user-id',
+            content: 'Tôi vẫn gặp lỗi này, nhờ bạn kiểm tra lại giúp.',
+            createdAt: new Date().toISOString(),
+            sender: { fullName: 'Khách hàng Test' },
+            updatedRequest: {
+              ...mockResolvedTicket,
+              status: 'IN_PROGRESS',
+            },
+          },
+        }),
+      });
+    });
+
+    await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('h1', { hasText: 'Yêu cầu hỗ trợ' })).toBeVisible({ timeout: 10000 });
+
+    // Chọn ticket RESOLVED
+    await page.getByText('Ticket cần hỗ trợ lại sau khi đã giải quyết').click();
+
+    // Xác nhận ban đầu hiển thị badge "Đã giải quyết"
+    await expect(page.locator('span', { hasText: 'Đã giải quyết' }).first()).toBeVisible();
+
+    // Nhập nội dung phản hồi
+    const replyInput = page.getByPlaceholder('Nhập phản hồi hoặc hướng dẫn xử lý...');
+    await replyInput.fill('Tôi vẫn gặp lỗi này, nhờ bạn kiểm tra lại giúp.');
+
+    // Nhấn Gửi phản hồi
+    await page.getByRole('button', { name: 'Gửi phản hồi' }).click();
+
+    // Xác nhận trạng thái ngay lập tức chuyển sang "Đang xử lý" mà không cần reload
+    await expect(page.locator('span', { hasText: 'Đang xử lý' }).first()).toBeVisible({ timeout: 5000 });
+  });
 });

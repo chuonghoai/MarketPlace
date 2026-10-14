@@ -217,20 +217,23 @@ export const UserSupportPage: React.FC = () => {
       }
 
       if (sentMessage) {
+        const updatedReq = (sentMessage as any)?.updatedRequest;
         setSelectedRequest((prev) => {
           if (!prev || prev.id !== selectedRequest.id) return prev;
           const exists = prev.messages?.some((m) => m.id === sentMessage.id);
-          if (exists) return prev;
           return {
             ...prev,
-            messages: [...(prev.messages || []), sentMessage],
+            ...(updatedReq ? { ...updatedReq } : {}),
+            messages: exists
+              ? prev.messages
+              : [...(prev.messages || []), sentMessage],
           };
         });
       }
 
       setReplyContent('');
       setTimeout(scrollToBottom, 50);
-      await fetchRequests();
+      await Promise.all([fetchRequests(), fetchDetail(selectedRequest.id)]);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||

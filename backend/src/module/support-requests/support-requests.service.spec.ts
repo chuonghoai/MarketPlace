@@ -274,5 +274,161 @@ describe('SupportRequestsService', () => {
         service.addMessage('req-1', hackerUser, { content: 'Spam' }),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('Test A: should reopen RESOLVED ticket to IN_PROGRESS when customer replies', async () => {
+      const existingReq: SupportRequest = {
+        id: 'req-1',
+        requesterId: 'user-1',
+        assignedStaffId: 'staff-1',
+        status: ESupportRequestStatus.RESOLVED,
+      } as SupportRequest;
+
+      requestRepo.findOne.mockResolvedValue(existingReq);
+      messageRepo.findOne.mockResolvedValue({
+        id: 'msg-1',
+        content: 'Tôi vẫn gặp lỗi này, nhờ hỗ trợ thêm',
+      });
+
+      const res = await service.addMessage('req-1', mockUser, {
+        content: 'Tôi vẫn gặp lỗi này, nhờ hỗ trợ thêm',
+      });
+
+      expect(existingReq.status).toBe(ESupportRequestStatus.IN_PROGRESS);
+      expect(requestRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ status: ESupportRequestStatus.IN_PROGRESS }),
+      );
+      expect((res as any).updatedRequest?.status).toBe(ESupportRequestStatus.IN_PROGRESS);
+      expect(res.request?.status).toBe(ESupportRequestStatus.IN_PROGRESS);
+    });
+
+    it('Test B: should keep IN_PROGRESS status when customer replies to IN_PROGRESS ticket', async () => {
+      const existingReq: SupportRequest = {
+        id: 'req-1',
+        requesterId: 'user-1',
+        assignedStaffId: 'staff-1',
+        status: ESupportRequestStatus.IN_PROGRESS,
+        firstResponseAt: new Date(),
+      } as SupportRequest;
+
+      requestRepo.findOne.mockResolvedValue(existingReq);
+      messageRepo.findOne.mockResolvedValue({
+        id: 'msg-2',
+        content: 'Cảm ơn, tôi đang kiểm tra lại',
+      });
+
+      requestRepo.save.mockClear();
+
+      const res = await service.addMessage('req-1', mockUser, {
+        content: 'Cảm ơn, tôi đang kiểm tra lại',
+      });
+
+      expect(existingReq.status).toBe(ESupportRequestStatus.IN_PROGRESS);
+      expect(requestRepo.save).not.toHaveBeenCalled();
+      expect(res.content).toBeDefined();
+    });
+
+    it('Test C: should keep RESOLVED status when assigned staff or admin replies to RESOLVED ticket', async () => {
+      const existingReq: SupportRequest = {
+        id: 'req-1',
+        requesterId: 'user-1',
+        assignedStaffId: 'staff-1',
+        status: ESupportRequestStatus.RESOLVED,
+        firstResponseAt: new Date(),
+      } as SupportRequest;
+
+      requestRepo.findOne.mockResolvedValue(existingReq);
+      staffRepo.findOne.mockResolvedValue(mockStaff);
+      messageRepo.findOne.mockResolvedValue({
+        id: 'msg-staff-resolved',
+        content: 'Chúng tôi ghi nhận thêm thông tin từ phía hỗ trợ',
+      });
+
+      requestRepo.save.mockClear();
+
+      const resStaff = await service.addMessage('req-1', mockStaffUser, {
+        content: 'Chúng tôi ghi nhận thêm thông tin từ phía hỗ trợ',
+      });
+
+      expect(existingReq.status).toBe(ESupportRequestStatus.RESOLVED);
+      expect(requestRepo.save).not.toHaveBeenCalled();
+
+      // Test with Admin as well
+      const resAdmin = await service.addMessage('req-1', mockAdmin, {
+        content: 'Admin ghi chú trên ticket đã giải quyết',
+      });
+      expect(existingReq.status).toBe(ESupportRequestStatus.RESOLVED);
+      expect(requestRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('Test D: should throw ForbiddenException and not alter ticket when unauthorized user replies', async () => {
+      const existingReq: SupportRequest = {
+        id: 'req-1',
+        requesterId: 'user-1',
+        assignedStaffId: 'staff-1',
+        status: ESupportRequestStatus.RESOLVED,
+      } as SupportRequest;
+
+      requestRepo.findOne.mockResolvedValue(existingReq);
+      requestRepo.save.mockClear();
+      messageRepo.save.mockClear();
+
+      const unauthorizedCustomer: User = {
+        id: 'other-user',
+        email: 'other@example.com',
+        role: EUserRole.USER,
+      } as User;
+
+      await expect(
+        service.addMessage('req-1', unauthorizedCustomer, { content: 'Hack reply' }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(existingReq.status).toBe(ESupportRequestStatus.RESOLVED);
+      expect(requestRepo.save).not.toHaveBeenCalled();
+      expect(messageRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('Test E: should rollback transaction and throw if message persistence or status update fails', async () => {
+      const existingReq: SupportRequest = {
+        id: 'req-1',
+        requesterId: 'user-1',
+        assignedStaffId: 'staff-1',
+        status: ESupportRequestStatus.RESOLVED,
+      } as SupportRequest;
+
+      requestRepo.findOne.mockResolvedValue(existingReq);
+
+      const mockQueryRunner = {
+        connect: jest.fn().mockResolvedValue(undefined),
+        startTransaction: jest.fn().mockResolvedValue(undefined),
+        commitTransaction: jest.fn().mockResolvedValue(undefined),
+        rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+        release: jest.fn().mockResolvedValue(undefined),
+        manager: {
+          save: jest.fn().mockRejectedValue(new Error('Database write failure')),
+          create: jest.fn().mockImplementation((entityClass, dto) => ({ id: 'msg-1', ...dto })),
+        },
+      };
+
+      const mockDataSource = {
+        createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+      } as any;
+
+      const serviceWithDataSource = new SupportRequestsService(
+        requestRepo,
+        messageRepo,
+        staffRepo,
+        { findOne: jest.fn() } as any,
+        mockDataSource,
+      );
+
+      await expect(
+        serviceWithDataSource.addMessage('req-1', mockUser, { content: 'Reply causing DB error' }),
+      ).rejects.toThrow('Database write failure');
+
+      expect(mockQueryRunner.startTransaction).toHaveBeenCalledTimes(1);
+      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
+      expect(mockQueryRunner.commitTransaction).not.toHaveBeenCalled();
+      expect(mockQueryRunner.release).toHaveBeenCalledTimes(1);
+    });
   });
 });
