@@ -85,12 +85,9 @@ export const ArtisanPage = () => {
                   <td className="p-4 text-text-ink">{art.productCount || 0}</td>
                   <td className="p-4 text-muted">{art.birthDate ? new Date(art.birthDate).toLocaleDateString() : 'N/A'}</td>
                   <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                    <Link to={`/admin/artisans/${art.id}`} className="text-text-muted hover:text-primary mr-3 inline-flex">
+                    <Link to={`/admin/artisans/${art.id}`} className="text-text-muted hover:text-primary inline-flex">
                       <span className="material-symbols-outlined">edit</span>
                     </Link>
-                    <button className="text-text-muted hover:text-error inline-flex">
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
                   </td>
                 </tr>
               ))}
