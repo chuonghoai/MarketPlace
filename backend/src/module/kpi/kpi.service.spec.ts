@@ -11,6 +11,46 @@ describe('KpiService', () => {
   let staffRepo: any;
   let requestRepo: any;
 
+  const createMockQueryBuilder = (rows: any[] = []) => ({
+    innerJoin: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
+    addGroupBy: jest.fn().mockReturnThis(),
+    setParameter: jest.fn().mockReturnThis(),
+    getRawMany: jest.fn().mockResolvedValue(rows),
+  });
+
+  const mockKpiQuery = (
+    staffRows: any[] = [],
+    dailyAssigned: any[] = [],
+    dailyResolved: any[] = [],
+  ) => {
+    staffRepo.createQueryBuilder.mockReturnValue(
+      createMockQueryBuilder(staffRows),
+    );
+    requestRepo.createQueryBuilder
+      .mockReturnValueOnce(createMockQueryBuilder(dailyAssigned))
+      .mockReturnValueOnce(createMockQueryBuilder(dailyResolved));
+  };
+
+  const createMockStaffRow = (data: Record<string, any> = {}) => ({
+    staffId: 'staff-1',
+    staffName: 'Staff 1',
+    staffEmail: 'staff1@marketnest.vn',
+    totalAssigned: '10',
+    totalResolved: '8',
+    openBacklog: '2',
+    avgFirstResponseMinutes: '30',
+    avgResolutionMinutes: '100',
+    slaMetCount: '0',
+    respondedCount: '0',
+    ...data,
+  });
+
   beforeEach(async () => {
     staffRepo = {
       createQueryBuilder: jest.fn(),
@@ -103,49 +143,7 @@ describe('KpiService', () => {
       const mockDailyAssigned = [{ date: '2026-03-20', count: '5' }];
       const mockDailyResolved = [{ date: '2026-03-20', count: '4' }];
 
-      const qbStaff: any = {
-        innerJoin: jest.fn().mockReturnThis(),
-        leftJoin: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        addSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        groupBy: jest.fn().mockReturnThis(),
-        addGroupBy: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        setParameter: jest.fn().mockReturnThis(),
-        setParameters: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue(mockRawRows),
-      };
-
-      const qbAssigned: any = {
-        select: jest.fn().mockReturnThis(),
-        addSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        groupBy: jest.fn().mockReturnThis(),
-        addGroupBy: jest.fn().mockReturnThis(),
-        setParameter: jest.fn().mockReturnThis(),
-        setParameters: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue(mockDailyAssigned),
-      };
-
-      const qbResolved: any = {
-        select: jest.fn().mockReturnThis(),
-        addSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        groupBy: jest.fn().mockReturnThis(),
-        addGroupBy: jest.fn().mockReturnThis(),
-        setParameter: jest.fn().mockReturnThis(),
-        setParameters: jest.fn().mockReturnThis(),
-        getRawMany: jest.fn().mockResolvedValue(mockDailyResolved),
-      };
-
-      staffRepo.createQueryBuilder.mockReturnValue(qbStaff);
-      requestRepo.createQueryBuilder
-        .mockReturnValueOnce(qbAssigned)
-        .mockReturnValueOnce(qbResolved);
+      mockKpiQuery(mockRawRows, mockDailyAssigned, mockDailyResolved);
 
       const res = await service.getStaffKpi({
         startDate: '2026-03-01',
@@ -170,6 +168,163 @@ describe('KpiService', () => {
       expect(res.summary.totalAssigned).toBe(10);
       expect(res.summary.totalResolved).toBe(8);
       expect(res.summary.overallResolveRate).toBe(80);
+      expect(res.summary.overallSlaMetRate).toBe(87.5);
+    });
+
+    describe('MKP-076: overallSlaMetRate weighted calculation', () => {
+      it('Test A - Unequal ticket counts: should calculate overallSlaMetRate weighted by ticket counts (66.7% vs old 66.3%)', async () => {
+        // Staff A: 7 SLA-compliant / 10 responded (70%)
+        // Staff B: 5 SLA-compliant / 8 responded (62.5%)
+        // Old arithmetic average: (70 + 62.5) / 2 = 66.25% -> 66.3%
+        // Correct weighted: (7 + 5) / (10 + 8) * 100 = 12 / 18 * 100 = 66.666...% -> 66.7%
+        mockKpiQuery([
+          createMockStaffRow({
+            staffId: 'staff-a',
+            slaMetCount: '7',
+            respondedCount: '10',
+          }),
+          createMockStaffRow({
+            staffId: 'staff-b',
+            slaMetCount: '5',
+            respondedCount: '8',
+          }),
+        ]);
+
+        const res = await service.getStaffKpi({
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+        });
+
+        expect(res.items[0].slaMetRate).toBe(70);
+        expect(res.items[1].slaMetRate).toBe(62.5);
+        expect(res.summary.overallSlaMetRate).toBe(66.7);
+      });
+
+      it('Test B - Equal ticket counts: should calculate correct weighted SLA rate without regression', async () => {
+        // Staff A: 7 / 10 = 70%
+        // Staff B: 5 / 10 = 50%
+        // Weighted: (7 + 5) / (10 + 10) * 100 = 12 / 20 * 100 = 60.0%
+        mockKpiQuery([
+          createMockStaffRow({
+            staffId: 'staff-a',
+            slaMetCount: '7',
+            respondedCount: '10',
+          }),
+          createMockStaffRow({
+            staffId: 'staff-b',
+            slaMetCount: '5',
+            respondedCount: '10',
+          }),
+        ]);
+
+        const res = await service.getStaffKpi({
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+        });
+
+        expect(res.items[0].slaMetRate).toBe(70);
+        expect(res.items[1].slaMetRate).toBe(50);
+        expect(res.summary.overallSlaMetRate).toBe(60);
+      });
+
+      it('Test C - Zero eligible tickets: should return 0 and never return NaN or Infinity', async () => {
+        mockKpiQuery([
+          createMockStaffRow({
+            staffId: 'staff-a',
+            totalAssigned: '0',
+            slaMetCount: '0',
+            respondedCount: '0',
+          }),
+          createMockStaffRow({
+            staffId: 'staff-b',
+            totalAssigned: '0',
+            slaMetCount: '0',
+            respondedCount: '0',
+          }),
+        ]);
+
+        const res = await service.getStaffKpi({
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+        });
+
+        expect(res.summary.overallSlaMetRate).toBe(0);
+        expect(Number.isNaN(res.summary.overallSlaMetRate)).toBe(false);
+        expect(Number.isFinite(res.summary.overallSlaMetRate)).toBe(true);
+
+        // Also test empty staff list
+        mockKpiQuery([]);
+        const emptyRes = await service.getStaffKpi({
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+        });
+        expect(emptyRes.summary.overallSlaMetRate).toBe(0);
+      });
+
+      it('Test D - Staff with zero eligible responses: should not distort overall rate', async () => {
+        // Staff A: 7 / 8 = 87.5%
+        // Staff B: 0 / 0 (totalAssigned: 5, but respondedCount: 0)
+        // With old code: Staff B was included in staffsWithSla because totalAssigned > 0, producing (87.5 + 0) / 2 = 43.8%
+        // With ticket totals: 7 / 8 * 100 = 87.5%
+        mockKpiQuery([
+          createMockStaffRow({
+            staffId: 'staff-a',
+            slaMetCount: '7',
+            respondedCount: '8',
+          }),
+          createMockStaffRow({
+            staffId: 'staff-b',
+            totalAssigned: '5',
+            totalResolved: '0',
+            openBacklog: '5',
+            slaMetCount: '0',
+            respondedCount: '0',
+          }),
+        ]);
+
+        const res = await service.getStaffKpi({
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+        });
+
+        expect(res.items[0].slaMetRate).toBe(87.5);
+        expect(res.items[1].slaMetRate).toBe(0);
+        expect(res.summary.overallSlaMetRate).toBe(87.5);
+      });
+
+      it('Test E - Multiple staff members: calculates overall SLA from sum of actual ticket counts across all staff', async () => {
+        // Staff 1: 10 / 12 (83.3%)
+        // Staff 2: 2 / 20 (10%)
+        // Staff 3: 50 / 50 (100%)
+        // Total SLA met = 10 + 2 + 50 = 62
+        // Total responded = 12 + 20 + 50 = 82
+        // Overall SLA rate = 62 / 82 * 100 = 75.6097...% -> 75.6%
+        // (Old arithmetic average: (83.3 + 10 + 100) / 3 = 64.4%)
+        mockKpiQuery([
+          createMockStaffRow({
+            staffId: 'staff-1',
+            slaMetCount: '10',
+            respondedCount: '12',
+          }),
+          createMockStaffRow({
+            staffId: 'staff-2',
+            slaMetCount: '2',
+            respondedCount: '20',
+          }),
+          createMockStaffRow({
+            staffId: 'staff-3',
+            slaMetCount: '50',
+            respondedCount: '50',
+          }),
+        ]);
+
+        const res = await service.getStaffKpi({
+          startDate: '2026-03-01',
+          endDate: '2026-03-31',
+        });
+
+        expect(res.summary.overallSlaMetRate).toBe(75.6);
+      });
     });
   });
 
