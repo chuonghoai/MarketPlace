@@ -15,6 +15,7 @@ import {
   OrderDetailProductItemDto,
   OrderStatusHistoryDto,
   UserUpdateOrderStatusDto,
+  EOrderTrackingFilterStatus,
 } from './dto/orders.dto';
 import { EOrderStatus } from '../checkout/enums/EOrderStatus.enum';
 import { MailService } from '../mails/mail.service';
@@ -61,8 +62,10 @@ export class OrdersService {
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.items', 'items');
 
-    if (status) {
+    if (status && status !== EOrderTrackingFilterStatus.ALL) {
       query.andWhere('order.status = :status', { status });
+      query.orderBy('order.createdAt', 'DESC');
+    } else if (status === EOrderTrackingFilterStatus.ALL) {
       query.orderBy('order.createdAt', 'DESC');
     } else {
       query.andWhere('order.status IN (:...statuses)', {
@@ -460,7 +463,7 @@ export class OrdersService {
 
   async getTrackingOrders(
     userId: string,
-    status?: string,
+    status?: EOrderTrackingFilterStatus | string,
   ): Promise<OrderListItemDto[]> {
     const query = this.orderRepository
       .createQueryBuilder('order')
@@ -468,11 +471,16 @@ export class OrdersService {
       .where('order.userId = :userId', { userId });
 
     const isAll =
-      !status || status.trim() === '' || status.toUpperCase() === 'ALL';
+      !status ||
+      status.trim() === '' ||
+      status.toUpperCase() === EOrderTrackingFilterStatus.ALL;
 
     if (!isAll) {
       const normalizedStatus = status.toUpperCase();
-      if (normalizedStatus === EOrderStatus.SUCCESS) {
+      if (
+        normalizedStatus === EOrderStatus.SUCCESS ||
+        normalizedStatus === EOrderStatus.DELIVERED
+      ) {
         query.andWhere('order.status IN (:...statuses)', {
           statuses: [EOrderStatus.SUCCESS, EOrderStatus.DELIVERED],
         });
