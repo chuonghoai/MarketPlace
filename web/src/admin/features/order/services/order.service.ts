@@ -53,6 +53,10 @@ export class OrderService {
     processRefund(id: string, note?: string, refundProofUrl?: string): Promise<ApiResponse<any>> {
         return apiClient.patch(`/admin/order/return-requests/${id}/refund`, { note, refundProofUrl });
     }
+
+    rejectReturnRequest(id: string, reason: string): Promise<ApiResponse<any>> {
+        return apiClient.patch(`/admin/order/return-requests/${id}/reject`, { reason });
+    }
 }
 
 export const orderService = new OrderService(USE_MOCK ? new OrderMockRepository() : undefined);

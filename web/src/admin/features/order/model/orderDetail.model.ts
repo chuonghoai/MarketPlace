@@ -44,6 +44,7 @@ export interface OrderReturnRequestDetail {
     bankAccountNumber?: string | null;
     bankAccountHolder?: string | null;
     refundProofUrl?: string | null;
+    adminNote?: string | null;
     createdAt: string;
 }
 

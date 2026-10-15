@@ -256,6 +256,7 @@ export class OrdersService {
         bankAccountNumber: returnReq.bankAccountNumber,
         bankAccountHolder: returnReq.bankAccountHolder,
         refundProofUrl: returnReq.refundProofUrl,
+        adminNote: returnReq.adminNote,
         createdAt: returnReq.createdAt,
       };
     }
@@ -1042,4 +1043,45 @@ export class OrdersService {
       method: isBankTransfer ? 'BANK_TRANSFER' : 'WALLET',
     };
   }
+
+  // Từ chối yêu cầu đổi trả (UC23 - 2.2.1)
+  async adminRejectReturnRequest(
+    returnId: string,
+    processedBy: string,
+    reason: string,
+  ) {
+    const returnReq = await this.returnRepository.findOne({
+      where: { id: returnId },
+      relations: ['order'],
+    });
+    if (!returnReq) {
+      throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+    }
+
+    if (
+      returnReq.status === EOrderReturnStatus.COMPLETED ||
+      returnReq.status === EOrderReturnStatus.REJECTED
+    ) {
+      throw new BadRequestException('Yêu cầu đổi trả này đã kết thúc xử lý');
+    }
+
+    returnReq.status = EOrderReturnStatus.REJECTED;
+    returnReq.adminNote = reason || 'Từ chối yêu cầu đổi trả';
+    returnReq.processedBy = processedBy;
+    const saved = await this.returnRepository.save(returnReq);
+
+    if (returnReq.order) {
+      const history = returnReq.order.statusHistory || [];
+      history.push({
+        status: returnReq.order.status,
+        timestamp: new Date().toISOString(),
+        note: `Từ chối yêu cầu đổi trả: ${reason}`.trim(),
+      });
+      returnReq.order.statusHistory = history;
+      await this.orderRepository.save(returnReq.order);
+    }
+
+    return saved;
+  }
 }
+

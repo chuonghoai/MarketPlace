@@ -105,6 +105,7 @@ export class OrderReturnRequestDetailDto {
   bankAccountNumber?: string | null;
   bankAccountHolder?: string | null;
   refundProofUrl?: string | null;
+  adminNote?: string | null;
   createdAt: Date;
 }
 

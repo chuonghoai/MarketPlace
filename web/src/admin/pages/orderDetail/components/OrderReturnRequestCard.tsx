@@ -236,6 +236,21 @@ export const OrderReturnRequestCard: React.FC<OrderReturnRequestCardProps> = ({
                     </div>
                 )}
 
+                {/* Rejection Notice (if request was rejected) */}
+                {returnRequest.status === 'REJECTED' && (
+                    <div className="p-3.5 bg-red-50/80 dark:bg-red-950/40 border border-red-200 dark:border-red-800/80 rounded-xl text-xs text-red-900 dark:text-red-200 space-y-1">
+                        <div className="font-bold flex items-center gap-1.5 text-red-700 dark:text-red-300">
+                            <span className="material-symbols-outlined text-base">cancel</span>
+                            Yêu cầu đổi trả đã bị từ chối
+                        </div>
+                        {returnRequest.adminNote && (
+                            <p className="text-stone-700 dark:text-stone-300">
+                                <strong>Lý do từ chối:</strong> {returnRequest.adminNote}
+                            </p>
+                        )}
+                    </div>
+                )}
+
                 {/* Process Action Trigger */}
                 {canProcess && onOpenProcessModal && (
                     <div className="pt-2 flex justify-end">
