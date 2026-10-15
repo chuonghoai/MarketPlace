@@ -6,26 +6,33 @@ usecase "start" as start_node
 usecase "1" as n1
 note right of n1 : d(userId)\nd(productId)\nd(quantity)
 usecase "2" as n2
-note right of n2 : u(userId)\nu(productId)\nd(item)
+note right of n2 : d(item)\nu(userId)\nu(productId)
 usecase "3" as n3
 note right of n3 : u(item)
 usecase "4" as n4
-note right of n4 : u(quantity)\nu(item)\nd(item)
 usecase "5" as n5
-note right of n5 : u(userId)\nu(productId)\nu(quantity)\nd(item)
+note right of n5 : u(quantity)
 usecase "6" as n6
-note right of n6 : u(item)
+note left of n6 : u(item)
 usecase "7" as n7
-note right of n7 : u(userId)
+note right of n7 : u(item)\nu(quantity)
+usecase "8" as n8
+note right of n8 : u(item)
+usecase "9" as n9
+note right of n9 : u(userId)
 usecase "Exit" as end_node
 note right of end_node : k(userId)\nk(productId)\nk(quantity)\nk(item)
 
 start_node -[hidden]down-> n1
 n1 -[hidden]down-> n2
 n2 -[hidden]down-> n3
-n3 -[hidden]down-> n6
-n6 -[hidden]down-> n7
-n7 -[hidden]down-> end_node
+n3 -[hidden]down-> n5
+n5 -[hidden]down-> n7
+n7 -[hidden]down-> n8
+n8 -[hidden]down-> n9
+n9 -[hidden]down-> end_node
+
+n4 -[hidden]right-> n5
 
 start_node --> n1
 n1 --> n2
@@ -33,11 +40,16 @@ n2 --> n3
 
 n3 --> n4
 n3 --> n5
+n4 --> end_node
 
-n4 --> n6
 n5 --> n6
+n5 --> n7
 
-n6 --> n7
-n7 --> end_node
+n6 --> n9
+
+n7 --> n8
+n8 --> n9
+
+n9 --> end_node
 
 @enduml
