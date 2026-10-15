@@ -53,16 +53,24 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
         }
     };
 
-    const isReturnFinished =
-        (order as any).returnStatus === 'COMPLETED' ||
+    const isReturnRejected =
+        (order as any).returnStatus === 'REJECTED' ||
         (Array.isArray(order.statusHistory) &&
             order.statusHistory.some(
-                (h: any) =>
-                    h.note &&
-                    (h.note.includes('Hoàn tiền') ||
-                        h.note.includes('đổi hàng mới') ||
-                        h.note.includes('Đã hoàn tất'))
+                (h: any) => h.note && (h.note.includes('Từ chối') || h.note.includes('từ chối'))
             ));
+
+    const isReturnFinished =
+        !isReturnRejected &&
+        ((order as any).returnStatus === 'COMPLETED' ||
+            (Array.isArray(order.statusHistory) &&
+                order.statusHistory.some(
+                    (h: any) =>
+                        h.note &&
+                        (h.note.includes('Hoàn tiền') ||
+                            h.note.includes('đổi hàng mới') ||
+                            h.note.includes('Đã hoàn tất'))
+                )));
 
     return (
         <div className="bg-white border border-border-subtle rounded-xl shadow-sm overflow-hidden flex flex-col hover:border-market-primary/30 transition-colors">
@@ -77,7 +85,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                         })}
                     </span>
                 </div>
-                <OrderStatusBadge status={order.orderStatus} isReturnFinished={isReturnFinished} />
+                <OrderStatusBadge
+                    status={order.orderStatus}
+                    isReturnFinished={isReturnFinished}
+                    isReturnRejected={isReturnRejected}
+                />
             </div>
 
             {/* Body */}

@@ -60,6 +60,23 @@ export interface OrderTrackingDetail {
     paymentStatus: EPaymentStatus;
 
     cancelReason?: string;      // Lý do hủy đơn nếu EOrderStatus là CANCELLED hoặc RETURNED
-    returnStatus?: string;      // Trạng thái yêu cầu đổi trả: PENDING, PICKING_UP, RECEIVED, COMPLETED
+    returnStatus?: string;      // Trạng thái yêu cầu đổi trả: PENDING, PICKING_UP, RECEIVED, COMPLETED, REJECTED
+    returnAdminNote?: string;   // Ghi chú xử lý / lý do từ chối từ admin
     newOrderId?: string;        // Mã đơn hàng thay thế nếu là yêu cầu đổi hàng
+    returnRequest?: {
+        id: string;
+        orderId: string;
+        type: string;
+        status: string;
+        title: string;
+        reason: string;
+        proofImages: string[];
+        proofVideos: string[];
+        bankName?: string | null;
+        bankAccountNumber?: string | null;
+        bankAccountHolder?: string | null;
+        refundProofUrl?: string | null;
+        adminNote?: string | null;
+        createdAt: Date;
+    };
 }

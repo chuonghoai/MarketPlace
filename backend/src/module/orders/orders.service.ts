@@ -517,6 +517,15 @@ export class OrdersService {
 
     const orders = await query.getMany();
 
+    const orderIds = orders.map((o) => o.id);
+    const returnReqs =
+      orderIds.length > 0
+        ? await this.returnRepository.find({
+            where: { orderId: In(orderIds) },
+          })
+        : [];
+    const returnReqMap = new Map(returnReqs.map((r) => [r.orderId, r]));
+
     return orders.map((order) => {
       let totalProductQuantity = 0;
       let firstProductImageUrl = '';
@@ -532,6 +541,7 @@ export class OrdersService {
       }
 
       const snapshot: any = order.snapshotAddress || {};
+      const returnReq = returnReqMap.get(order.id);
 
       return {
         id: order.id,
@@ -547,6 +557,8 @@ export class OrdersService {
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
         statusHistory: order.statusHistory,
+        returnStatus: returnReq ? returnReq.status : undefined,
+        returnAdminNote: returnReq ? returnReq.adminNote : undefined,
       };
     });
   }
@@ -633,6 +645,22 @@ export class OrdersService {
     if (returnReq) {
       dto.returnStatus = returnReq.status;
       dto.newOrderId = returnReq.newOrderId || undefined;
+      dto.returnRequest = {
+        id: returnReq.id,
+        orderId: returnReq.orderId,
+        type: returnReq.type,
+        status: returnReq.status,
+        title: returnReq.title,
+        reason: returnReq.reason,
+        proofImages: returnReq.proofImages || [],
+        proofVideos: returnReq.proofVideos || [],
+        bankName: returnReq.bankName,
+        bankAccountNumber: returnReq.bankAccountNumber,
+        bankAccountHolder: returnReq.bankAccountHolder,
+        refundProofUrl: returnReq.refundProofUrl,
+        adminNote: returnReq.adminNote,
+        createdAt: returnReq.createdAt,
+      };
     }
     return dto;
   }
