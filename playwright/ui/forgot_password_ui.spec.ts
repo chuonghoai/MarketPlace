@@ -183,3 +183,210 @@ test.describe('Giao diện - Quên mật khẩu', () => {
     await expect(otpInput).not.toHaveValue('abcdef');
   });
 });
+
+test.describe('Giao diện - Đặt lại mật khẩu (MKP-024)', () => {
+  const resetPasswordUrl = '/reset-password?email=client@example.com';
+
+  // Test A — OTP rejects alphabetic input
+  test('Test A — OTP rejects alphabetic input', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const otpInput = page.getByPlaceholder(/Nhập mã 6 chữ số|Enter 6-digit code/i);
+    await expect(otpInput).toBeVisible();
+
+    await otpInput.fill('abcdef');
+    await expect(otpInput).not.toHaveValue('abcdef');
+    await expect(otpInput).toHaveValue('');
+  });
+
+  // Test B — OTP accepts digits
+  test('Test B — OTP accepts digits', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const otpInput = page.getByPlaceholder(/Nhập mã 6 chữ số|Enter 6-digit code/i);
+    await expect(otpInput).toBeVisible();
+
+    await otpInput.fill('123456');
+    await expect(otpInput).toHaveValue('123456');
+  });
+
+  // Test C — OTP limits to 6 digits
+  test('Test C — OTP limits to 6 digits', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const otpInput = page.getByPlaceholder(/Nhập mã 6 chữ số|Enter 6-digit code/i);
+    await expect(otpInput).toBeVisible();
+
+    await otpInput.fill('123456789');
+    await expect(otpInput).toHaveValue('123456');
+  });
+
+  // Test D — OTP validation
+  test('Test D — OTP validation shows error for fewer than 6 digits', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const otpInput = page.getByPlaceholder(/Nhập mã 6 chữ số|Enter 6-digit code/i);
+    await expect(otpInput).toBeVisible();
+
+    await otpInput.fill('12345');
+    const submitBtn = page.getByRole('button', { name: /Đặt lại mật khẩu|Reset Password/i });
+    await submitBtn.click();
+
+    await expect(page.getByText(/OTP phải gồm đúng 6 chữ số|OTP must contain exactly 6 digits/i)).toBeVisible();
+  });
+
+  // Test E — OTP paste sanitization
+  test('Test E — OTP paste sanitization strips non-digits and limits to 6', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const otpInput = page.getByPlaceholder(/Nhập mã 6 chữ số|Enter 6-digit code/i);
+    await expect(otpInput).toBeVisible();
+
+    // Trigger paste event with 'abc123456xyz'
+    await page.evaluate(() => {
+      const input = document.querySelector<HTMLInputElement>('input[inputmode="numeric"]');
+      if (input) {
+        input.focus();
+        const dt = new DataTransfer();
+        dt.setData('text/plain', 'abc123456xyz');
+        const pasteEvent = new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData: dt,
+        });
+        input.dispatchEvent(pasteEvent);
+      }
+    });
+
+    await expect(otpInput).toHaveValue('123456');
+  });
+
+  // Test F — New password visibility
+  test('Test F — New password visibility toggle', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const newPasswordInput = page.getByPlaceholder(/Nhập mật khẩu mới\.\.\.|Enter new password\.\.\./i);
+    await expect(newPasswordInput).toBeVisible();
+    await expect(newPasswordInput).toHaveAttribute('type', 'password');
+
+    await newPasswordInput.fill('Secret123!');
+
+    const toggleBtn = page.getByRole('button', { name: /Hiện mật khẩu$/i });
+    await expect(toggleBtn).toBeVisible();
+
+    await toggleBtn.click();
+    await expect(newPasswordInput).toHaveAttribute('type', 'text');
+    await expect(newPasswordInput).toHaveValue('Secret123!');
+
+    const hideBtn = page.getByRole('button', { name: /Ẩn mật khẩu$/i });
+    await expect(hideBtn).toBeVisible();
+
+    await hideBtn.click();
+    await expect(newPasswordInput).toHaveAttribute('type', 'password');
+    await expect(newPasswordInput).toHaveValue('Secret123!');
+  });
+
+  // Test G — Confirm password visibility
+  test('Test G — Confirm password visibility toggle', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const confirmPasswordInput = page.getByPlaceholder(/Nhập lại mật khẩu mới\.\.\.|Re-enter new password\.\.\./i);
+    await expect(confirmPasswordInput).toBeVisible();
+    await expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+
+    await confirmPasswordInput.fill('Secret123!');
+
+    const toggleBtn = page.getByRole('button', { name: /Hiện mật khẩu xác nhận/i });
+    await expect(toggleBtn).toBeVisible();
+
+    await toggleBtn.click();
+    await expect(confirmPasswordInput).toHaveAttribute('type', 'text');
+    await expect(confirmPasswordInput).toHaveValue('Secret123!');
+
+    const hideBtn = page.getByRole('button', { name: /Ẩn mật khẩu xác nhận/i });
+    await expect(hideBtn).toBeVisible();
+
+    await hideBtn.click();
+    await expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+    await expect(confirmPasswordInput).toHaveValue('Secret123!');
+  });
+
+  // Test H — Toggle survives blur/refocus
+  test('Test H — Toggle survives blur/refocus', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+    const newPasswordInput = page.getByPlaceholder(/Nhập mật khẩu mới\.\.\.|Enter new password\.\.\./i);
+    await newPasswordInput.fill('Pass123456');
+
+    // Blur
+    await newPasswordInput.blur();
+
+    // Refocus
+    await newPasswordInput.focus();
+
+    // Verify toggle still exists and works
+    const toggleBtn = page.getByRole('button', { name: /Hiện mật khẩu$/i });
+    await expect(toggleBtn).toBeVisible();
+    await toggleBtn.click();
+
+    await expect(newPasswordInput).toHaveAttribute('type', 'text');
+    await expect(newPasswordInput).toHaveValue('Pass123456');
+  });
+
+  // Test I — Eye button does not submit
+  test('Test I — Eye button does not trigger form submit', async ({ page }) => {
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+
+    let submitRequested = false;
+    await page.route('**/auth/**', async (route) => {
+      submitRequested = true;
+      await route.continue();
+    });
+
+    const toggleBtn = page.getByRole('button', { name: /Hiện mật khẩu$/i });
+    await toggleBtn.click();
+
+    // Verify URL does not change and no request sent
+    await expect(page).toHaveURL(/reset-password/);
+    expect(submitRequested).toBe(false);
+  });
+
+  // Test J — OTP guidance visible on Desktop and Mobile
+  for (const vp of [{ name: 'Desktop', width: 1280, height: 720 }, { name: 'Mobile', width: 375, height: 812 }]) {
+    test(`Test J — OTP guidance visible on ${vp.name} (${vp.width}x${vp.height})`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+
+      const guidanceNote = page.getByRole('note');
+      await expect(guidanceNote).toBeVisible();
+      await expect(guidanceNote.getByText(/Spam|Thư rác/i)).toBeVisible();
+
+      // Check no horizontal overflow
+      const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        clientWidth: document.documentElement.clientWidth,
+      }));
+      expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    });
+  }
+
+  // Test K — Existing reset password flow
+  test('Test K — Existing valid reset password flow succeeds', async ({ page }) => {
+    let apiCalled = false;
+    await page.route('**/auth/forgot-password', async (route) => {
+      apiCalled = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          message: 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập.',
+          data: null,
+        }),
+      });
+    });
+
+    await page.goto(resetPasswordUrl, { waitUntil: 'domcontentloaded' });
+
+    await page.getByPlaceholder(/Nhập mã 6 chữ số|Enter 6-digit code/i).fill('123456');
+    await page.getByPlaceholder(/Nhập mật khẩu mới\.\.\.|Enter new password\.\.\./i).fill('NewSecret123');
+    await page.getByPlaceholder(/Nhập lại mật khẩu mới\.\.\.|Re-enter new password\.\.\./i).fill('NewSecret123');
+
+    await page.getByRole('button', { name: /Đặt lại mật khẩu|Reset Password/i }).click();
+
+    await expect.poll(() => apiCalled).toBe(true);
+    await expect(page).toHaveURL(/\/login/, { timeout: 7000 });
+  });
+});
