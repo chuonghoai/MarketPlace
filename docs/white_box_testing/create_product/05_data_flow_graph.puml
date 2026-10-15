@@ -1,5 +1,5 @@
 @startuml
-skinparam nodesep 15
+skinparam nodesep 20
 skinparam ranksep 25
 
 usecase "start" as start_node
@@ -13,9 +13,9 @@ usecase "4" as n4
 usecase "5" as n5
 note right of n5 : u(createProductDto)\nd(mediaPublicIds)\nd(productData)
 usecase "6" as n6
-note right of n6 : u(productData)\nu(category)\nd(product)
+note right of n6 : u(productData)\nu(category)
 usecase "7" as n7
-note right of n7 : u(product)\nd(productSaved)
+note right of n7 : d(productSaved)
 usecase "8" as n8
 note right of n8 : u(mediaPublicIds)
 usecase "9" as n9
@@ -23,33 +23,53 @@ note right of n9 : u(mediaPublicIds)
 usecase "10" as n10
 note right of n10 : u(mediaPublicIds)
 usecase "11" as n11
-note right of n11 : d(err)
 usecase "12" as n12
-note right of n12 : u(err)\nu(productSaved)
+note right of n12 : u(productSaved)
 usecase "13" as n13
 note right of n13 : u(productSaved)
 usecase "14" as n14
 note right of n14 : u(productSaved)
 usecase "Exit" as end_node
-note right of end_node : k(createProductDto)\nk(category)\nk(mediaPublicIds)\nk(productData)\nk(product)\nk(productSaved)\nk(err)
+note right of end_node : k(createProductDto)\nk(category)\nk(mediaPublicIds)\nk(productData)\nk(productSaved)
+
+start_node -[hidden]down-> n1
+n1 -[hidden]down-> n2
+n2 -[hidden]down-> n3
+n3 -[hidden]down-> n5
+n5 -[hidden]down-> n6
+n6 -[hidden]down-> n7
+n7 -[hidden]down-> n8
+n8 -[hidden]down-> n9
+n9 -[hidden]down-> n10
+n10 -[hidden]down-> n13
+n13 -[hidden]down-> n14
+n14 -[hidden]down-> end_node
+
+n4 -[hidden]right-> n5
 
 start_node --> n1
 n1 --> n2
 n2 --> n3
-n3 --> n4 : true
-n3 --> n5 : false
+
+n3 --> n4
+n3 --> n5
 n4 --> end_node
+
 n5 --> n6
 n6 --> n7
 n7 --> n8
-n8 --> n13 : false
-n8 --> n9 : true
-n9 --> n13 : false
-n9 --> n10 : true
-n10 --> n11 : exception
-n10 --> n13 : success
+
+n8 --> n9
+n8 --> n13
+
+n9 --> n10
+n9 --> n13
+
+n10 --> n13
+n10 --> n11
 n11 --> n12
 n12 --> n13
+
 n13 --> n14
 n14 --> end_node
 
