@@ -3,12 +3,14 @@ import { authService } from "../../../features/auth/services/auth.service";
 import type { LoginRequest } from "../../../features/auth/dto/login.type";
 import { useToast } from "../../../components/toast/toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getDefaultRouteByRole } from "../../../utils/route.util";
 
 export const useLoginController = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const toggleShowPassword = () => setShowPassword((prev) => !prev);
   const {
     register,
     handleSubmit,
@@ -64,5 +66,8 @@ export const useLoginController = () => {
     errors,
     isSubmitting,
     onLogin,
+    showPassword,
+    setShowPassword,
+    toggleShowPassword,
   };
 };
