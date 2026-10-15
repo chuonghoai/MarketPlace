@@ -165,195 +165,289 @@ note right of n136 : u(createOrderDto)
 note right of n139 : u(createOrderDto)
 note right of n142 : u(userId)
 note right of n143 : u(userId)
+note right of end_node : k(createOrderDto)\nk(userId)
+
+start_node -[hidden]down-> n1
+n1 -[hidden]down-> n2
+n2 -[hidden]down-> n3
+n3 -[hidden]down-> n5
+n5 -[hidden]down-> n6
+n6 -[hidden]down-> n8
+n8 -[hidden]down-> n9
+n9 -[hidden]down-> n10
+n10 -[hidden]down-> n11
+n11 -[hidden]down-> n12
+n12 -[hidden]down-> n13
+n13 -[hidden]down-> n22
+n22 -[hidden]down-> n23
+n23 -[hidden]down-> n25
+n25 -[hidden]down-> n26
+n26 -[hidden]down-> n27
+n27 -[hidden]down-> n28
+n28 -[hidden]down-> n29
+n29 -[hidden]down-> n30
+n30 -[hidden]down-> n31
+n31 -[hidden]down-> n32
+n32 -[hidden]down-> n33
+n33 -[hidden]down-> n43
+n43 -[hidden]down-> n45
+n45 -[hidden]down-> n47
+n47 -[hidden]down-> n48
+n48 -[hidden]down-> n49
+n49 -[hidden]down-> n67
+n67 -[hidden]down-> n83
+n83 -[hidden]down-> n84
+n84 -[hidden]down-> n85
+n85 -[hidden]down-> n99
+n99 -[hidden]down-> n100
+n100 -[hidden]down-> n101
+n101 -[hidden]down-> n102
+n102 -[hidden]down-> n103
+n103 -[hidden]down-> n104
+n104 -[hidden]down-> n113
+n113 -[hidden]down-> n114
+n114 -[hidden]down-> n115
+n115 -[hidden]down-> n116
+n116 -[hidden]down-> n117
+n117 -[hidden]down-> n118
+n118 -[hidden]down-> n119
+n119 -[hidden]down-> n123
+n123 -[hidden]down-> n126
+n126 -[hidden]down-> n131
+n131 -[hidden]down-> n132
+n132 -[hidden]down-> n133
+n133 -[hidden]down-> n136
+n136 -[hidden]down-> n139
+n139 -[hidden]down-> n142
+n142 -[hidden]down-> n143
+n143 -[hidden]down-> n144
+n144 -[hidden]down-> n146
+n146 -[hidden]down-> end_node
+
 
 start_node --> n1
 n1 --> n2
-n2 --> n4 : true
-n2 --> n3 : false
-n3 --> n4 : true
-n3 --> n5 : false
+n2 --> n4
+n2 --> n3
+n3 --> n4
+n3 --> n5
 n4 --> end_node
+
 n5 --> n6
-n6 --> n7 : true
-n6 --> n8 : false
+n6 --> n7
+n6 --> n8
 n7 --> end_node
+
 n8 --> n9
 n9 --> n10
 n10 --> n11
 n11 --> n12
 n12 --> n13
-n13 --> n14 : true
-n13 --> n22 : false
+
+n13 --> n14
+n13 --> n22
 n14 --> n15
-n15 --> n16 : true
-n15 --> n17 : false
+n15 --> n16
+n15 --> n17
 n16 --> end_node
-n17 --> n18 : true
-n17 --> n19 : false
+n17 --> n18
+n17 --> n19
 n18 --> end_node
 n19 --> n20
 n20 --> n21
 n21 --> n13
+
 n22 --> n23
-n23 --> n24 : true
-n23 --> n25 : false
+n23 --> n24
+n23 --> n25
 n24 --> n25
+
 n25 --> n26
 n26 --> n27
 n27 --> n28
+
 n28 --> n29
-n29 --> n30 : true
-n29 --> n83 : false
-n30 --> n31 : true
-n30 --> n83 : false
+n29 --> n30
+n29 --> n83
+n30 --> n31
+n30 --> n83
+
 n31 --> n32
 n32 --> n33
-n33 --> n34 : true
-n33 --> n43 : false
+
+n33 --> n34
+n33 --> n43
 n34 --> n35
 n35 --> n36
 n36 --> n37
-n37 --> n39 : true
-n37 --> n38 : false
-n38 --> n39 : true
-n38 --> n40 : false
+n37 --> n39
+n37 --> n38
+n38 --> n39
+n38 --> n40
 n39 --> n33
 n40 --> n33
-n35 --> n41 : exception
+n35 --> n41
 n41 --> n42
 n42 --> end_node
-n43 --> n44 : true
-n43 --> n45 : false
+
+n43 --> n44
+n43 --> n45
 n44 --> end_node
-n45 --> n46 : true
-n45 --> n47 : false
+
+n45 --> n46
+n45 --> n47
 n46 --> end_node
+
 n47 --> n48
 n48 --> n49
-n49 --> n50 : true
-n49 --> n67 : false
-n50 --> n51 : true
-n50 --> n60 : false
-n52 --> n54 : true
-n52 --> n53 : false
-n53 --> n54 : true
-n53 --> n55 : false
+
+n49 --> n50
+n49 --> n67
+n50 --> n51
+n50 --> n60
+
+n51 --> n52
+n52 --> n53
+n52 --> n55
+n53 --> n54
+n53 --> n55
 n54 --> n55
-n55 --> n56 : true
-n55 --> n57 : false
+n55 --> n56
+n55 --> n57
 n56 --> n57
 n57 --> n58
 n58 --> n59
 n59 --> n49
-n60 --> n61 : true
-n60 --> n49 : false
+
+n60 --> n61
+n60 --> n49
 n61 --> n62
-n62 --> n63 : true
-n62 --> n64 : false
+n62 --> n63
+n62 --> n64
 n63 --> n64
 n64 --> n65
 n65 --> n66
 n66 --> n49
-n67 --> n68 : true
-n67 --> n83 : false
-n68 --> n69 : true
-n68 --> n77 : false
+
+n67 --> n68
+n67 --> n83
+n68 --> n69
+n68 --> n77
+
+n69 --> n70
 n70 --> n71
-n71 --> n73 : true
-n71 --> n72 : false
-n72 --> n73 : true
-n72 --> n74 : false
+n70 --> n73
+n71 --> n72
+n71 --> n73
 n73 --> n74
-n74 --> n75 : true
-n74 --> n76 : false
+n74 --> n75
+n74 --> n76
 n75 --> n76
 n76 --> n67
-n77 --> n78 : true
-n77 --> n67 : false
+
+n77 --> n78
+n77 --> n67
 n78 --> n79
-n79 --> n80 : true
-n79 --> n81 : false
+n79 --> n80
+n79 --> n81
 n80 --> n81
 n81 --> n82
 n82 --> n67
+
 n83 --> n84
 n84 --> n85
-n85 --> n86 : true
-n85 --> n99 : false
+n85 --> n86
+n85 --> n99
+
 n86 --> n87
-n87 --> n88 : true
-n87 --> n95 : false
+n87 --> n88
+n87 --> n95
+
 n88 --> n89
 n89 --> n90
 n90 --> n91
-n91 --> n92 : true
-n91 --> n94 : false
+n91 --> n92
+n91 --> n94
 n92 --> n93
 n93 --> end_node
 n94 --> n85
-n95 --> n96 : true
-n95 --> n98 : false
+
+n95 --> n96
+n95 --> n98
 n96 --> n97
 n97 --> end_node
 n98 --> n85
+
 n99 --> n100
 n100 --> n101
 n101 --> n102
 n102 --> n103
+
 n103 --> n104
-n104 --> n105 : true
-n104 --> n113 : false
-n105 --> n106 : true
-n105 --> n113 : false
+n104 --> n105
+n104 --> n113
+
+n105 --> n106
+n105 --> n113
 n106 --> n107
-n107 --> n108 : true
-n107 --> n109 : false
-n108 --> n127 : throw
-n109 --> n110 : true
-n109 --> n111 : false
-n110 --> n127 : throw
+n107 --> n108
+n107 --> n109
+n108 --> n127
+n109 --> n110
+n109 --> n111
+n110 --> n127
 n111 --> n112
 n112 --> n105
+
 n113 --> n114
 n114 --> n115
 n115 --> n116
 n116 --> n117
 n117 --> n118
 n118 --> n119
-n119 --> n120 : true
-n119 --> n123 : false
+
+n119 --> n120
+n119 --> n123
 n120 --> n121
-n121 --> n122 : true
-n121 --> n119 : false
-n122 --> n127 : throw
-n123 --> n124 : true
-n123 --> n126 : false
+n121 --> n122
+n121 --> n119
+n122 --> n127
+
+n123 --> n124
+n123 --> n126
 n124 --> n125
 n125 --> n126
-n126 --> n131 : (try ends)
+
+n126 --> n131
+
 n127 --> n128
 n128 --> n129
 n129 --> n130
-n130 --> n131 : throw
+n130 --> n131
+
 n131 --> n132
-n132 --> n133 : success
-n132 --> end_node : thrown
-n133 --> n134 : true
-n133 --> n136 : false
+n132 --> n133
+n132 --> end_node
+
+n133 --> n134
+n133 --> n136
 n134 --> n135
 n135 --> end_node
-n136 --> n137 : true
-n136 --> n139 : false
+
+n136 --> n137
+n136 --> n139
 n137 --> n138
 n138 --> end_node
-n139 --> n140 : true
-n139 --> n142 : false
+
+n139 --> n140
+n139 --> n142
 n140 --> n141
 n141 --> end_node
+
 n142 --> n143
 n143 --> n144
-n144 --> n145 : true
-n144 --> n146 : false
+n144 --> n145
+n144 --> n146
 n145 --> n146
 n146 --> end_node
 
