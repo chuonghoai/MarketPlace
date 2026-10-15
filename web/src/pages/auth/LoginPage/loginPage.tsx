@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { useLoginController } from "./login.controller";
 
 function LoginPage() {
@@ -7,7 +8,9 @@ function LoginPage() {
     handleSubmit,
     errors,
     isSubmitting,
-    onLogin
+    onLogin,
+    showPassword,
+    toggleShowPassword,
   } = useLoginController();
 
   return (
@@ -71,8 +74,8 @@ function LoginPage() {
 
 
           {/* Right: Login form */}
-          <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white relative">
-            <div className="w-full max-w-[360px] mx-auto relative z-10">
+          <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center bg-white relative">
+            <div className="w-full max-w-[380px] mx-auto relative z-10">
 
               {/* Mobile Back to Home */}
               <div className="block md:hidden mb-6 text-left">
@@ -113,16 +116,30 @@ function LoginPage() {
                 {/* Password input */}
                 <div className="flex flex-col mb-2">
                   <label className="text-[13px] font-semibold text-[#1C1917] mb-2">Mật khẩu</label>
-                  <input
-                    type="password"
-                    placeholder="Nhập mật khẩu..."
-                    className={`bg-white border-[1.5px] rounded-[4px] h-[42px] px-[14px] text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] ${errors.password ? 'border-market-error' : 'border-[#D6D3D1]'
-                      }`}
-                    {...register("password", {
-                      required: "Mật khẩu là bắt buộc",
-                      minLength: { value: 3, message: "Mật khẩu phải ít nhất 3 ký tự" }
-                    })}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Nhập mật khẩu..."
+                      className={`bg-white border-[1.5px] rounded-[4px] h-[42px] pl-[14px] pr-10 text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] w-full [&::-ms-reveal]:hidden [&::-ms-clear]:hidden ${errors.password ? 'border-market-error' : 'border-[#D6D3D1]'
+                        }`}
+                      {...register("password", {
+                        required: "Mật khẩu là bắt buộc",
+                        minLength: { value: 3, message: "Mật khẩu phải ít nhất 3 ký tự" }
+                      })}
+                    />
+                    <button
+                      type="button"
+                      onClick={toggleShowPassword}
+                      aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                      className="absolute right-0 top-0 h-[42px] px-3 flex items-center justify-center text-[#A8A29E] hover:text-[#57534E] focus:outline-none focus-visible:text-market-primary transition-colors cursor-pointer"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="w-5 h-5" aria-hidden="true" />
+                      ) : (
+                        <Eye className="w-5 h-5" aria-hidden="true" />
+                      )}
+                    </button>
+                  </div>
                   {errors.password && (
                     <p className="text-market-error text-[12px] mt-1.5">{errors.password.message}</p>
                   )}
