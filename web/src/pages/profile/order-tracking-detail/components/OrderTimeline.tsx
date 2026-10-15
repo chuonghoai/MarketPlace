@@ -9,6 +9,15 @@ interface OrderTimelineProps {
 const getStatusLabel = (status: EOrderStatus, note?: string): string => {
     if (
         note &&
+        (note.includes("Từ chối yêu cầu đổi trả") ||
+            note.includes("Từ chối đổi trả") ||
+            note.includes("Từ chối") ||
+            note.includes("từ chối"))
+    ) {
+        return "Từ chối đổi trả";
+    }
+    if (
+        note &&
         (note.includes("Hoàn tiền") ||
             note.includes("đổi hàng mới") ||
             note.includes("Đã hoàn tất"))

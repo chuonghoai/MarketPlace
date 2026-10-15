@@ -23,15 +23,36 @@ export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCan
                         h.note.includes("yêu cầu đổi trả")))
         );
 
-    const isReturnFinished =
-        order.returnStatus === 'COMPLETED' ||
+    const isReturnRejected =
+        order.returnStatus === 'REJECTED' ||
         (order.statusHistory || []).some(
-            (h) =>
-                h.note &&
-                (h.note.includes('Hoàn tiền') ||
-                    h.note.includes('đổi hàng mới') ||
-                    h.note.includes('Đã hoàn tất'))
+            (h) => h.note && (h.note.includes('Từ chối') || h.note.includes('từ chối'))
         );
+
+    const isReturnFinished =
+        !isReturnRejected &&
+        (order.returnStatus === 'COMPLETED' ||
+            (order.statusHistory || []).some(
+                (h) =>
+                    h.note &&
+                    (h.note.includes('Hoàn tiền') ||
+                        h.note.includes('đổi hàng mới') ||
+                        h.note.includes('Đã hoàn tất'))
+            ));
+
+    const rejectionReason =
+        order.returnRequest?.adminNote ||
+        order.returnAdminNote ||
+        (() => {
+            const h = (order.statusHistory || []).find(
+                (item) => item.note && (item.note.includes('Từ chối') || item.note.includes('từ chối'))
+            );
+            if (h && h.note) {
+                const parts = h.note.split(':');
+                return parts.length > 1 ? parts.slice(1).join(':').trim() : h.note;
+            }
+            return undefined;
+        })();
 
     const replacementOrderId =
         order.newOrderId ||
@@ -170,7 +191,24 @@ export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCan
                             </button>
                         )}
                         {hasReturnHistory && (
-                            isReturnFinished ? (
+                            isReturnRejected ? (
+                                <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 text-red-900 dark:text-red-200 text-sm flex flex-col gap-2.5">
+                                    <div className="flex items-center gap-2.5">
+                                        <span className="material-symbols-outlined text-red-600 shrink-0">cancel</span>
+                                        <div>
+                                            <div className="font-semibold text-xs uppercase tracking-wide">Yêu cầu đổi trả bị từ chối</div>
+                                            <div className="text-xs text-red-700 dark:text-red-300/80 mt-0.5">
+                                                Yêu cầu đổi trả của bạn không được phê duyệt.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {rejectionReason && (
+                                        <div className="text-xs text-red-800 dark:text-red-300 bg-red-100/70 dark:bg-red-900/40 p-2.5 rounded-lg border border-red-200 dark:border-red-800/50">
+                                            <strong>Lý do từ chối:</strong> {rejectionReason}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : isReturnFinished ? (
                                 <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200 text-sm flex flex-col gap-2.5">
                                     <div className="flex items-center gap-2.5">
                                         <span className="material-symbols-outlined text-emerald-600 shrink-0">check_circle</span>
@@ -195,9 +233,19 @@ export const ShippingInfoCard: React.FC<ShippingInfoCardProps> = ({ order, onCan
                                 <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-amber-900 dark:text-amber-200 text-sm flex items-center gap-2.5">
                                     <span className="material-symbols-outlined text-amber-600 shrink-0">assignment_return</span>
                                     <div>
-                                        <div className="font-semibold text-xs uppercase tracking-wide">Đang xử lý đổi trả</div>
+                                        <div className="font-semibold text-xs uppercase tracking-wide">
+                                            {order.returnStatus === 'PICKING_UP'
+                                                ? 'Shipper đang lấy hàng'
+                                                : order.returnStatus === 'RECEIVED'
+                                                ? 'Đã nhận hàng về kho'
+                                                : 'Đang xử lý đổi trả'}
+                                        </div>
                                         <div className="text-xs text-amber-700 dark:text-amber-300/80 mt-0.5">
-                                            Đơn hàng đang có yêu cầu đổi trả / hoàn tiền được xử lý.
+                                            {order.returnStatus === 'PICKING_UP'
+                                                ? 'Shipper đang trên đường đến lấy lại sản phẩm đổi trả.'
+                                                : order.returnStatus === 'RECEIVED'
+                                                ? 'Hàng đã được chuyển về kho và đang được kiểm tra.'
+                                                : 'Đơn hàng đang có yêu cầu đổi trả / hoàn tiền được xử lý.'}
                                         </div>
                                     </div>
                                 </div>

@@ -256,6 +256,7 @@ export class OrdersService {
         bankAccountNumber: returnReq.bankAccountNumber,
         bankAccountHolder: returnReq.bankAccountHolder,
         refundProofUrl: returnReq.refundProofUrl,
+        adminNote: returnReq.adminNote,
         createdAt: returnReq.createdAt,
       };
     }
@@ -516,6 +517,15 @@ export class OrdersService {
 
     const orders = await query.getMany();
 
+    const orderIds = orders.map((o) => o.id);
+    const returnReqs =
+      orderIds.length > 0
+        ? await this.returnRepository.find({
+            where: { orderId: In(orderIds) },
+          })
+        : [];
+    const returnReqMap = new Map(returnReqs.map((r) => [r.orderId, r]));
+
     return orders.map((order) => {
       let totalProductQuantity = 0;
       let firstProductImageUrl = '';
@@ -531,6 +541,7 @@ export class OrdersService {
       }
 
       const snapshot: any = order.snapshotAddress || {};
+      const returnReq = returnReqMap.get(order.id);
 
       return {
         id: order.id,
@@ -546,6 +557,8 @@ export class OrdersService {
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
         statusHistory: order.statusHistory,
+        returnStatus: returnReq ? returnReq.status : undefined,
+        returnAdminNote: returnReq ? returnReq.adminNote : undefined,
       };
     });
   }
@@ -632,6 +645,22 @@ export class OrdersService {
     if (returnReq) {
       dto.returnStatus = returnReq.status;
       dto.newOrderId = returnReq.newOrderId || undefined;
+      dto.returnRequest = {
+        id: returnReq.id,
+        orderId: returnReq.orderId,
+        type: returnReq.type,
+        status: returnReq.status,
+        title: returnReq.title,
+        reason: returnReq.reason,
+        proofImages: returnReq.proofImages || [],
+        proofVideos: returnReq.proofVideos || [],
+        bankName: returnReq.bankName,
+        bankAccountNumber: returnReq.bankAccountNumber,
+        bankAccountHolder: returnReq.bankAccountHolder,
+        refundProofUrl: returnReq.refundProofUrl,
+        adminNote: returnReq.adminNote,
+        createdAt: returnReq.createdAt,
+      };
     }
     return dto;
   }
@@ -1042,4 +1071,45 @@ export class OrdersService {
       method: isBankTransfer ? 'BANK_TRANSFER' : 'WALLET',
     };
   }
+
+  // Từ chối yêu cầu đổi trả (UC23 - 2.2.1)
+  async adminRejectReturnRequest(
+    returnId: string,
+    processedBy: string,
+    reason: string,
+  ) {
+    const returnReq = await this.returnRepository.findOne({
+      where: { id: returnId },
+      relations: ['order'],
+    });
+    if (!returnReq) {
+      throw new NotFoundException('Không tìm thấy yêu cầu đổi trả');
+    }
+
+    if (
+      returnReq.status === EOrderReturnStatus.COMPLETED ||
+      returnReq.status === EOrderReturnStatus.REJECTED
+    ) {
+      throw new BadRequestException('Yêu cầu đổi trả này đã kết thúc xử lý');
+    }
+
+    returnReq.status = EOrderReturnStatus.REJECTED;
+    returnReq.adminNote = reason || 'Từ chối yêu cầu đổi trả';
+    returnReq.processedBy = processedBy;
+    const saved = await this.returnRepository.save(returnReq);
+
+    if (returnReq.order) {
+      const history = returnReq.order.statusHistory || [];
+      history.push({
+        status: returnReq.order.status,
+        timestamp: new Date().toISOString(),
+        note: `Từ chối yêu cầu đổi trả: ${reason}`.trim(),
+      });
+      returnReq.order.statusHistory = history;
+      await this.orderRepository.save(returnReq.order);
+    }
+
+    return saved;
+  }
 }
+

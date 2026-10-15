@@ -7,7 +7,7 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
     const [isLoading, setIsLoading] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [isReturnCompleted, setIsReturnCompleted] = useState(
-        order.returnStatus === 'COMPLETED'
+        order.returnStatus === 'COMPLETED' || order.returnStatus === 'REJECTED'
     );
     const [newOrderId, setNewOrderId] = useState<string | undefined>(
         order.newOrderId
@@ -18,7 +18,7 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
             setNewOrderId(order.newOrderId);
         }
         if (order.orderStatus === EOrderStatus.RETURNED) {
-            if (order.returnStatus === 'COMPLETED') {
+            if (order.returnStatus === 'COMPLETED' || order.returnStatus === 'REJECTED') {
                 setIsReturnCompleted(true);
             }
             orderService
@@ -26,7 +26,7 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
                 .then((res) => {
                     const req = res.data?.items?.find((r: any) => r.orderId === order.id);
                     if (req) {
-                        if (req.status === 'COMPLETED') {
+                        if (req.status === 'COMPLETED' || req.status === 'REJECTED') {
                             setIsReturnCompleted(true);
                         }
                         if (req.newOrderId) {
@@ -82,7 +82,7 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
         orderService.getOrderDetail(order.id).then((res) => {
             if (res.success && res.data) {
                 onUpdateSuccess(res.data);
-                if (res.data.returnStatus === 'COMPLETED') {
+                if (res.data.returnStatus === 'COMPLETED' || res.data.returnStatus === 'REJECTED') {
                     setIsReturnCompleted(true);
                 }
             }
@@ -90,7 +90,7 @@ export const useOrderActionsController = (order: OrderDetail, onUpdateSuccess: (
         orderService.getReturnRequests(1, 1, undefined, order.id).then((res) => {
             const req = res.data?.items?.find((r: any) => r.orderId === order.id);
             if (req) {
-                if (req.status === 'COMPLETED') {
+                if (req.status === 'COMPLETED' || req.status === 'REJECTED') {
                     setIsReturnCompleted(true);
                 }
                 if (req.newOrderId) {

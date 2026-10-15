@@ -30,9 +30,13 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
     type: 'image' | 'video';
     title?: string;
   } | null>(null);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   useEffect(() => {
     if (isOpen) {
+      setIsRejecting(false);
+      setRejectReason('');
       setLoading(true);
       orderService
         .getReturnRequests(1, 10, undefined, order.id)
@@ -153,7 +157,36 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
     }
   };
 
+  // Xử lý Từ chối yêu cầu đổi trả (UC23 - 2.2.1)
+  const handleRejectSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectReason.trim()) {
+      toast('Vui lòng nhập lý do từ chối yêu cầu', 'warning');
+      return;
+    }
+    setLoading(true);
+    try {
+      if (activeReq) {
+        const res = await orderService.rejectReturnRequest(activeReq.id, rejectReason.trim());
+        if (res.success) {
+          toast('Đã từ chối yêu cầu đổi trả của khách hàng', 'success');
+          setActiveReq((prev: any) => ({ ...prev, status: 'REJECTED', adminNote: rejectReason.trim() }));
+          setIsRejecting(false);
+          onSuccess(true);
+          onClose();
+        } else {
+          toast(res.message || 'Lỗi khi từ chối yêu cầu', 'error');
+        }
+      }
+    } catch {
+      toast('Lỗi khi từ chối yêu cầu đổi trả', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const isCompleted = activeReq?.status === 'COMPLETED';
+  const isRejected = activeReq?.status === 'REJECTED';
 
   // Quy trình tuần tự: Shipper lấy hàng -> Đã nhận hàng về kho -> Hoàn tiền
   const isStep1Done = isCompleted || step === 'RECEIVED' || step === 'REFUND';
@@ -222,7 +255,15 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
             <div className="p-3.5 bg-stone-50 dark:bg-stone-800/60 rounded-xl border border-stone-200 dark:border-stone-700 text-xs space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-stone-700 dark:text-stone-300">Thông tin yêu cầu từ khách:</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300">
+                <span
+                  className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                    activeReq.status === 'REJECTED'
+                      ? 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400'
+                      : activeReq.status === 'COMPLETED'
+                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400'
+                      : 'bg-stone-200 dark:bg-stone-700 text-stone-700 dark:text-stone-300'
+                  }`}
+                >
                   {activeReq.status}
                 </span>
               </div>
@@ -317,8 +358,78 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
             </div>
           )}
 
+          {/* Rejection State */}
+          {isRejected && (
+            <div className="space-y-4">
+              <div className="p-3.5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/80 rounded-xl text-xs text-red-900 dark:text-red-200 space-y-1.5">
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <span className="material-symbols-outlined text-red-600 dark:text-red-400">cancel</span>
+                  <span>Yêu cầu đổi trả đã bị từ chối</span>
+                </div>
+                {activeReq?.adminNote && (
+                  <p className="text-stone-700 dark:text-stone-300">
+                    Lý do từ chối: <strong>{activeReq.adminNote}</strong>
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end gap-3 pt-3 border-t border-stone-200 dark:border-stone-800">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Form nhập lý do từ chối */}
+          {!isRejected && isRejecting && (
+            <form onSubmit={handleRejectSubmit} className="space-y-4 p-4 rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/50 dark:bg-red-950/20">
+              <div className="flex items-center gap-2 text-red-700 dark:text-red-400 font-bold text-sm">
+                <span className="material-symbols-outlined text-base">block</span>
+                <span>Xác nhận từ chối yêu cầu đổi trả</span>
+              </div>
+              <p className="text-xs text-stone-600 dark:text-stone-400">
+                Vui lòng nhập lý do từ chối. Lý do này sẽ được ghi vào lịch sử đơn hàng và hiển thị cho khách hàng.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1">
+                  Lý do từ chối <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Ví dụ: Sản phẩm không còn nguyên seal, lỗi phát sinh do người dùng..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-900 dark:text-stone-100 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => setIsRejecting(false)}
+                  className="px-4 py-2 text-sm rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                >
+                  Quay lại
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !rejectReason.trim()}
+                  className="px-5 py-2 text-sm font-semibold rounded-xl text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-colors shadow-xs flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">check</span>
+                  {loading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+                </button>
+              </div>
+            </form>
+          )}
+
           {/* CASE 1: Đổi lấy món hàng mới (UC23 - 1.1) */}
-          {actionType === 'EXCHANGE' && (
+          {!isRejected && !isRejecting && actionType === 'EXCHANGE' && (
             isCompleted ? (
               <div className="space-y-4">
                 <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 rounded-xl text-xs text-emerald-900 dark:text-emerald-200 space-y-1.5">
@@ -389,29 +500,40 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-stone-200 dark:border-stone-800">
+                <div className="flex justify-between items-center pt-3 border-t border-stone-200 dark:border-stone-800">
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={() => setIsRejecting(true)}
                     disabled={loading}
-                    className="px-4 py-2 text-sm rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                    className="px-3.5 py-2 text-xs font-semibold rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-900/50 flex items-center gap-1 transition-colors"
                   >
-                    Hủy
+                    <span className="material-symbols-outlined text-sm">block</span>
+                    Từ chối yêu cầu
                   </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-5 py-2 text-sm font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs"
-                  >
-                    {loading ? 'Đang tạo đơn...' : 'Xác nhận tạo đơn đổi mới'}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      disabled={loading}
+                      className="px-4 py-2 text-sm rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-5 py-2 text-sm font-semibold rounded-xl text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-xs"
+                    >
+                      {loading ? 'Đang tạo đơn...' : 'Xác nhận tạo đơn đổi mới'}
+                    </button>
+                  </div>
                 </div>
               </form>
             )
           )}
 
           {/* CASE 2: Trả hàng hoàn tiền (UC23 - 1.2) */}
-          {actionType === 'RETURN_REFUND' && (
+          {!isRejected && !isRejecting && actionType === 'RETURN_REFUND' && (
             <div className="space-y-4">
               <div className="p-3 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-xl text-xs text-amber-800 dark:text-amber-300">
                 Quy trình xử lý lần lượt:{' '}
@@ -545,50 +667,63 @@ export const ReturnProcessModal: React.FC<ReturnProcessModalProps> = ({
                 </>
               )}
 
-              <div className="flex justify-end gap-3 pt-3 border-t border-stone-200 dark:border-stone-800">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  disabled={loading}
-                  className="px-4 py-2 text-sm rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
-                >
-                  {isCompleted ? 'Đóng' : 'Hủy'}
-                </button>
-                {!isCompleted && (
-                  step === 'REFUND' ? (
-                    <button
-                      type="button"
-                      onClick={handleRefundSubmit}
-                      disabled={loading}
-                      className="px-5 py-2 text-sm font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs flex items-center gap-1.5"
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        {activeReq?.bankAccountNumber ? 'account_balance' : 'account_balance_wallet'}
-                      </span>
-                      {loading
-                        ? 'Đang hoàn tiền...'
-                        : activeReq?.bankAccountNumber
-                        ? `Xác nhận đã CK ${order.totalAmount.toLocaleString('vi-VN')} ₫ cho khách`
-                        : `Hoàn ${order.totalAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleRefundSubmit}
-                      disabled={loading}
-                      className="px-5 py-2 text-sm font-semibold rounded-xl text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-xs flex items-center gap-1.5"
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        {step === 'PICKING_UP' ? 'local_shipping' : 'inventory_2'}
-                      </span>
-                      {loading
-                        ? 'Đang lưu...'
-                        : step === 'PICKING_UP'
-                        ? 'Bước 1: Xác nhận Shipper đi lấy hàng'
-                        : 'Bước 2: Xác nhận đã nhận hàng về kho'}
-                    </button>
-                  )
-                )}
+              <div className="flex justify-between items-center pt-3 border-t border-stone-200 dark:border-stone-800">
+                {!isCompleted ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsRejecting(true)}
+                    disabled={loading}
+                    className="px-3.5 py-2 text-xs font-semibold rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border border-red-200 dark:border-red-900/50 flex items-center gap-1 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">block</span>
+                    Từ chối yêu cầu
+                  </button>
+                ) : <div />}
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                  >
+                    {isCompleted ? 'Đóng' : 'Hủy'}
+                  </button>
+                  {!isCompleted && (
+                    step === 'REFUND' ? (
+                      <button
+                        type="button"
+                        onClick={handleRefundSubmit}
+                        disabled={loading}
+                        className="px-5 py-2 text-sm font-semibold rounded-xl text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-xs flex items-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          {activeReq?.bankAccountNumber ? 'account_balance' : 'account_balance_wallet'}
+                        </span>
+                        {loading
+                          ? 'Đang hoàn tiền...'
+                          : activeReq?.bankAccountNumber
+                          ? `Xác nhận đã CK ${order.totalAmount.toLocaleString('vi-VN')} ₫ cho khách`
+                          : `Hoàn ${order.totalAmount.toLocaleString('vi-VN')} ₫ vào Ví điện tử`}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleRefundSubmit}
+                        disabled={loading}
+                        className="px-5 py-2 text-sm font-semibold rounded-xl text-white bg-amber-600 hover:bg-amber-700 transition-colors shadow-xs flex items-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          {step === 'PICKING_UP' ? 'local_shipping' : 'inventory_2'}
+                        </span>
+                        {loading
+                          ? 'Đang lưu...'
+                          : step === 'PICKING_UP'
+                          ? 'Bước 1: Xác nhận Shipper đi lấy hàng'
+                          : 'Bước 2: Xác nhận đã nhận hàng về kho'}
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
             </div>
           )}

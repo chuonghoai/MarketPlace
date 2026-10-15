@@ -86,11 +86,13 @@ export const OrderActions: React.FC<OrderActionsProps> = ({ order, onUpdateSucce
         const isReturnFinished =
             orderActionController.isReturnCompleted ||
             order.returnStatus === 'COMPLETED' ||
+            order.returnStatus === 'REJECTED' ||
             order.statusHistory?.some(
                 (h) =>
                     h.note &&
                     (h.note.includes('Hoàn tiền') ||
                      h.note.includes('đổi hàng mới') ||
+                     h.note.includes('Từ chối yêu cầu đổi trả') ||
                      h.note.includes('Đã hoàn tất'))
             );
 
