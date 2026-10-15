@@ -351,7 +351,15 @@ test.describe('Giao diện - Đặt lại mật khẩu (MKP-024)', () => {
 
       const guidanceNote = page.getByRole('note');
       await expect(guidanceNote).toBeVisible();
-      await expect(guidanceNote.getByText(/Spam|Thư rác/i)).toBeVisible();
+
+      // Verify guidance content contains: email, Spam/Junk/Thư rác, and OTP
+      const noteContent = await guidanceNote.innerText();
+      expect(noteContent).toMatch(/email/i);
+      expect(noteContent).toMatch(/Spam|Thư rác/i);
+      expect(noteContent).toMatch(/OTP/i);
+
+      // Verify recipient email is visible on page
+      await expect(page.getByText('client@example.com')).toBeVisible();
 
       // Check no horizontal overflow
       const { scrollWidth, clientWidth } = await page.evaluate(() => ({

@@ -15,7 +15,7 @@ export const AUTH_L10N = {
     // Reset Password
     resetPasswordTitle: 'Đặt lại mật khẩu',
     resetPasswordOtpSentTo: 'Mã OTP đã được gửi đến',
-    resetPasswordSpamGuidance: 'Nếu không thấy email trong hộp thư đến, vui lòng kiểm tra thư mục Spam (Thư rác) hoặc Quảng cáo.',
+    resetPasswordSpamGuidance: 'Nếu không thấy email chứa mã OTP trong hộp thư đến, vui lòng kiểm tra thư mục Spam (Thư rác) hoặc Quảng cáo.',
     resetPasswordOtpLabel: 'Mã xác nhận (OTP)',
     resetPasswordOtpPlaceholder: 'Nhập mã 6 chữ số...',
     resetPasswordOtpRequired: 'Vui lòng nhập mã OTP',
@@ -54,7 +54,7 @@ export const AUTH_L10N = {
     // Reset Password
     resetPasswordTitle: 'Reset Password',
     resetPasswordOtpSentTo: 'OTP code has been sent to',
-    resetPasswordSpamGuidance: "If you don't see the email in your inbox, please check your Spam/Junk or Promotions folder.",
+    resetPasswordSpamGuidance: "If you don't see the email with OTP code in your inbox, please check your Spam/Junk or Promotions folder.",
     resetPasswordOtpLabel: 'Verification Code (OTP)',
     resetPasswordOtpPlaceholder: 'Enter 6-digit code...',
     resetPasswordOtpRequired: 'Please enter OTP code',
