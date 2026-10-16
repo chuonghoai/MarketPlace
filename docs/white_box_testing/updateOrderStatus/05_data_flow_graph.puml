@@ -16,9 +16,11 @@ usecase "6" as n6
 usecase "7" as n7
 note right of n7 : u(order)
 usecase "8" as n8
-note right of n8 : u(order)\nd(history)
+note right of n8 : u(order)
 usecase "9" as n9
+note left of n9 : u(order)\nd(history)
 usecase "10" as n10
+note right of n10 : u(order)\nd(history)
 usecase "11" as n11
 usecase "12" as n12
 usecase "13" as n13
