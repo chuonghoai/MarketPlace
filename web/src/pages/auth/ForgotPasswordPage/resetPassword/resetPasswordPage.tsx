@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { Info, Eye, EyeOff } from "lucide-react";
 import { useResetPasswordController } from "./resetPassword.controller";
+import { tAuth } from "../../../../features/auth/constants/authL10n";
 
 function ResetPasswordPage() {
     const {
         register,
         handleSubmit,
+        setValue,
         errors,
         isSubmitting,
         onResetPassword,
@@ -12,9 +16,41 @@ function ResetPasswordPage() {
         email,
     } = useResetPasswordController();
 
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
     if (!email) {
         return <Navigate to="/forgot-password" replace />;
     }
+
+    const handleOtpKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Allow navigation, deletion, clipboard modifiers
+        if (
+            e.key === "Backspace" ||
+            e.key === "Delete" ||
+            e.key === "Tab" ||
+            e.key === "ArrowLeft" ||
+            e.key === "ArrowRight" ||
+            e.key === "Home" ||
+            e.key === "End" ||
+            e.key === "Enter" ||
+            ((e.ctrlKey || e.metaKey) && ["a", "c", "v", "x"].includes(e.key.toLowerCase()))
+        ) {
+            return;
+        }
+        // Block anything that is not a numeric digit 0-9
+        if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+        }
+    };
+
+    const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+        e.preventDefault();
+        const pastedData = e.clipboardData.getData("text") || "";
+        const sanitized = pastedData.replace(/\D/g, "").slice(0, 6);
+        e.currentTarget.value = sanitized;
+        setValue("otp", sanitized, { shouldValidate: true, shouldDirty: true });
+    };
 
     return (
         <div className="relative min-h-screen flex items-center justify-center p-4 md:p-8 bg-market-background text-[#1C1917] font-['Open_Sans',sans-serif] overflow-hidden">
@@ -73,8 +109,8 @@ function ResetPasswordPage() {
                     </div>
 
                     {/* Right: Form */}
-                    <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white relative">
-                        <div className="w-full max-w-[360px] mx-auto relative z-10">
+                    <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center bg-white relative">
+                        <div className="w-full max-w-[380px] mx-auto relative z-10">
 
                             {/* Mobile Back to Home */}
                             <div className="block md:hidden mb-6 text-left">
@@ -88,29 +124,51 @@ function ResetPasswordPage() {
 
                             <div className="mb-6 text-center md:text-left">
                                 <h2 className="font-['Lora',serif] text-[36px] font-semibold text-[#1C1917] mb-2">
-                                    Đặt lại mật khẩu
+                                    {tAuth("resetPasswordTitle")}
                                 </h2>
                                 <p className="text-[14px] text-[#57534E]">
-                                    Mã OTP đã được gửi đến{" "}
+                                    {tAuth("resetPasswordOtpSentTo")}{" "}
                                     <span className="font-semibold text-[#1C1917]">{email}</span>
                                 </p>
                             </div>
 
+                            {/* Informational Guidance Block (Bug A) */}
+                            <div
+                                role="note"
+                                aria-label={tAuth("resetPasswordSpamGuidance")}
+                                className="flex items-start gap-2.5 rounded-[8px] border border-market-primary/20 bg-market-background p-3 mb-6 text-[13px] text-[#57534E] leading-relaxed shadow-none"
+                            >
+                                <Info className="w-4 h-4 text-market-primary shrink-0 mt-0.5" aria-hidden="true" />
+                                <p>{tAuth("resetPasswordSpamGuidance")}</p>
+                            </div>
+
                             <form onSubmit={handleSubmit(onResetPassword)}>
 
-                                {/* OTP input */}
+                                {/* OTP input (Bug B) */}
                                 <div className="flex flex-col mb-4">
-                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">Mã xác nhận (OTP)</label>
+                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">
+                                        {tAuth("resetPasswordOtpLabel")}
+                                    </label>
                                     <input
                                         type="text"
-                                        placeholder="Nhập mã 6 chữ số..."
+                                        inputMode="numeric"
+                                        autoComplete="one-time-code"
+                                        placeholder={tAuth("resetPasswordOtpPlaceholder")}
                                         maxLength={6}
+                                        onKeyDown={handleOtpKeyDown}
+                                        onPaste={handleOtpPaste}
                                         className={`bg-white border-[1.5px] rounded-[4px] h-[42px] px-[14px] text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] tracking-widest ${errors.otp ? "border-market-error" : "border-[#D6D3D1]"}`}
-                                        {...register("otp", { 
-                                            required: "Vui lòng nhập mã OTP",
+                                        {...register("otp", {
+                                            required: tAuth("resetPasswordOtpRequired"),
+                                            pattern: {
+                                                value: /^[0-9]{6}$/,
+                                                message: tAuth("resetPasswordOtpInvalid"),
+                                            },
                                             onChange: (e) => {
-                                                e.target.value = e.target.value.replace(/[^0-9]/g, '');
-                                            }
+                                                const sanitized = e.target.value.replace(/\D/g, "").slice(0, 6);
+                                                e.target.value = sanitized;
+                                                setValue("otp", sanitized, { shouldValidate: true, shouldDirty: true });
+                                            },
                                         })}
                                     />
                                     {errors.otp && (
@@ -125,41 +183,71 @@ function ResetPasswordPage() {
                                     </div>
                                 )}
 
-                                {/* New Password input */}
+                                {/* New Password input (Bug C) */}
                                 <div className="flex flex-col mb-4">
-                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">Mật khẩu mới</label>
-                                    <input
-                                        type="password"
-                                        placeholder="Nhập mật khẩu mới..."
-                                        className={`bg-white border-[1.5px] rounded-[4px] h-[42px] px-[14px] text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] ${errors.newPassword ? "border-market-error" : "border-[#D6D3D1]"}`}
-                                        {...register("newPassword", {
-                                            required: "Mật khẩu mới là bắt buộc",
-                                            minLength: { value: 6, message: "Mật khẩu phải ít nhất 6 ký tự" }
-                                        })}
-                                    />
+                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">
+                                        {tAuth("resetPasswordNewPasswordLabel")}
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showNewPassword ? "text" : "password"}
+                                            placeholder={tAuth("resetPasswordNewPasswordPlaceholder")}
+                                            className={`bg-white border-[1.5px] rounded-[4px] h-[42px] pl-[14px] pr-10 text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] w-full [&::-ms-reveal]:hidden [&::-ms-clear]:hidden ${errors.newPassword ? "border-market-error" : "border-[#D6D3D1]"}`}
+                                            {...register("newPassword", {
+                                                required: tAuth("resetPasswordNewPasswordRequired"),
+                                                minLength: { value: 6, message: tAuth("resetPasswordNewPasswordMin") },
+                                            })}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword((prev) => !prev)}
+                                            aria-label={showNewPassword ? tAuth("hidePasswordLabel") : tAuth("showPasswordLabel")}
+                                            className="absolute right-0 top-0 h-[42px] px-3 flex items-center justify-center text-[#A8A29E] hover:text-[#57534E] focus:outline-none focus-visible:text-market-primary transition-colors cursor-pointer"
+                                        >
+                                            {showNewPassword ? (
+                                                <EyeOff className="w-5 h-5" aria-hidden="true" />
+                                            ) : (
+                                                <Eye className="w-5 h-5" aria-hidden="true" />
+                                            )}
+                                        </button>
+                                    </div>
                                     {errors.newPassword && (
                                         <p className="text-market-error text-[12px] mt-1.5">{errors.newPassword.message}</p>
                                     )}
                                 </div>
 
-                                {/* Confirm Password input */}
+                                {/* Confirm Password input (Bug C) */}
                                 <div className="flex flex-col mb-6">
-                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">Xác nhận mật khẩu mới</label>
-                                    <input
-                                        type="password"
-                                        placeholder="Nhập lại mật khẩu mới..."
-                                        className={`bg-white border-[1.5px] rounded-[4px] h-[42px] px-[14px] text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] ${errors.confirmPassword ? "border-market-error" : "border-[#D6D3D1]"}`}
-                                        {...register("confirmPassword", {
-                                            required: "Vui lòng xác nhận mật khẩu",
-                                            validate: (value) => value === currentPassword || "Mật khẩu không khớp"
-                                        })}
-                                    />
+                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">
+                                        {tAuth("resetPasswordConfirmPasswordLabel")}
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            placeholder={tAuth("resetPasswordConfirmPasswordPlaceholder")}
+                                            className={`bg-white border-[1.5px] rounded-[4px] h-[42px] pl-[14px] pr-10 text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] w-full [&::-ms-reveal]:hidden [&::-ms-clear]:hidden ${errors.confirmPassword ? "border-market-error" : "border-[#D6D3D1]"}`}
+                                            {...register("confirmPassword", {
+                                                required: tAuth("resetPasswordConfirmPasswordRequired"),
+                                                validate: (value) => value === currentPassword || tAuth("resetPasswordConfirmPasswordMismatch"),
+                                            })}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                            aria-label={showConfirmPassword ? tAuth("hideConfirmPasswordLabel") : tAuth("showConfirmPasswordLabel")}
+                                            className="absolute right-0 top-0 h-[42px] px-3 flex items-center justify-center text-[#A8A29E] hover:text-[#57534E] focus:outline-none focus-visible:text-market-primary transition-colors cursor-pointer"
+                                        >
+                                            {showConfirmPassword ? (
+                                                <EyeOff className="w-5 h-5" aria-hidden="true" />
+                                            ) : (
+                                                <Eye className="w-5 h-5" aria-hidden="true" />
+                                            )}
+                                        </button>
+                                    </div>
                                     {errors.confirmPassword && (
                                         <p className="text-market-error text-[12px] mt-1.5">{errors.confirmPassword.message}</p>
                                     )}
                                 </div>
-
-
 
                                 {/* Submit button */}
                                 <button
@@ -168,13 +256,13 @@ function ResetPasswordPage() {
                                     className="w-full bg-market-primary text-white font-semibold text-[15px] h-[42px] rounded-[4px] border border-market-primary cursor-pointer transition-colors duration-200 hover:bg-[#9A3412] hover:border-[#9A3412] active:bg-[#7C2D12] disabled:opacity-40 disabled:cursor-not-allowed mb-6"
                                     disabled={isSubmitting}
                                 >
-                                    {isSubmitting ? "Đang xử lý..." : "Đặt lại mật khẩu"}
+                                    {isSubmitting ? tAuth("resetPasswordSubmitting") : tAuth("resetPasswordSubmit")}
                                 </button>
 
                                 {/* Back link */}
                                 <div className="text-center text-[14px] text-[#57534E]">
                                     <Link to="/forgot-password" className="font-semibold text-market-primary hover:text-[#9A3412] transition-colors">
-                                        ← Quay lại nhập email
+                                        {tAuth("resetPasswordBackToEmail")}
                                     </Link>
                                 </div>
 
