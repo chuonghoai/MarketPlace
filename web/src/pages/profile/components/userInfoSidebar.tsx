@@ -130,11 +130,11 @@ export const UserInfoSidebar = ({
     };
 
     return (
-        <div className="bg-white border border-border-subtle rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-surface-card card-border rounded-xl overflow-hidden shadow-sm">
             {/* User Info */}
-            <div className="p-6 flex flex-col items-center border-b border-stone-100">
+            <div className="p-6 flex flex-col items-center border-b border-border-subtle">
                 <div className="relative mb-4">
-                    <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-[0_4px_16px_rgba(0,0,0,0.12)] bg-stone-100">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-surface-card shadow-sm bg-surface-container">
                         {user?.avatarUrl ? (
                             <img
                                 src={user.avatarUrl}
@@ -148,10 +148,10 @@ export const UserInfoSidebar = ({
                         )}
                     </div>
                 </div>
-                <h2 className="text-base font-bold text-stone-900 text-center leading-tight">
+                <h2 className="text-base font-bold text-text-ink text-center leading-tight">
                     {user?.fullName || "Người dùng"}
                 </h2>
-                <p className="text-stone-400 text-xs mt-0.5 text-center">{user?.email}</p>
+                <p className="text-text-muted text-xs mt-0.5 text-center">{user?.email}</p>
             </div>
 
             {/* Navigation */}
@@ -161,24 +161,24 @@ export const UserInfoSidebar = ({
                         key={item.id}
                         onClick={() => navigate(item.path)}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${isActive(item.path)
-                                ? "bg-market-primary/8 text-market-primary"
-                                : "text-stone-700 hover:bg-stone-50 hover:text-stone-900"
+                                ? "bg-primary-container/10 text-primary-container font-semibold"
+                                : "text-text-ink hover:bg-surface-container-low hover:text-primary"
                             }`}
                     >
                         <span
-                            className={`shrink-0 ${isActive(item.path) ? "text-market-primary" : "text-stone-500"
+                            className={`shrink-0 ${isActive(item.path) ? "text-primary-container" : "text-text-muted"
                                 }`}
                         >
                             {item.icon}
                         </span>
                         {item.label}
                         {isActive(item.path) && (
-                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-market-primary shrink-0" />
+                            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary-container shrink-0" />
                         )}
                     </button>
                 ))}
 
-                <div className="my-2 border-t border-stone-100" />
+                <div className="my-2 border-t border-border-subtle" />
 
                 {/* Action items */}
                 {actionItems.map((item) => (
@@ -187,11 +187,11 @@ export const UserInfoSidebar = ({
                         onClick={item.action}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-left ${item.isDestructive
                                 ? "text-red-500 hover:bg-red-50 hover:text-red-600"
-                                : "text-stone-700 hover:bg-stone-50 hover:text-stone-900"
+                                : "text-text-ink hover:bg-surface-container-low hover:text-primary"
                             }`}
                     >
                         <span
-                            className={`shrink-0 ${item.isDestructive ? "text-red-400" : "text-stone-500"
+                            className={`shrink-0 ${item.isDestructive ? "text-red-400" : "text-text-muted"
                                 }`}
                         >
                             {item.icon}
