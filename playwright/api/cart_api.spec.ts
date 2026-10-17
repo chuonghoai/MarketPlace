@@ -5,18 +5,22 @@ test.describe('API - Giỏ hàng', () => {
   let token: string;
   let sampleProductId: string;
 
-  test.beforeAll(async ({ request }) => {
-    token = await getAuthToken(request);
-
-    // Lấy ID một sản phẩm mẫu
+  async function ensureSampleProductId(request: any): Promise<string> {
+    if (sampleProductId) return sampleProductId;
     const prodRes = await request.get('/products?pageSize=1');
     if (prodRes.ok()) {
       const prodBody = await prodRes.json();
-      const list = prodBody.data?.products || prodBody.data || [];
+      const list = prodBody.data?.products || prodBody.data?.items || prodBody.data || [];
       if (list.length > 0) {
         sampleProductId = list[0].id;
       }
     }
+    return sampleProductId;
+  }
+
+  test.beforeAll(async ({ request }) => {
+    token = await getAuthToken(request);
+    await ensureSampleProductId(request);
   });
 
   test('Lấy danh sách sản phẩm trong giỏ hàng thành công (MKP_006)', async ({ request }) => {

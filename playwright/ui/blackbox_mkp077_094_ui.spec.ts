@@ -16,7 +16,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
   // NHÓM 1: UC09 - ĐÁNH GIÁ SẢN PHẨM (MKP_077 -> MKP_080)
   // =========================================================================
 
-  test('MKP_077 - [UI - EXPECTED FAIL] Màn hình Đánh giá đơn hàng (/profile/order/tracking/:orderId/evaluate) phải tải được độc lập qua URL thay vì bị văng về trang chi tiết đơn hàng', async ({ page }) => {
+  test('MKP_077 - [UI - FIXED] Màn hình Đánh giá đơn hàng (/profile/order/tracking/:orderId/evaluate) tải được độc lập qua URL', async ({ page }) => {
     await loginViaUI(page);
     // Người dùng truy cập trực tiếp URL trang đánh giá đơn hàng (từ link thông báo/bookmark hoặc F5 tải lại trang)
     await page.goto('/profile/order/tracking/mock-order-id/evaluate');
@@ -29,7 +29,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
     await expect(evaluateHeading, 'Tiêu đề "Đánh giá đơn hàng" phải hiển thị').toBeVisible({ timeout: 5000 });
   });
 
-  test('MKP_078 - [UI - EXPECTED FAIL] Kiểm tra hiển thị nút hành động "Đánh giá" trên thẻ đơn hàng tại màn hình Danh sách theo dõi đơn hàng', async ({ page }) => {
+  test('MKP_078 - [UI - FIXED] Kiểm tra hiển thị nút hành động "Đánh giá" trên thẻ đơn hàng tại màn hình Danh sách theo dõi đơn hàng', async ({ page }) => {
     await loginViaUI(page);
     await page.goto('/profile/order/tracking');
     await page.waitForLoadState('domcontentloaded');
@@ -127,7 +127,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
     }
   });
 
-  test('MKP_085 - [UI - EXPECTED FAIL] Modal Thêm địa chỉ mới không kiểm tra định dạng số điện thoại người nhận', async ({ page }) => {
+  test('MKP_085 - [UI - FIXED] Modal Thêm địa chỉ mới kiểm tra định dạng số điện thoại người nhận', async ({ page }) => {
     await loginViaUI(page);
     await page.goto('/profile/addresses');
     await page.waitForLoadState('domcontentloaded');
@@ -187,7 +187,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
     await expect(page.getByText('50.000 ₫').first()).toBeVisible();
   });
 
-  test('MKP_088 - [API/Security - EXPECTED FAIL] Lỗ hổng nạp tiền ví khi gửi phương thức cổng thanh toán lạ tự động cộng tiền', async ({ request }) => {
+  test('MKP_088 - [API/Security - FIXED] Từ chối nạp tiền ví khi gửi phương thức cổng thanh toán lạ (400 Bad Request)', async ({ request }) => {
     const token = await getAuthToken(request, TEST_USERS.client);
     const response = await request.post('http://127.0.0.1:3000/wallets/topup', {
       headers: { Authorization: `Bearer ${token}` },
@@ -259,7 +259,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
     ],
   };
 
-  test('MKP_091 - [UI - EXPECTED FAIL] Quy trình duyệt đơn hoàn trả - Nút "Xử lý hoàn trả" bị ẩn mất khi chưa hoàn tất các bước', async ({ page }) => {
+  test('MKP_091 - [UI - FIXED] Quy trình duyệt đơn hoàn trả - Duy trì nút "Xử lý hoàn trả" trong các bước xử lý', async ({ page }) => {
     const returnOrderId = 'eeb164d5-d103-4213-9825-8bae97e0151f';
     let currentReturnStatus = 'PICKING_UP';
 
@@ -400,7 +400,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
     await expect(page.getByRole('heading', { name: /Quản lý yêu cầu rút tiền/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test('MKP_094 - [UI - EXPECTED FAIL] Modal Yêu cầu đổi trả chỉ cho phép nhập URL, thiếu nút tải lên ảnh/video trực tiếp từ thiết bị', async ({ page }) => {
+  test('MKP_094 - [UI - FIXED] Modal Yêu cầu đổi trả kiểm tra phần tải lên minh chứng hình ảnh/video', async ({ page }) => {
     await page.route('**/orders/tracking*', async (route) => {
       if (route.request().url().includes('/orders/tracking/count')) {
         return route.continue();

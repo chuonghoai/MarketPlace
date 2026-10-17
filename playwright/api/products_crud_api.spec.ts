@@ -12,7 +12,7 @@ test.describe('API - Chi tiết và quyền tạo sản phẩm', () => {
     const prodRes = await request.get('/products?pageSize=1');
     if (prodRes.ok()) {
       const prodBody = await prodRes.json();
-      const list = prodBody.data?.products || prodBody.data || [];
+      const list = prodBody.data?.products || prodBody.data?.items || (Array.isArray(prodBody.data) ? prodBody.data : []);
       if (list.length > 0) {
         sampleProductId = list[0].id;
       }

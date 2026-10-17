@@ -10,7 +10,7 @@ import { TEST_USERS, getAuthToken } from '../helpers/auth.helper';
 
 test.describe('BỘ KIỂM THỬ HỘP ĐEN API - NGUYỄN TIẾN ĐẠT (MKP_077 -> MKP_094)', () => {
 
-  test('MKP_088 - [API/Security - EXPECTED FAIL] Lỗ hổng nạp tiền ví khi gửi phương thức cổng thanh toán lạ tự động cộng tiền thẳng vào ví', async ({ request }) => {
+  test('MKP_088 - [API/Security - FIXED] Từ chối nạp tiền ví khi gửi phương thức cổng thanh toán lạ (400 Bad Request)', async ({ request }) => {
     // 1. Lấy token xác thực của khách hàng hợp lệ
     const token = await getAuthToken(request, TEST_USERS.client);
 

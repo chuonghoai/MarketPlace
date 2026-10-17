@@ -7,7 +7,7 @@ test.describe('Giao diện - Chi tiết sản phẩm', () => {
     const response = await request.get('http://127.0.0.1:3000/products?pageSize=1');
     if (response.ok()) {
       const body = await response.json();
-      const list = body.data?.products || body.data || [];
+      const list = body.data?.products || body.data?.items || (Array.isArray(body.data) ? body.data : []);
       if (list.length > 0) {
         sampleProductId = list[0].id;
       }

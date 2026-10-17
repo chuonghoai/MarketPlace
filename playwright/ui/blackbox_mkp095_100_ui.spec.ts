@@ -245,7 +245,7 @@ test.describe('BỘ 6 TEST CASE KIỂM THỬ HỘP ĐEN - CHƯƠNG (MKP_095 -> M
   // NHÓM 3: UC21 - QUẢN LÝ NGHỆ DANH (MKP_099 -> MKP_100)
   // =========================================================================
 
-  test('MKP_099 - [UI - EXPECTED FAIL] Form Thêm mới nghệ danh không kiểm tra ràng buộc ngày sinh trong tương lai', async ({ page }) => {
+  test('MKP_099 - [UI - FIXED] Form Thêm mới nghệ danh kiểm tra ràng buộc ngày sinh không được trong tương lai', async ({ page }) => {
     // Mock API backend artisans (tránh chặn nhầm URL frontend /admin/artisans)
     await page.route('*/**:3000/artisans*', async (route) => {
       if (route.request().method() === 'POST') {

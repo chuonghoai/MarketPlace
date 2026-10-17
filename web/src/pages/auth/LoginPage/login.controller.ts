@@ -47,6 +47,15 @@ export const useLoginController = () => {
         toast("Đăng nhập thành công!", "success");
         const nextRoute = getDefaultRouteByRole(result.data.user.role);
         navigate(nextRoute);
+      } else {
+        const apiErrorMsg = (result as any)?.message
+          || (result as any)?.error?.message
+          || "Tài khoản hoặc mật khẩu không đúng";
+        toast(apiErrorMsg, "error");
+        setError("root", {
+          type: "server",
+          message: apiErrorMsg,
+        });
       }
     } catch (error: any) {
       const apiErrorMsg = error.response?.data?.error?.message

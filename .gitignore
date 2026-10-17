@@ -8,3 +8,14 @@ dist-ssr/
 .vscode/*
 !.vscode/extensions.json
 Project MarketPlace/
+
+# Playwright artifacts & reports
+playwright-report/
+test-results/
+playwright/playwright-report/
+playwright/test-results/
+.last-run.json
+
+# Local environment
+.env.local
+.env.*.local
