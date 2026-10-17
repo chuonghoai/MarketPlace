@@ -27,15 +27,19 @@ jobs:
         with:
           node-version: 22
           cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            web/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
 
       - name: Install backend dependencies
-        run: cd backend && npm install
+        run: cd backend && npm ci
 
       - name: Install web frontend dependencies
-        run: cd web && npm install
+        run: cd web && npm ci
 
       - name: Prepare Backend Environment
         run: |
@@ -58,36 +62,36 @@ jobs:
           REDIS_URI=${{ secrets.REDIS_URI }}
           OPENSEARCH_NODE=${{ secrets.OPENSEARCH_NODE }}
           OPENSEARCH_USERNAME=${{ secrets.OPENSEARCH_USERNAME }}
-          OPENSEARCH_PASSWORD=${{ secrets.OPENSEARCH_PASSWORD}}
-          JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET}}
+          OPENSEARCH_PASSWORD=${{ secrets.OPENSEARCH_PASSWORD }}
+          JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
           JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
           JWT_ACCESS_EXPIRES_IN=7d
 
-          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
-          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
-          CLOUDINARY_FOLDER=${{ secrets.CLOUDINARY_FOLDER }}
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME || 'dj650dpxi' }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY || '939982415422772' }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET || 'irAlka0hWQiSraJrVpr_dLkzkqE' }}
+          CLOUDINARY_FOLDER=${{ secrets.CLOUDINARY_FOLDER || 'TMDT_Cloudinary' }}
 
           MAIL_HOST=smtp.gmail.com
           MAIL_PORT=465
-          MAIL_USER=${{ secrets.MAIL_USER }}
-          MAIL_PASS=${{ secrets.MAIL_PASS }}
-          MAIL_FROM="MarketNest <${{ secrets.MAIL_USER }}>"
+          MAIL_USER=${{ secrets.MAIL_USER || 'trinhthy333@gmail.com' }}
+          MAIL_PASS=${{ secrets.MAIL_PASS || 'qukg xvmi xoct fbuz' }}
+          MAIL_FROM="MarketNest <${{ secrets.MAIL_USER || 'trinhthy333@gmail.com' }}>"
 
           ADMIN_MAIL=admin@marketnest.com
           ADMIN_PASSWORD=Admin@123456
           ADMIN_FULL_NAME=MarketNest Administrator
           ADMIN_AVATAR_URL=https://res.cloudinary.com/demo/image/upload/avatar.png
 
-          MOMO_PARTNER_CODE=${{ secrets.MOMO_PARTNER_CODE }}
-          MOMO_ACCESS_KEY=${{ secrets.MOMO_ACCESS_KEY }}
-          MOMO_SECRET_KEY=${{ secrets.MOMO_SECRET_KEY }}
+          MOMO_PARTNER_CODE=${{ secrets.MOMO_PARTNER_CODE || 'MOMOBKUN20180529' }}
+          MOMO_ACCESS_KEY=${{ secrets.MOMO_ACCESS_KEY || 'klm05TvNBzhg7h7j' }}
+          MOMO_SECRET_KEY=${{ secrets.MOMO_SECRET_KEY || 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa' }}
           MOMO_ENDPOINT=https://test-payment.momo.vn/v2/gateway/api/create
-          VNP_TMN_CODE=${{ secrets.VNP_TMN_CODE }}
-          VNP_HASH_SECRET=${{ secrets.VNP_HASH_SECRET }}
+          VNP_TMN_CODE=${{ secrets.VNP_TMN_CODE || 'CGXZLS0Z' }}
+          VNP_HASH_SECRET=${{ secrets.VNP_HASH_SECRET || 'XNBCJFAKAZQSGTARRLGCHVZWCIOIGSHN' }}
           VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
-          PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
-          PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}
+          PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID || 'AbltbBZWvUDcqWjB_e27TsVAAGWLL3U6xsKg4c4NQxm9bIznq8o2t6ms4_QNxBok3ugDr_RQCv52WDJI' }}
+          PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET || 'EHp6rk7Mf-r6wBWSHNk6GmWhZBt_9dtoXLhv0rsTZZF4ks4Xvm66YSfy5qKE5zXULq-mcfGfY3PlfzjA' }}
           PAYPAL_ENVIRONMENT=sandbox
           EOF
           fi
@@ -101,8 +105,20 @@ jobs:
           EOF
           fi
 
+      - name: Cache Playwright Browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
       - name: Install Playwright Browsers & OS Dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright OS Dependencies (if cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
 
       - name: Run Playwright Tests
         run: npm run test:all

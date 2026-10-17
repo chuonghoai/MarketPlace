@@ -24,7 +24,6 @@
     "seed:kpi": "cross-env NODE_ENV=development APP_ENV=dev ts-node -r tsconfig-paths/register src/scripts/seed-kpi.ts"
   },
   "dependencies": {
-    "@css-inline/css-inline-win32-x64-msvc": "^0.23.1",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/cache-manager": "^3.1.2",
     "@nestjs/common": "^11.0.1",
@@ -111,5 +110,9 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "optionalDependencies": {
+    "@css-inline/css-inline-win32-x64-msvc": "^0.23.1",
+    "@css-inline/css-inline-linux-x64-gnu": "^0.23.1"
   }
 }
