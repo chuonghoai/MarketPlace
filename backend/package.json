@@ -81,7 +81,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/streamifier": "^0.1.2",
     "@types/supertest": "^6.0.2",
-    "chokidar": "^3.6.0",
+    "chokidar": "^4.0.3",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
@@ -119,5 +119,8 @@
   "optionalDependencies": {
     "@css-inline/css-inline-linux-x64-gnu": "^0.23.1",
     "@css-inline/css-inline-win32-x64-msvc": "^0.23.1"
+  },
+  "overrides": {
+    "chokidar": "^4.0.3"
   }
 }
