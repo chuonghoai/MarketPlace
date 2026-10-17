@@ -32,10 +32,10 @@ jobs:
         run: npm ci
 
       - name: Install backend dependencies
-        run: cd backend && npm ci --omit=optional
+        run: cd backend && npm install
 
       - name: Install web frontend dependencies
-        run: cd web && npm ci
+        run: cd web && npm install
 
       - name: Prepare Backend Environment
         run: |
