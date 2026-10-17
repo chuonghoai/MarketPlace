@@ -1,0 +1,11 @@
+# 04. Bảng Test Cases bao phủ nhánh (Branch Coverage)
+
+| Kịch bản | Mã test case | Đường thi hành | Điều kiện đầu vào | Kết quả mong đợi | Trạng thái |
+|:---|:---|:---|:---|:---|:---:|
+| Kịch bản 1 | TC01 | 1 -> 2 -> 3 -> 4 -> 14 -> 21 -> Exit | `request.reviews = []` (Mảng đánh giá rỗng) | Không thực hiện lặp, trả về `{ submittedCount: 0 }` | Pass |
+| Kịch bản 2 | TC02 | 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 4 -> 14 -> 21 -> Exit | `request.reviews` có 1 phần tử, `orderItemId` không tồn tại (`!orderItem = true`) | Bỏ qua phần tử qua `continue`, trả về `{ submittedCount: 0 }` | Pass |
+| Kịch bản 3 | TC03 | 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 4 -> 14 -> 21 -> Exit | `request.reviews` có 1 phần tử, `orderItem` tồn tại nhưng đã đánh giá (`!orderItem = false`, `orderItem.isReviewed = true`) | Bỏ qua phần tử qua `continue`, trả về `{ submittedCount: 0 }` | Pass |
+| Kịch bản 4 | TC04 | 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 4 -> 14 -> 21 -> Exit | `request.reviews` có 1 phần tử hợp lệ (`!orderItem = false`, `orderItem.isReviewed = false`), query trung bình rating trả về `result = null` (`result = false`) | Lưu review, gán `isReviewed = true`, gán `avg = 0`, cập nhật rating sản phẩm = 0, trả về `{ submittedCount: 1 }` | Pass |
+| Kịch bản 5 | TC05 | 1 -> 2 -> 3 -> 4 -> 14 -> 15 -> 16 -> 19 -> 20 -> 14 -> 21 -> Exit | `request.reviews` có 1 phần tử hợp lệ, query trả về `result` tồn tại nhưng `result.avgRating = null` (`result = true`, `result.avgRating = false`) | Lưu review, gán `isReviewed = true`, gán `avg = 0`, cập nhật rating sản phẩm = 0, trả về `{ submittedCount: 1 }` | Pass |
+| Kịch bản 6 | TC06 | 1 -> 2 -> 3 -> 4 -> 14 -> 15 -> 16 -> 17 -> 19 -> 20 -> 14 -> 21 -> Exit | `request.reviews` có 1 phần tử hợp lệ, query trả về `result` tồn tại và `result.avgRating = 4.5` (`result = true`, `result.avgRating = true`) | Lưu review, gán `isReviewed = true`, tính `avg = 4.5`, cập nhật rating sản phẩm = 4.5, trả về `{ submittedCount: 1 }` | Pass |
+| Kịch bản 7 | TC07 | 1 -> 2 -> 3 -> 4 -> 14 -> 15 -> 16 -> 17 -> 18 -> 20 -> 14 -> 21 -> Exit | `request.reviews` có 2 phần tử (1 phần tử hợp lệ và 1 phần tử đã review `orderItem.isReviewed = true`) | Thực hiện lặp 2 lần, chỉ lưu và cập nhật sản phẩm cho phần tử hợp lệ, trả về `{ submittedCount: 1 }` | Pass |
