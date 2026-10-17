@@ -677,5 +677,6 @@ npx playwright show-trace playwright/test-results/<tên-thư-mục-test-bị-l�
 ---
 
 <p align="center">
-  <b>MarketNest Platform</b> • Được xây dựng với đam mê dành cho sản phẩm thủ công truyền thống Việt Nam 🇻🇳
+  <b>MarketNest Platform</b> • Được xây dựng với đam mê dành cho sản phẩm thủ công truyền thống Việt Nam 🇻🇳 <br>
+  <i>Dự án này là mã nguồn mở và được tạo ra với mục đích học tập.</i>
 </p>
