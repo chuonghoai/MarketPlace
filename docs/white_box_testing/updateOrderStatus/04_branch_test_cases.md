@@ -1,43 +1,49 @@
-# Bảng Test Case (Bao phủ nhánh)
+# Bảng Test Case (Bao phủ nhánh) — `updateOrderStatus`
 
-| STT | Điều kiện đầu vào (Tham số & State DB) | Kết quả mong đợi |
-| --- | --- | --- |
-| 1 | `DB.order = null` (Node 2: true) | Quăng lỗi `NotFoundException` |
-| 2 | `DB.order = { ... }` (Node 2: false) | Đi tiếp đến cập nhật biến |
-| 3 | `updateDto.note = 'Khách yêu cầu'` (Node 6: true) | Cập nhật `order.note` |
-| 4 | `updateDto.note = undefined` (Node 6: false) | Bỏ qua cập nhật `order.note` |
-| 5 | `DB.order.statusHistory = [{ status: 'PENDING' }]` (Node 8: true) | Dùng `order.statusHistory` cũ |
-| 6 | `DB.order.statusHistory = null` (Node 8: false) | Tạo mảng `history` mới |
-| 7 | `updateDto.status = EOrderStatus.PREPARING` (Node 12 & 38) | `defaultNote` và `newStatusStr` nhận giá trị PREPARING |
-| 8 | `updateDto.status = EOrderStatus.SHIPPING` (Node 12 & 38) | `defaultNote` và `newStatusStr` nhận giá trị SHIPPING |
-| 9 | `updateDto.status = EOrderStatus.DELIVERED` (Node 12 & 38) | `defaultNote` và `newStatusStr` nhận giá trị DELIVERED |
-| 10 | `updateDto.status = EOrderStatus.SUCCESS` (Node 12 & 38) | `defaultNote` và `newStatusStr` nhận giá trị SUCCESS |
-| 11 | `updateDto.status = EOrderStatus.CANCELLED` (Node 12 & 38) | `defaultNote` và `newStatusStr` nhận giá trị CANCELLED |
-| 12 | `updateDto.status = EOrderStatus.RETURNED` (Node 12 & 38) | `defaultNote` và `newStatusStr` nhận giá trị RETURNED |
-| 13 | `updateDto.status = undefined` (Node 12 & 38) | `newStatusStr = 'Đã cập nhật'` |
-| 14 | `updateDto.note = 'Khách yêu cầu'` (Node 20: true) | Dùng `updateDto.note` để push vào history |
-| 15 | `updateDto.note = undefined` (Node 20: false) | Dùng `defaultNote` để push vào history |
-| 16 | `updateDto.status = EOrderStatus.SUCCESS` (Node 23: true) | `order.paymentStatus = PAID` |
-| 17 | `updateDto.status = EOrderStatus.SHIPPING` (Node 23: false) | Bỏ qua gán `paymentStatus` |
-| 18 | `updateDto.status = EOrderStatus.SUCCESS` (Node 26: true) | Kiểm tra `oldStatus` |
-| 19 | `updateDto.status = EOrderStatus.SHIPPING` (Node 26: false) | Bỏ qua tăng `soldCount` |
-| 20 | `DB.order.status = EOrderStatus.PENDING` (Node 27: true) | Lặp qua `items` tăng `soldCount` |
-| 21 | `DB.order.status = EOrderStatus.SUCCESS` (Node 27: false) | Không tăng `soldCount` |
-| 22 | `DB.order.items = [{ productId: 1, quantity: 2 }]` (Node 28: true) | Tăng `soldCount` cho product |
-| 23 | `DB.order.items = []` (Node 28: false) | Thoát khỏi vòng lặp tăng `soldCount` |
-| 24 | `updateDto.status = EOrderStatus.CANCELLED` (Node 30: true) | Rollback vouchers |
-| 25 | `updateDto.status = EOrderStatus.SUCCESS` (Node 30: false) | Đánh giá node 31 |
-| 26 | `updateDto.status = EOrderStatus.RETURNED` (Node 31: true) | Rollback vouchers |
-| 27 | `updateDto.status = EOrderStatus.SUCCESS` (Node 31: false) | Bỏ qua logic rollback và cập nhật stock |
-| 28 | `DB.order.status = EOrderStatus.PENDING` (Node 33: true) | Đánh giá node 34 |
-| 29 | `DB.order.status = EOrderStatus.CANCELLED` (Node 33: false) | Bỏ qua khôi phục stock |
-| 30 | `DB.order.status = EOrderStatus.PENDING` (Node 34: true) | Lặp qua `items` tăng stock |
-| 31 | `DB.order.status = EOrderStatus.RETURNED` (Node 34: false) | Bỏ qua khôi phục stock |
-| 32 | `DB.order.items = [{ productId: 1, quantity: 2 }]` (Node 35: true) | Khôi phục stock cho product |
-| 33 | `DB.order.items = []` (Node 35: false) | Thoát vòng lặp khôi phục stock |
-| 34 | `updateDto.status = EOrderStatus.CANCELLED` (Node 46: true) | Truyền `cancelReason = updateDto.note` |
-| 35 | `updateDto.status = EOrderStatus.SUCCESS` (Node 46: false) | Truyền `cancelReason = undefined` |
-| 36 | `updateDto.status = EOrderStatus.SUCCESS` (Node 50: true) | Đánh giá node 51 |
-| 37 | `updateDto.status = EOrderStatus.SHIPPING` (Node 50: false) | Bỏ qua gửi email billing |
-| 38 | `DB.order.paymentMethod = EPaymentMethod.COD` (Node 51: true) | Gọi `sendBillingEmail` |
-| 39 | `DB.order.paymentMethod = EPaymentMethod.VNPAY` (Node 51: false) | Bỏ qua gửi email billing |
+## 1. Bảng Test Cases
+
+| STT | Điều kiện đầu vào | Kết quả mong đợi |
+|:---:|---|---|
+| 1 | • `id = 'ord-not-exist'`<br>• `updateDto = { status: EOrderStatus.PREPARING }`<br>• DB Mock: `order = null` (Node 2: True) | Quăng ngoại lệ `NotFoundException('Không tìm thấy đơn hàng với ID ord-not-exist')`. Không có thao tác DB nào được thực thi. |
+| 2 | • `id = 'ord-01'`<br>• `updateDto = { status: EOrderStatus.PREPARING, note: 'Gói cẩn thận' }`<br>• DB Mock: `order = { status: PENDING, statusHistory: [{ status: PENDING, note: 'Khởi tạo' }] }` | Cập nhật `order.status = PREPARING`, `order.note = 'Gói cẩn thận'`. Thêm bản ghi vào `statusHistory` với note từ DTO. Gửi email cập nhật với status `'Đơn hàng đang được chuẩn bị'`. Trả về `OrderDetailDto`. |
+| 3 | • `id = 'ord-02'`<br>• `updateDto = { status: EOrderStatus.SHIPPING }`<br>• DB Mock: `order = { status: PREPARING, statusHistory: null }` | Tạo mới `statusHistory` mặc định (Node 10). Lấy `defaultNote = 'Đơn hàng đang được giao'` (Node 14, 21). Gửi email status `'Đơn hàng đang được giao, vui lòng chú ý điện thoại'`. Trả về `OrderDetailDto`. |
+| 4 | • `id = 'ord-03'`<br>• `updateDto = { status: EOrderStatus.DELIVERED }`<br>• DB Mock: `order = { status: SHIPPING, statusHistory: [{ status: SHIPPING }] }` | Giữ `statusHistory` cũ. Dùng `defaultNote = 'Đơn hàng đã được giao thành công'` (Node 15, 21). Gửi email status `'Giao hàng thành công'`. Trả về `OrderDetailDto`. |
+| 5 | • `id = 'ord-04'`<br>• `updateDto = { status: EOrderStatus.SUCCESS }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: null, items: [{ productId: 'p1', quantity: 2 }], paymentMethod: COD }` | Cập nhật `paymentStatus = PAID`. Tăng `soldCount` của `p1` thêm 2. Gửi email cập nhật status `'Đơn hàng đã hoàn tất'`. Gửi billing email (Node 53). Trả về `OrderDetailDto`. |
+| 6 | • `id = 'ord-05'`<br>• `updateDto = { status: EOrderStatus.SUCCESS }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: null, items: [{ productId: 'p1', quantity: 1 }], paymentMethod: VNPAY }` | Cập nhật `paymentStatus = PAID`. Tăng `soldCount` của `p1` thêm 1. Gửi email status `'Đơn hàng đã hoàn tất'`. Bỏ qua gửi billing email vì không phải COD (Node 51: False). Trả về `OrderDetailDto`. |
+| 7 | • `id = 'ord-06'`<br>• `updateDto = { status: EOrderStatus.SUCCESS }`<br>• DB Mock: `order = { status: SUCCESS, statusHistory: null, items: [{ productId: 'p1', quantity: 1 }], paymentMethod: VNPAY }` | Cập nhật `paymentStatus = PAID`. Do `oldStatus === SUCCESS` (Node 27: False) nên không tăng `soldCount`. Không gửi billing email. Trả về `OrderDetailDto`. |
+| 8 | • `id = 'ord-07'`<br>• `updateDto = { status: EOrderStatus.SUCCESS }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: null, items: [], paymentMethod: VNPAY }` | Cập nhật `paymentStatus = PAID`. Mảng `items = []` nên thoát vòng lặp tăng `soldCount` (Node 28: False). Không gửi billing email. Trả về `OrderDetailDto`. |
+| 9 | • `id = 'ord-08'`<br>• `updateDto = { status: EOrderStatus.CANCELLED, note: 'Khách đổi ý' }`<br>• DB Mock: `order = { status: PREPARING, statusHistory: [{ status: PREPARING }], items: [{ productId: 'p1', quantity: 3 }] }` | Gọi `rollbackVouchersForOrder`. Do `oldStatus !== CANCELLED && !== RETURNED`, tăng hoàn `stock` của `p1` thêm 3. Gửi email cập nhật với `cancelReason = 'Khách đổi ý'`. Trả về `OrderDetailDto`. |
+| 10 | • `id = 'ord-09'`<br>• `updateDto = { status: EOrderStatus.CANCELLED }`<br>• DB Mock: `order = { status: PREPARING, statusHistory: null, items: [{ productId: 'p1', quantity: 2 }] }` | Gọi `rollbackVouchersForOrder`. Tăng hoàn `stock` của `p1` thêm 2. `cancelReason = undefined` (Node 46: False). Dùng `defaultNote = 'Đơn hàng đã bị hủy'`. Trả về `OrderDetailDto`. |
+| 11 | • `id = 'ord-10'`<br>• `updateDto = { status: EOrderStatus.CANCELLED }`<br>• DB Mock: `order = { status: CANCELLED, statusHistory: null, items: [{ productId: 'p1', quantity: 1 }] }` | Gọi `rollbackVouchersForOrder`. Do `oldStatus === CANCELLED` (Node 33: False) nên bỏ qua vòng lặp hoàn stock. Gửi email cập nhật. Trả về `OrderDetailDto`. |
+| 12 | • `id = 'ord-11'`<br>• `updateDto = { status: EOrderStatus.CANCELLED }`<br>• DB Mock: `order = { status: RETURNED, statusHistory: null, items: [{ productId: 'p1', quantity: 1 }] }` | Gọi `rollbackVouchersForOrder`. Do `oldStatus === RETURNED` (Node 34: False) nên bỏ qua vòng lặp hoàn stock. Gửi email cập nhật. Trả về `OrderDetailDto`. |
+| 13 | • `id = 'ord-12'`<br>• `updateDto = { status: EOrderStatus.CANCELLED }`<br>• DB Mock: `order = { status: PREPARING, statusHistory: null, items: [] }` | Gọi `rollbackVouchersForOrder`. Mảng `items = []` nên thoát vòng lặp hoàn stock (Node 35: False). Gửi email cập nhật. Trả về `OrderDetailDto`. |
+| 14 | • `id = 'ord-13'`<br>• `updateDto = { status: EOrderStatus.RETURNED }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: null, items: [{ productId: 'p2', quantity: 1 }] }` | `updateDto.status` đi qua Node 30 (False) và Node 31 (True). Gọi `rollbackVouchersForOrder`. Tăng hoàn `stock` của `p2` thêm 1. Gửi email status `'Yêu cầu trả hàng/hoàn tiền'`. Trả về `OrderDetailDto`. |
+| 15 | • `id = 'ord-14'`<br>• `updateDto = { status: EOrderStatus.RETURNED }`<br>• DB Mock: `order = { status: CANCELLED, statusHistory: null, items: [{ productId: 'p2', quantity: 1 }] }` | Gọi `rollbackVouchersForOrder`. Do `oldStatus === CANCELLED` (Node 33: False), bỏ qua hoàn kho. Gửi email cập nhật status RETURNED. Trả về `OrderDetailDto`. |
+| 16 | • `id = 'ord-15'`<br>• `updateDto = { status: EOrderStatus.RETURNED }`<br>• DB Mock: `order = { status: RETURNED, statusHistory: null, items: [{ productId: 'p2', quantity: 1 }] }` | Gọi `rollbackVouchersForOrder`. Do `oldStatus === RETURNED` (Node 34: False), bỏ qua hoàn kho. Gửi email cập nhật status RETURNED. Trả về `OrderDetailDto`. |
+| 17 | • `id = 'ord-16'`<br>• `updateDto = { status: EOrderStatus.RETURNED }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: null, items: [] }` | Gọi `rollbackVouchersForOrder`. Mảng `items = []` nên thoát vòng lặp hoàn kho (Node 35: False). Gửi email cập nhật. Trả về `OrderDetailDto`. |
+| 18 | • `id = 'ord-17'`<br>• `updateDto = { status: 'CUSTOM_STATUS' as any }`<br>• DB Mock: `order = { status: PENDING, statusHistory: null }` | Rẽ nhánh default ở Node 12 (đến 19) và Node 38 (`newStatusStr = 'Đã cập nhật'` tại Node 45). Bỏ qua các khối logic nghiệp vụ riêng biệt. Gửi email cập nhật. Trả về `OrderDetailDto`. |
+| 19 | • `id = 'ord-18'`<br>• `updateDto = { status: EOrderStatus.PREPARING }`<br>• DB Mock: `order = { status: PENDING, statusHistory: [{ status: PENDING }] }` | Cập nhật `order.status = PREPARING`. Dùng mảng `statusHistory` cũ (Node 8: True, Node 9). Lấy `defaultNote` của PREPARING. Gửi email cập nhật. Trả về `OrderDetailDto`. |
+| 20 | • `id = 'ord-19'`<br>• `updateDto = { status: EOrderStatus.SHIPPING, note: 'Giao giờ hành chính' }`<br>• DB Mock: `order = { status: PREPARING, statusHistory: [{ status: PREPARING }] }` | Cập nhật `order.note` và push vào `statusHistory` note từ DTO (Node 6: True, Node 20: True). Gửi email cập nhật status SHIPPING. Trả về `OrderDetailDto`. |
+| 21 | • `id = 'ord-20'`<br>• `updateDto = { status: EOrderStatus.DELIVERED, note: 'Đã nhận tại bảo vệ' }`<br>• DB Mock: `order = { status: SHIPPING, statusHistory: null }` | Tạo mới `statusHistory` (Node 10). Cập nhật note từ DTO. Gửi email cập nhật status DELIVERED. Trả về `OrderDetailDto`. |
+| 22 | • `id = 'ord-21'`<br>• `updateDto = { status: EOrderStatus.SUCCESS, note: 'Khách thanh toán đủ' }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: [{ status: DELIVERED }], items: [{ productId: 'p1', quantity: 1 }], paymentMethod: COD }` | Cập nhật `paymentStatus = PAID`. Tăng `soldCount` cho `p1`. Gửi email hoàn tất và gửi billing email COD. Trả về `OrderDetailDto`. |
+| 23 | • `id = 'ord-22'`<br>• `updateDto = { status: EOrderStatus.SUCCESS, note: 'Đã nhận đủ hàng' }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: null, items: [{ productId: 'p1', quantity: 1 }], paymentMethod: VNPAY }` | Cập nhật `paymentStatus = PAID`. Tăng `soldCount` cho `p1`. Tạo `statusHistory` mới với note từ DTO. Không gửi billing email. Trả về `OrderDetailDto`. |
+| 24 | • `id = 'ord-23'`<br>• `updateDto = { status: EOrderStatus.SUCCESS }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: [{ status: DELIVERED }], items: [{ productId: 'p1', quantity: 2 }], paymentMethod: COD }` | Cập nhật `paymentStatus = PAID`. Tăng `soldCount` cho `p1`. Dùng `statusHistory` cũ và `defaultNote` của SUCCESS. Gửi billing email COD. Trả về `OrderDetailDto`. |
+| 25 | • `id = 'ord-24'`<br>• `updateDto = { status: EOrderStatus.CANCELLED, note: 'Hết nhu cầu' }`<br>• DB Mock: `order = { status: PENDING, statusHistory: null, items: [{ productId: 'p1', quantity: 1 }] }` | Tạo mới `statusHistory`. Rollback voucher, hoàn stock `p1` thêm 1. Gửi email cập nhật với `cancelReason = 'Hết nhu cầu'`. Trả về `OrderDetailDto`. |
+| 26 | • `id = 'ord-25'`<br>• `updateDto = { status: EOrderStatus.CANCELLED }`<br>• DB Mock: `order = { status: PENDING, statusHistory: [{ status: PENDING }], items: [{ productId: 'p1', quantity: 1 }] }` | Giữ `statusHistory` cũ. Rollback voucher, hoàn stock `p1` thêm 1. `cancelReason = undefined`. Trả về `OrderDetailDto`. |
+| 27 | • `id = 'ord-26'`<br>• `updateDto = { status: EOrderStatus.RETURNED, note: 'Hàng lỗi vỡ' }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: [{ status: DELIVERED }], items: [{ productId: 'p2', quantity: 1 }] }` | Giữ `statusHistory` cũ. Rollback voucher, hoàn stock `p2` thêm 1. Gửi email cập nhật status RETURNED. Trả về `OrderDetailDto`. |
+| 28 | • `id = 'ord-27'`<br>• `updateDto = { status: EOrderStatus.RETURNED }`<br>• DB Mock: `order = { status: DELIVERED, statusHistory: [{ status: DELIVERED }], items: [{ productId: 'p2', quantity: 1 }] }` | Dùng `defaultNote` của RETURNED. Rollback voucher, hoàn stock `p2` thêm 1. Gửi email cập nhật status RETURNED. Trả về `OrderDetailDto`. |
+| 29 | • `id = 'ord-28'`<br>• `updateDto = { status: 'OTHER' as any, note: 'Trạng thái tùy biến' }`<br>• DB Mock: `order = { status: PENDING, statusHistory: [{ status: PENDING }] }` | Cập nhật `order.note`. Đi qua nhánh default (Node 45) với `newStatusStr = 'Đã cập nhật'`. Gửi email cập nhật. Trả về `OrderDetailDto`. |
+
+---
+
+## 2. Giải thích về độ bao phủ nhánh (Branch Coverage Analysis)
+
+### Sự tương quan giữa con số 39 nhánh và 29 Test Cases
+- Trong đồ thị luồng điều khiển (CFG), hệ thống có **18 điểm quyết định (Predicate Nodes)** tạo ra tổng cộng **39 nhánh rẽ (Branch Outcomes)**:
+  - 16 node điều kiện nhị phân $\times 2 = 32$ nhánh True/False (gồm các node `[2]`, `[6]`, `[8]`, `[20]`, `[23]`, `[26]`, `[27]`, `[28]`, `[30]`, `[31]`, `[33]`, `[34]`, `[35]`, `[46]`, `[50]`, `[51]`).
+  - 1 lệnh `switch` đa nhánh (Node `[12]` và `[38]`) với 7 nhánh xử lý (6 case enum + 1 default).
+  - Tổng số nhánh trong CFG là: $32 + 7 = 39$ nhánh rẽ.
+- Tài liệu trước đây từng nhầm lẫn giữa **số nhánh rẽ (39 nhánh)** và **số ca kiểm thử**. 
+- Trong lý thuyết kiểm thử hộp trắng (Basis Path Testing của McCabe), số lượng ca kiểm thử độc lập tối thiểu cần thiết để bao phủ toàn bộ cơ sở độc lập là **$V(G) = 29$ Test Cases**.
+- Bảng trên gồm đúng **29 Test Cases (từ STT 1 đến 29)**, tương ứng 1-1 với **29 Đường thi hành độc lập (Paths 1 đến 29)** trong file [`03_independent_paths.md`](file:///d:/study/ute/4 - HK1/KiemThuPhanMem/FinalProject/MarketPlace/docs/white_box_testing/updateOrderStatus/03_independent_paths.md).
+- Khi thực thi đủ 29 Test Cases này, **100% trong số 39 nhánh rẽ** của đồ thị CFG và **100% trong số 54 câu lệnh** đều được kích hoạt và bao phủ đầy đủ.
