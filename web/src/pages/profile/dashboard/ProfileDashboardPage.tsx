@@ -20,8 +20,8 @@ const ProfileDashboardPage = () => {
             />
 
             {/* Wishlist */}
-            <div className="bg-white border border-border-subtle rounded-2xl p-6 shadow-sm">
-                <h2 className="font-['Lora',serif] text-lg font-bold text-stone-900 mb-6 border-b border-stone-100 pb-4">
+            <div className="bg-surface-card card-border rounded-xl p-6 shadow-sm">
+                <h2 className="font-['Lora',serif] text-lg font-bold text-text-ink mb-6 border-b border-border-subtle pb-4">
                     Danh sách yêu thích
                 </h2>
                 <WishlistTab

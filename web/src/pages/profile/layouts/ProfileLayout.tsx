@@ -8,7 +8,7 @@ export const ProfileLayout = () => {
     const controller = useProfileLayoutController();
 
     return (
-        <div className="w-full min-h-screen bg-stone-50/50">
+        <div className="w-full min-h-screen bg-background-page font-body text-text-ink">
             <ProfileHeroSection user={controller.user} />
 
             <div className="max-w-400 mx-auto px-6 lg:px-10 py-8">
@@ -23,7 +23,7 @@ export const ProfileLayout = () => {
                     )}
 
                     <aside className={`
-                        fixed inset-y-0 left-0 z-50 w-[70%] max-w-75 bg-stone-50 shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out lg:w-65 xl:w-70 lg:shrink-0 lg:bg-transparent lg:shadow-none lg:overflow-visible lg:translate-x-0 lg:sticky lg:top-22 lg:z-auto
+                        fixed inset-y-0 left-0 z-50 w-[70%] max-w-75 bg-background-page border-r border-border-subtle shadow-2xl overflow-y-auto transition-transform duration-300 ease-in-out lg:w-65 xl:w-70 lg:shrink-0 lg:bg-transparent lg:shadow-none lg:overflow-visible lg:border-r-0 lg:translate-x-0 lg:sticky lg:top-22 lg:z-auto
                         ${controller.isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
                     `}>
                         <div className="p-4 lg:p-0 min-h-full">
@@ -38,7 +38,7 @@ export const ProfileLayout = () => {
                         {/* Mobile Menu Button (Fixed Icon) */}
                         <button
                             onClick={controller.handleToggleMobileSidebar}
-                            className="lg:hidden fixed top-22 left-2 z-40 w-11 h-11 flex items-center justify-center text-stone-700 focus:outline-none"
+                            className="lg:hidden fixed top-22 left-2 z-40 w-11 h-11 flex items-center justify-center text-text-ink hover:text-primary focus:outline-none"
                             aria-label="Mở menu hồ sơ"
                         >
                             <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">

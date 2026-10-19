@@ -63,7 +63,7 @@ export const WishlistTab = ({
     return (
         <div className="flex flex-col gap-6">
             {pagination && (
-                <p className="text-[14px] text-[#57534E]">
+                <p className="text-[14px] text-text-muted">
                     <span className="font-semibold text-text-ink">{pagination.totalItems}</span> sản phẩm yêu thích
                 </p>
             )}
@@ -76,7 +76,7 @@ export const WishlistTab = ({
                         <Link
                             key={item.id}
                             to={buildProductUrl(item)}
-                            className="group bg-white border border-border-subtle rounded-xl overflow-hidden hover:border-market-primary hover:shadow-[0_6px_20px_rgba(28,25,23,0.1)] transition-all"
+                            className="group bg-surface-card card-border rounded-xl overflow-hidden hover:border-market-primary hover:shadow-[0_6px_20px_rgba(28,25,23,0.1)] transition-all"
                         >
                             <div className="relative h-45 overflow-hidden bg-[#F5F5F4]">
                                 <img
@@ -125,7 +125,7 @@ export const WishlistTab = ({
                                         {formatPrice(item.discountPrice)}
                                     </span>
                                     {hasSale && (
-                                        <span className="text-[11px] text-[#A8A29E] line-through">
+                                        <span className="text-[11px] text-text-muted line-through">
                                             {formatPrice(item.price)}
                                         </span>
                                     )}
@@ -141,7 +141,7 @@ export const WishlistTab = ({
                     <button
                         onClick={() => onPageChange(currentPage - 1)}
                         disabled={currentPage === 1}
-                        className="h-9.5 px-4 border-[1.5px] border-border-medium rounded-lg text-[13px] font-semibold text-[#57534E] hover:bg-market-background hover:text-market-primary hover:border-market-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#57534E] disabled:hover:border-border-medium"
+                        className="h-9.5 px-4 border-[1.5px] border-border-medium rounded-lg text-[13px] font-semibold text-text-muted hover:bg-surface-container-low hover:text-primary hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-muted disabled:hover:border-border-medium cursor-pointer"
                     >
                         Trước
                     </button>
@@ -150,10 +150,10 @@ export const WishlistTab = ({
                         <button
                             key={p}
                             onClick={() => onPageChange(p)}
-                            className={`w-9.5 h-9.5 rounded-lg text-[13px] font-semibold transition-colors ${
+                            className={`w-9.5 h-9.5 rounded-lg text-[13px] font-semibold transition-colors cursor-pointer ${
                                 p === currentPage
-                                    ? "bg-market-primary text-white border-[1.5px] border-market-primary"
-                                    : "bg-white border-[1.5px] border-border-medium text-[#57534E] hover:bg-market-background hover:text-market-primary hover:border-market-primary"
+                                    ? "bg-primary-container text-white border-[1.5px] border-primary-container"
+                                    : "bg-surface-card border-[1.5px] border-border-medium text-text-muted hover:bg-surface-container-low hover:text-primary hover:border-primary"
                             }`}
                         >
                             {p}
@@ -163,7 +163,7 @@ export const WishlistTab = ({
                     <button
                         onClick={() => onPageChange(currentPage + 1)}
                         disabled={currentPage === pagination.totalPages}
-                        className="h-9.5 px-4 border-[1.5px] border-border-medium rounded-lg text-[13px] font-semibold text-[#57534E] hover:bg-market-background hover:text-market-primary hover:border-market-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#57534E] disabled:hover:border-border-medium"
+                        className="h-9.5 px-4 border-[1.5px] border-border-medium rounded-lg text-[13px] font-semibold text-text-muted hover:bg-surface-container-low hover:text-primary hover:border-primary transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-text-muted disabled:hover:border-border-medium cursor-pointer"
                     >
                         Sau
                     </button>

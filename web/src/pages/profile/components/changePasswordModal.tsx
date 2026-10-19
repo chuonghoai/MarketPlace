@@ -54,13 +54,13 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-                <div className="px-6 py-4 border-b border-stone-100 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-stone-900">Đổi mật khẩu</h3>
+            <div className="bg-surface-card card-border rounded-xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+                <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-text-ink">Đổi mật khẩu</h3>
                     <button
                         onClick={handleClose}
                         disabled={isSaving}
-                        className="text-stone-400 hover:text-stone-600 transition-colors disabled:opacity-50 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-stone-100"
+                        className="text-text-muted hover:text-text-ink transition-colors disabled:opacity-50 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-container-low cursor-pointer"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -70,7 +70,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
 
                 <div className="p-6 space-y-4">
                     <div className="flex flex-col gap-1.5">
-                        <label htmlFor="cp-current" className="text-sm font-medium text-stone-700">Mật khẩu hiện tại</label>
+                        <label htmlFor="cp-current" className="text-sm font-medium text-text-ink">Mật khẩu hiện tại</label>
                         <input
                             id="cp-current"
                             type="password"
@@ -78,12 +78,12 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             placeholder="Nhập mật khẩu hiện tại"
                             disabled={isSaving}
-                            className="h-11 px-4 border border-stone-200 rounded-xl text-sm text-stone-900 placeholder:text-stone-400 outline-none focus-visible:ring-2 focus-visible:ring-market-primary/20 focus-visible:border-market-primary transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04)] disabled:bg-stone-50"
+                            className="input-field h-11 px-4 rounded-lg text-sm text-text-ink placeholder:text-text-muted/60 transition-all disabled:opacity-60"
                         />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label htmlFor="cp-new" className="text-sm font-medium text-stone-700">Mật khẩu mới</label>
+                        <label htmlFor="cp-new" className="text-sm font-medium text-text-ink">Mật khẩu mới</label>
                         <input
                             id="cp-new"
                             type="password"
@@ -91,12 +91,12 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
                             onChange={(e) => setNewPassword(e.target.value)}
                             placeholder="Nhập mật khẩu mới"
                             disabled={isSaving}
-                            className="h-11 px-4 border border-stone-200 rounded-xl text-sm text-stone-900 placeholder:text-stone-400 outline-none focus-visible:ring-2 focus-visible:ring-market-primary/20 focus-visible:border-market-primary transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04)] disabled:bg-stone-50"
+                            className="input-field h-11 px-4 rounded-lg text-sm text-text-ink placeholder:text-text-muted/60 transition-all disabled:opacity-60"
                         />
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                        <label htmlFor="cp-confirm" className="text-sm font-medium text-stone-700">Xác nhận mật khẩu mới</label>
+                        <label htmlFor="cp-confirm" className="text-sm font-medium text-text-ink">Xác nhận mật khẩu mới</label>
                         <input
                             id="cp-confirm"
                             type="password"
@@ -104,7 +104,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             placeholder="Nhập lại mật khẩu mới"
                             disabled={isSaving}
-                            className="h-11 px-4 border border-stone-200 rounded-xl text-sm text-stone-900 placeholder:text-stone-400 outline-none focus-visible:ring-2 focus-visible:ring-market-primary/20 focus-visible:border-market-primary transition-all shadow-[0_2px_8px_rgba(0,0,0,0.04)] disabled:bg-stone-50"
+                            className="input-field h-11 px-4 rounded-lg text-sm text-text-ink placeholder:text-text-muted/60 transition-all disabled:opacity-60"
                         />
                     </div>
 
@@ -115,12 +115,12 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
                     )}
                 </div>
 
-                <div className="px-6 py-4 border-t border-stone-100 flex justify-end gap-3 bg-stone-50/60">
+                <div className="px-6 py-4 border-t border-border-subtle flex justify-end gap-3 bg-surface-container-low/50">
                     <button
                         type="button"
                         onClick={handleClose}
                         disabled={isSaving}
-                        className="h-10 px-5 text-sm font-semibold text-stone-600 hover:text-stone-900 hover:bg-stone-200/50 rounded-xl transition-colors disabled:opacity-50"
+                        className="btn-secondary h-10 px-5 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
                     >
                         Hủy
                     </button>
@@ -128,7 +128,7 @@ export const ChangePasswordModal = ({ isOpen, onClose }: ChangePasswordModalProp
                         type="button"
                         onClick={handleSave}
                         disabled={isSaving}
-                        className="h-10 px-6 bg-market-primary text-white text-sm font-semibold rounded-xl hover:brightness-110 transition-all flex items-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="btn-primary h-10 px-6 text-sm font-semibold rounded-lg hover:brightness-110 transition-all flex items-center gap-2 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                     >
                         {isSaving && (
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
