@@ -70,7 +70,7 @@ export const useProductStore = () => {
             toast(response.message, "success");
             return true;
         } else {
-            toast(response.message || "Không thể thêm vào giỏ hàng", "error");
+            toast(response.message || "Không thể cập nhật danh sách yêu thích", "error");
             return false;
         }
     };
