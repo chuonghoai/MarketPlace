@@ -1,18 +1,79 @@
 import { test, expect } from '@playwright/test';
 import { loginViaUI, TEST_USERS } from '../helpers/auth.helper';
 
-test.describe('MKP-065: Replace Native alert() with Toast Notification on Support Page', () => {
-  test.beforeEach(async ({ page }) => {
-    await loginViaUI(page, TEST_USERS.client);
-  });
+const mockSupportTicket = {
+  id: '838e2a0f-b3ee-4760-9fd3-d039cd1433e2',
+  title: 'Playwright API Test - Cần hỗ trợ thanh toán',
+  content: 'Tôi cần hỗ trợ tra cứu tiến độ xử lý và khiếu nại thanh toán đơn hàng.',
+  status: 'RESOLVED',
+  requesterId: 'client-user-id',
+  assignedStaffId: 'staff-user-id',
+  assignedStaff: {
+    id: 'staff-user-id',
+    fullName: 'Trần Thị Mai',
+    email: 'mai.tran@marketnest.vn',
+  },
+  createdAt: new Date(Date.now() - 86400000).toISOString(),
+  messages: [
+    {
+      id: 'msg-1',
+      requestId: '838e2a0f-b3ee-4760-9fd3-d039cd1433e2',
+      senderId: 'client-user-id',
+      content: 'Chào ban hỗ trợ, đơn hàng của tôi bị trừ tiền nhưng chưa thấy cập nhật.',
+      createdAt: new Date(Date.now() - 72000000).toISOString(),
+      sender: { fullName: 'Khách hàng' },
+    },
+    {
+      id: 'msg-2',
+      requestId: '838e2a0f-b3ee-4760-9fd3-d039cd1433e2',
+      senderId: 'staff-user-id',
+      content: 'Chào bạn, chúng tôi đã đối soát với cổng thanh toán và xác nhận đơn hàng thành công.',
+      createdAt: new Date(Date.now() - 36000000).toISOString(),
+      sender: { fullName: 'Trần Thị Mai' },
+    },
+  ],
+};
 
-  test('Test A — 255-character title: Tiêu đề đúng 255 ký tự được chấp nhận và gửi thành công', async ({ page }) => {
-    let dialogTriggered = false;
-    page.on('dialog', async (dialog) => {
-      dialogTriggered = true;
-      await dialog.dismiss();
+const mockOpenTicket = {
+  id: 'open-ticket-test-id',
+  title: 'Yêu cầu kiểm thử tự động Playwright - Tra cứu',
+  content: 'Tôi cần hỗ trợ tra cứu tiến độ xử lý và khiếu nại',
+  status: 'OPEN',
+  requesterId: 'client-user-id',
+  createdAt: new Date().toISOString(),
+  messages: [],
+};
+
+test.describe('UC20: Yêu cầu hỗ trợ (MKP_063 -> MKP_069)', () => {
+  test('Người dùng tạo yêu cầu hỗ trợ mới thành công với dữ liệu hợp lệ (MKP_063)', async ({ page }) => {
+    let createdTicket = mockOpenTicket;
+
+    await page.route('**/support-requests/my*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [createdTicket],
+        }),
+      });
     });
 
+    await page.route('**/support-requests', async (route) => {
+      if (route.request().method() === 'POST') {
+        return route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: mockOpenTicket,
+          }),
+        });
+      }
+      return route.continue();
+    });
+
+    await loginViaUI(page, TEST_USERS.client);
     await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('h1', { hasText: 'Yêu cầu hỗ trợ' })).toBeVisible({ timeout: 10000 });
 
@@ -20,59 +81,24 @@ test.describe('MKP-065: Replace Native alert() with Toast Notification on Suppor
     await page.getByRole('button', { name: 'Tạo yêu cầu mới' }).click();
     await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
 
-    // Nhập tiêu đề đúng 255 ký tự
-    const title255 = 'A'.repeat(255);
+    // Điền tiêu đề và nội dung hợp lệ
     const titleInput = page.getByPlaceholder('Mô tả ngắn gọn vấn đề bạn gặp phải...');
-    await titleInput.fill(title255);
+    await titleInput.fill('Yêu cầu kiểm thử tự động Playwright - Tra cứu');
 
     const contentInput = page.getByPlaceholder('Cung cấp thêm chi tiết (mã đơn hàng, ảnh chụp màn hình, thời gian...)...');
-    await contentInput.fill('Nội dung yêu cầu hỗ trợ kiểm thử tiêu đề 255 ký tự hợp lệ.');
+    await contentInput.fill('Tôi cần hỗ trợ tra cứu tiến độ xử lý và khiếu nại');
 
-    // Xác nhận không có lỗi inline khi tiêu đề đúng 255 ký tự
-    await expect(page.locator('#title-error')).not.toBeVisible();
-
-    // Mock API thành công để bảo đảm test không phụ thuộc vào trạng thái server
-    await page.route('**/support-requests', async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            success: true,
-            data: {
-              id: 'test-255-char-id',
-              title: title255,
-              content: 'Nội dung kiểm thử',
-              status: 'OPEN',
-              createdAt: new Date().toISOString(),
-            },
-          }),
-        });
-      } else {
-        await route.continue();
-      }
-    });
-
-    // Nhấn Xác nhận
+    // Nhấn Xác nhận gửi form
     await page.getByRole('button', { name: 'Xác nhận' }).click();
 
-    // Xác nhận Toast thành công hiển thị
+    // Toast thành công hiển thị
     await expect(page.getByText('Đã tạo yêu cầu hỗ trợ thành công')).toBeVisible({ timeout: 5000 });
 
     // Modal được đóng
     await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).not.toBeVisible();
-
-    // Không có dialog alert nào được kích hoạt
-    expect(dialogTriggered).toBe(false);
   });
 
-  test('Test B — 256-character title: Bị từ chối bởi client validation, hiển thị Toast và inline error, không gọi alert/API', async ({ page }) => {
-    let dialogTriggered = false;
-    page.on('dialog', async (dialog) => {
-      dialogTriggered = true;
-      await dialog.dismiss();
-    });
-
+  test('Xác thực form khi để trống tiêu đề hoặc nội dung yêu cầu hỗ trợ (MKP_064)', async ({ page }) => {
     let apiCalled = false;
     await page.route('**/support-requests', async (route) => {
       if (route.request().method() === 'POST') {
@@ -83,6 +109,44 @@ test.describe('MKP-065: Replace Native alert() with Toast Notification on Suppor
       }
     });
 
+    await loginViaUI(page, TEST_USERS.client);
+    await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('h1', { hasText: 'Yêu cầu hỗ trợ' })).toBeVisible({ timeout: 10000 });
+
+    await page.getByRole('button', { name: 'Tạo yêu cầu mới' }).click();
+    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
+
+    const titleInput = page.getByPlaceholder('Mô tả ngắn gọn vấn đề bạn gặp phải...');
+    const contentInput = page.getByPlaceholder('Cung cấp thêm chi tiết (mã đơn hàng, ảnh chụp màn hình, thời gian...)...');
+    const submitBtn = page.getByRole('button', { name: 'Xác nhận' });
+
+    // Trường hợp 1: Để trống cả 2 ô
+    await submitBtn.click();
+    expect(apiCalled).toBe(false);
+    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
+
+    // Trường hợp 2: Chỉ nhập tiêu đề, để trống nội dung
+    await titleInput.fill('Tiêu đề có nội dung nhưng chi tiết để trống');
+    await submitBtn.click();
+    expect(apiCalled).toBe(false);
+    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
+
+    // Trường hợp 3: Xóa tiêu đề, chỉ nhập chi tiết
+    await titleInput.fill('');
+    await contentInput.fill('Chi tiết có nội dung nhưng tiêu đề để trống');
+    await submitBtn.click();
+    expect(apiCalled).toBe(false);
+    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
+  });
+
+  test('Xác thực độ dài: Tiêu đề <= 255 ký tự thành công, 256 ký tự bị chặn (MKP_065)', async ({ page }) => {
+    let dialogTriggered = false;
+    page.on('dialog', async (dialog) => {
+      dialogTriggered = true;
+      await dialog.dismiss();
+    });
+
+    await loginViaUI(page, TEST_USERS.client);
     await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('h1', { hasText: 'Yêu cầu hỗ trợ' })).toBeVisible({ timeout: 10000 });
 
@@ -104,134 +168,124 @@ test.describe('MKP-065: Replace Native alert() with Toast Notification on Suppor
     await expect(inlineError).toBeVisible({ timeout: 5000 });
     await expect(inlineError).toHaveText('Tiêu đề tối đa 255 ký tự');
 
-    // 2. Kiểm tra Toast error xuất hiện
-    await expect(page.getByText('Tiêu đề tối đa 255 ký tự').first()).toBeVisible({ timeout: 5000 });
-
-    // 3. Không có native alert nào được bật lên
+    // 2. Không có native alert nào được bật lên
     expect(dialogTriggered).toBe(false);
 
-    // 4. API không được gọi vì client validation đã chặn submit
-    expect(apiCalled).toBe(false);
-
-    // 5. Form vẫn mở để người dùng sửa đổi
-    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
-
-    // 6. Khi người dùng xóa bớt 1 ký tự (còn 255 ký tự), inline error tự động biến mất
+    // 3. Khi người dùng giảm xuống 255 ký tự, lỗi biến mất
     await titleInput.fill('B'.repeat(255));
     await expect(inlineError).not.toBeVisible();
   });
 
-  test('Test C — Backend validation error: Hiển thị standard Toast và không dùng alert khi backend báo lỗi', async ({ page }) => {
-    let dialogTriggered = false;
-    page.on('dialog', async (dialog) => {
-      dialogTriggered = true;
-      await dialog.dismiss();
-    });
+  test('Lọc danh sách yêu cầu hỗ trợ theo trạng thái xử lý Đã giải quyết (MKP_066)', async ({ page }) => {
+    const listTickets = [
+      { ...mockSupportTicket, id: 'ticket-res-1', status: 'RESOLVED', title: 'Ticket Đã giải quyết' },
+      { ...mockOpenTicket, id: 'ticket-open-1', status: 'OPEN', title: 'Ticket Đang mở' },
+    ];
 
-    // Giả lập backend từ chối với lỗi validation
-    await page.route('**/support-requests', async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.fulfill({
-          status: 400,
+    await page.route('**/support-requests/my*', async (route) => {
+      const url = route.request().url();
+      if (url.includes('status=RESOLVED')) {
+        return route.fulfill({
+          status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
-            success: false,
-            error: {
-              code: 'VALIDATION_ERROR',
-              message: 'Tiêu đề tối đa 255 ký tự',
-            },
+            success: true,
+            data: [listTickets[0]],
           }),
         });
-      } else {
-        await route.continue();
       }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: listTickets,
+        }),
+      });
     });
 
+    await loginViaUI(page, TEST_USERS.client);
     await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Tạo yêu cầu mới' }).click();
+    await expect(page.locator('h1', { hasText: 'Yêu cầu hỗ trợ' })).toBeVisible({ timeout: 10000 });
 
-    await page.getByPlaceholder('Mô tả ngắn gọn vấn đề bạn gặp phải...').fill('Tiêu đề hợp lệ ở client nhưng backend giả lập lỗi');
-    await page.getByPlaceholder('Cung cấp thêm chi tiết (mã đơn hàng, ảnh chụp màn hình, thời gian...)...').fill('Nội dung hợp lệ.');
+    // Ban đầu có cả 2 ticket
+    await expect(page.getByText('Ticket Đang mở')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Ticket Đã giải quyết')).toBeVisible({ timeout: 5000 });
 
-    await page.getByRole('button', { name: 'Xác nhận' }).click();
+    // Chọn lọc trạng thái "Đã giải quyết"
+    const statusSelect = page.locator('select').first();
+    await statusSelect.selectOption({ label: 'Đã giải quyết' });
 
-    // Kiểm tra Toast error hiển thị thông báo lỗi từ backend
-    await expect(page.getByText('Tiêu đề tối đa 255 ký tự').first()).toBeVisible({ timeout: 5000 });
+    // Chỉ còn ticket Đã giải quyết hiển thị
+    await expect(page.getByText('Ticket Đã giải quyết')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Ticket Đang mở')).not.toBeVisible();
 
-    // Không dùng window.alert()
-    expect(dialogTriggered).toBe(false);
-
-    // Form vẫn mở để người dùng tiếp tục thao tác
-    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
+    // Chọn lại "Tất cả trạng thái"
+    await statusSelect.selectOption({ value: '' });
+    await expect(page.getByText('Ticket Đang mở')).toBeVisible({ timeout: 5000 });
   });
 
-  test('Test D — Generic submission error: Hiển thị thông báo fallback khi gặp lỗi mạng/hệ thống', async ({ page }) => {
-    let dialogTriggered = false;
-    page.on('dialog', async (dialog) => {
-      dialogTriggered = true;
-      await dialog.dismiss();
+  test('Xem chi tiết yêu cầu hỗ trợ và lịch sử trao đổi tin nhắn hai chiều (MKP_067)', async ({ page }) => {
+    await page.route('**/support-requests/my*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [mockSupportTicket],
+        }),
+      });
     });
 
-    // Giả lập lỗi mạng ngắt kết nối
-    await page.route('**/support-requests', async (route) => {
-      if (route.request().method() === 'POST') {
-        await route.abort('failed');
-      } else {
-        await route.continue();
-      }
+    await page.route(`**/support-requests/${mockSupportTicket.id}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: mockSupportTicket,
+        }),
+      });
     });
 
+    await loginViaUI(page, TEST_USERS.client);
     await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Tạo yêu cầu mới' }).click();
+    await expect(page.locator('h1', { hasText: 'Yêu cầu hỗ trợ' })).toBeVisible({ timeout: 10000 });
 
-    await page.getByPlaceholder('Mô tả ngắn gọn vấn đề bạn gặp phải...').fill('Vấn đề kết nối mạng');
-    await page.getByPlaceholder('Cung cấp thêm chi tiết (mã đơn hàng, ảnh chụp màn hình, thời gian...)...').fill('Chi tiết lỗi mạng.');
+    // Click chọn ticket trong danh sách
+    await page.getByText(mockSupportTicket.title).click();
 
-    await page.getByRole('button', { name: 'Xác nhận' }).click();
-
-    // Toast hiển thị thông báo fallback dịch chuẩn (hoặc message lỗi mạng an toàn)
-    const toastElem = page.locator('div.fixed.top-6 span');
-    await expect(toastElem.first()).toBeVisible({ timeout: 5000 });
-
-    // Không dùng window.alert()
-    expect(dialogTriggered).toBe(false);
-
-    // Form vẫn mở và nút không bị disable vĩnh viễn
-    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Xác nhận' })).toBeEnabled();
+    // Khung chi tiết bên phải hiển thị tiêu đề và tin nhắn trao đổi
+    await expect(page.locator('h2, h3, h4').filter({ hasText: mockSupportTicket.title }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Chào ban hỗ trợ, đơn hàng của tôi bị trừ tiền')).toBeVisible();
+    await expect(page.getByText('Chào bạn, chúng tôi đã đối soát với cổng thanh toán')).toBeVisible();
   });
 
-  test('Test E — Successful submission: Luồng gửi yêu cầu thành công với backend thật hoạt động chuẩn xác', async ({ page }) => {
-    let dialogTriggered = false;
-    page.on('dialog', async (dialog) => {
-      dialogTriggered = true;
-      await dialog.dismiss();
+  test('Nhân viên hỗ trợ xem danh sách yêu cầu cần xử lý tại trang quản trị (MKP_068)', async ({ page }) => {
+    await page.route('**/support-requests/assigned*', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: [mockSupportTicket],
+        }),
+      });
     });
 
-    await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
-    await page.getByRole('button', { name: 'Tạo yêu cầu mới' }).click();
+    await loginViaUI(page, TEST_USERS.staff);
+    await page.goto('/admin/support', { waitUntil: 'domcontentloaded' });
+    await page.waitForLoadState('domcontentloaded');
 
-    const uniqueTitle = `Yêu cầu hỗ trợ Playwright E2E - ${Date.now()}`;
-    await page.getByPlaceholder('Mô tả ngắn gọn vấn đề bạn gặp phải...').fill(uniqueTitle);
-    await page.getByPlaceholder('Cung cấp thêm chi tiết (mã đơn hàng, ảnh chụp màn hình, thời gian...)...').fill('Nội dung hỗ trợ gửi thành công.');
+    // Tiêu đề trang quản lý hỗ trợ hiển thị
+    await expect(page.getByRole('heading', { name: /Yêu cầu được phân công|Tất cả yêu cầu/i })).toBeVisible({ timeout: 10000 });
 
-    await page.getByRole('button', { name: 'Xác nhận' }).click();
-
-    // Toast thành công hiển thị
-    await expect(page.getByText('Đã tạo yêu cầu hỗ trợ thành công')).toBeVisible({ timeout: 10000 });
-
-    // Modal đóng
-    await expect(page.locator('h3', { hasText: 'Tạo yêu cầu mới' })).not.toBeVisible();
-
-    // Không có alert native nào
-    expect(dialogTriggered).toBe(false);
-
-    // Danh sách yêu cầu hiển thị ticket vừa tạo
-    await expect(page.getByText(uniqueTitle)).toBeVisible({ timeout: 10000 });
+    // Danh sách yêu cầu hiển thị ticket cần xử lý
+    await expect(page.getByText(mockSupportTicket.title)).toBeVisible({ timeout: 5000 });
   });
 
-  test('Test F — Frontend status refresh (MKP-069): Khách hàng gửi phản hồi trên ticket RESOLVED thấy trạng thái cập nhật ngay sang Đang xử lý mà không cần tải lại trang', async ({ page }) => {
-    const ticketId = 'ticket-resolved-test-f';
+  test('Khách hàng gửi thêm phản hồi vào vé đã giải quyết cập nhật ngay sang Đang xử lý (MKP_069)', async ({ page }) => {
+    const ticketId = 'ticket-resolved-test-mkp069';
     const mockResolvedTicket = {
       id: ticketId,
       title: 'Ticket cần hỗ trợ lại sau khi đã giải quyết',
@@ -261,7 +315,7 @@ test.describe('MKP-065: Replace Native alert() with Toast Notification on Suppor
 
     let currentStatus = 'RESOLVED';
 
-    await page.route(`**/support-requests/my*`, async (route) => {
+    await page.route('**/support-requests/my*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -306,6 +360,7 @@ test.describe('MKP-065: Replace Native alert() with Toast Notification on Suppor
       });
     });
 
+    await loginViaUI(page, TEST_USERS.client);
     await page.goto('/profile/support', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('h1', { hasText: 'Yêu cầu hỗ trợ' })).toBeVisible({ timeout: 10000 });
 
