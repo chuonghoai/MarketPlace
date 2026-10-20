@@ -59,8 +59,9 @@ export const useProfileDashboardStore = () => {
         setIsSaving(true);
         try {
             await userService.updateProfile(formData);
-            if (user && formData.fullName) {
-                const updated = { ...user, fullName: formData.fullName };
+            const baseUser = user || userStorageService.getUser();
+            if (baseUser && formData.fullName) {
+                const updated = { ...baseUser, fullName: formData.fullName };
                 userStorageService.setUser(updated);
             }
             toast("Cập nhật hồ sơ thành công", "success");

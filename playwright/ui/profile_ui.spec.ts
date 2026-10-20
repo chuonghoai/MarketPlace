@@ -21,18 +21,16 @@ test.describe('Giao diện - Hồ sơ cá nhân', () => {
 
     const newName = `Client ${Date.now()}`;
     const nameInput = page.locator('#pi-fullname');
-    if (await nameInput.isVisible()) {
-      await nameInput.fill(newName);
-    }
+    await expect(nameInput).toBeVisible({ timeout: 10000 });
+    await nameInput.fill(newName);
 
     const saveBtn = page.getByRole('button', { name: /Lưu thay đổi|Lưu/i });
-    if (await saveBtn.isVisible()) {
-      await saveBtn.click();
-    }
+    await expect(saveBtn).toBeVisible({ timeout: 10000 });
+    await saveBtn.click();
 
     // Kết quả mong đợi theo tài liệu kiểm thử MKP_026:
     // Tên mới phải cập nhật ngay trên thanh sidebar mà không cần F5 lại trang
     const sidebar = page.locator('aside');
-    await expect(sidebar.getByText(newName)).toBeVisible({ timeout: 3000 });
+    await expect(sidebar.getByText(newName)).toBeVisible({ timeout: 10000 });
   });
 });

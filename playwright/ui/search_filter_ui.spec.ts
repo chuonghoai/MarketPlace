@@ -91,6 +91,9 @@ test.describe('Giao diện - Tìm kiếm và bộ lọc sàn thương mại', ()
     await expect(page).toHaveURL(/minPrice=200000/);
 
     // Chỉ nhập giá tối đa
+    await page.goto('/marketplace', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByPlaceholder('Tối đa')).toBeVisible({ timeout: 10000 });
+
     await page.getByPlaceholder('Tối thiểu').fill('');
     await page.getByPlaceholder('Tối đa').fill('400000');
     await page.getByRole('button', { name: 'Áp dụng bộ lọc' }).click();
@@ -103,10 +106,9 @@ test.describe('Giao diện - Tìm kiếm và bộ lọc sàn thương mại', ()
     await page.goto('/marketplace', { waitUntil: 'domcontentloaded' });
 
     const sortOption = page.locator('label', { hasText: 'Giá tăng dần' });
-    if (await sortOption.isVisible({ timeout: 5000 })) {
-      await sortOption.click();
-      await page.getByRole('button', { name: 'Áp dụng bộ lọc' }).click();
-      await expect(page).toHaveURL(/sortBy=PRICE_LOW_TO_HIGH/, { timeout: 5000 });
-    }
+    await expect(sortOption).toBeVisible({ timeout: 10000 });
+    await sortOption.click();
+    await page.getByRole('button', { name: 'Áp dụng bộ lọc' }).click();
+    await expect(page).toHaveURL(/sortBy=PRICE_LOW_TO_HIGH/, { timeout: 10000 });
   });
 });
