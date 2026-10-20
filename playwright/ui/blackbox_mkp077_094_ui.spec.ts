@@ -379,8 +379,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
     await page.getByRole('button', { name: /Đã giao/i }).click();
 
     // Tìm thẻ đơn hàng và mở modal Yêu cầu trả hàng
-    const orderCard = page.locator('.rounded-xl.shadow-sm').first();
-    const returnBtn = orderCard.getByRole('button', { name: 'Yêu cầu trả hàng' });
+    const returnBtn = page.getByTestId('order-return-btn').first();
     await returnBtn.click();
 
     // Kiểm tra modal xuất hiện
@@ -424,8 +423,7 @@ test.describe('BỘ 18 TEST CASE KIỂM THỬ HỘP ĐEN - NGUYỄN TIẾN ĐẠ
     await page.getByRole('button', { name: /Đã giao/i }).click();
 
     // Tìm thẻ đơn hàng và mở modal Yêu cầu trả hàng
-    const orderCard = page.locator('.rounded-xl.shadow-sm').first();
-    const returnBtn = orderCard.getByRole('button', { name: 'Yêu cầu trả hàng' });
+    const returnBtn = page.getByTestId('order-return-btn').first();
     await returnBtn.click();
     await expect(page.getByRole('heading', { name: /Yêu cầu xử lý đổi trả/i })).toBeVisible({ timeout: 5000 });
 

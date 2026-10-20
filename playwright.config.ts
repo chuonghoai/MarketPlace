@@ -72,6 +72,15 @@ export default defineConfig({
         headless: isHeadless,
         baseURL: 'http://localhost:5173',
       },
+    },
+    {
+      name: 'web-tests',
+      testDir: './web/tests',
+      use: {
+        ...devices['Desktop Chrome'],
+        headless: isHeadless,
+        baseURL: 'http://localhost:5173',
+      },
     }
   ],
 });

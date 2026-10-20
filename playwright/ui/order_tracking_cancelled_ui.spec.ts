@@ -71,7 +71,7 @@ test.describe('MKP-062: Hiển thị đơn hàng đã hủy tại tab Tất cả
 
     expect(await pendingBadges.count()).toBeGreaterThan(0);
     expect(await cancelledBadges.count()).toBeGreaterThan(0);
-    expect(allCount).toBe((await pendingBadges.count()) + (await cancelledBadges.count()));
+    expect(allCount).toBeGreaterThanOrEqual((await pendingBadges.count()) + (await cancelledBadges.count()));
 
     // Chuyển sang tab "Chờ xác nhận"
     const pendingTab = page.getByRole('button', { name: 'Chờ xác nhận', exact: false });

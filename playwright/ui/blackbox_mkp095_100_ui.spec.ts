@@ -286,10 +286,10 @@ test.describe('BỘ 6 TEST CASE KIỂM THỬ HỘP ĐEN - CHƯƠNG (MKP_095 -> M
       await dialog.accept();
     });
 
-    // Bước 2: Nhập Họ và tên: "Đạt" và Ngày sinh: "2026-10-20" (ngày trong tương lai)
+    // Bước 2: Nhập Họ và tên: "Đạt" và Ngày sinh: "2029-12-31" (ngày trong tương lai)
     await page.locator('input[name="fullName"]').fill('Đạt');
     const birthDateInput = page.locator('input[name="birthDate"]');
-    await birthDateInput.fill('2026-10-20');
+    await birthDateInput.fill('2029-12-31');
 
     // Bấm nút "Lưu thông tin"
     const saveBtn = page.getByRole('button', { name: /Lưu thông tin/i });

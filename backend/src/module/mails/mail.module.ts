@@ -10,27 +10,49 @@ import { MailService } from './mail.service';
   imports: [
     MailerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        transport: {
-          host: config.get<string>(ENV_VARS.MAIL_HOST),
-          port: Number(config.get(ENV_VARS.MAIL_PORT)),
-          secure: Number(config.get(ENV_VARS.MAIL_PORT)) === 465,
-          auth: {
-            user: config.get<string>(ENV_VARS.MAIL_USER),
-            pass: config.get<string>(ENV_VARS.MAIL_PASS),
+      useFactory: (config: ConfigService) => {
+        const mailTransport = config.get<string>(ENV_VARS.MAIL_TRANSPORT);
+        const mailHost = config.get<string>(ENV_VARS.MAIL_HOST);
+        const mailPort = Number(config.get(ENV_VARS.MAIL_PORT));
+        const mailUser = config.get<string>(ENV_VARS.MAIL_USER);
+        const mailPass = config.get<string>(ENV_VARS.MAIL_PASS);
+
+        const isTestTransport =
+          mailTransport === 'test' ||
+          mailTransport === 'json' ||
+          mailHost === 'test' ||
+          mailHost === 'jsonTransport' ||
+          config.get<string>('APP_ENV') === 'test' ||
+          config.get<string>('NODE_ENV') === 'test';
+
+        const transport = isTestTransport
+          ? {
+              jsonTransport: true,
+            }
+          : {
+              host: mailHost,
+              port: mailPort,
+              secure: mailPort === 465,
+              auth: {
+                user: mailUser,
+                pass: mailPass,
+              },
+            };
+
+        return {
+          transport,
+          defaults: {
+            from: config.get<string>(ENV_VARS.MAIL_FROM) || '"MarketNest" <no-reply@marketnest.com>',
           },
-        },
-        defaults: {
-          from: config.get<string>(ENV_VARS.MAIL_FROM),
-        },
-        template: {
-          dir: join(__dirname, 'templates'),
-          adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
+          template: {
+            dir: join(__dirname, 'templates'),
+            adapter: new HandlebarsAdapter(),
+            options: {
+              strict: true,
+            },
           },
-        },
-      }),
+        };
+      },
     }),
   ],
   providers: [MailService],

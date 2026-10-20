@@ -157,6 +157,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
 
                 {order.orderStatus === EOrderStatus.SUCCESS && isWithin7Days && (
                     <button
+                        data-testid="order-return-btn"
                         onClick={handleReturn}
                         className="hidden md:block px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 hover:text-red-600 transition-colors"
                     >

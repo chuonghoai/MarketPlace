@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { loginViaUI } from '../helpers/auth.helper';
+import { loginViaUI, getAuthToken } from '../helpers/auth.helper';
 
 // Hàm kiểm tra giỏ hàng: nếu chưa có sản phẩm nào thì tự động thêm từ sàn trước khi test
 async function ensureCartHasItem(page: Page) {
@@ -48,12 +48,53 @@ test.describe('Giao diện - Giỏ hàng', () => {
     await expect(page.getByText('Tổng tiền')).toBeVisible();
   });
 
-  test('Vô hiệu hóa nút "+" hoặc cảnh báo khi số lượng đạt mức tồn kho tối đa (MKP_007)', async ({ page }) => {
-    const plusBtn = page.getByRole('button', { name: 'Increase quantity' }).first();
+  test('Vô hiệu hóa nút "+" hoặc cảnh báo khi số lượng đạt mức tồn kho tối đa (MKP_007)', async ({ page, request }) => {
+    const plusBtn = page.getByTestId('cart-increase-quantity').first();
     await expect(plusBtn).toBeVisible({ timeout: 10000 });
 
-    // Kết quả mong đợi theo tài liệu kiểm thử MKP_007:
-    // Khi đạt tối đa tồn kho, nút tăng số lượng phải bị vô hiệu hóa
-    await expect(plusBtn).toBeDisabled({ timeout: 3000 });
+    const token = await getAuthToken(request);
+    const cartRes = await request.get('http://127.0.0.1:3000/cart/items', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const cartData = await cartRes.json();
+    const items = cartData.data || [];
+    expect(items.length).toBeGreaterThan(0);
+
+    const firstItem = items[0];
+    const stock = Number(firstItem.product?.stock ?? 10);
+    const productId = firstItem.product?.id || firstItem.productId;
+
+    // 1. Khi quantity < stock: nút tăng phải enabled
+    if (firstItem.quantity < stock) {
+      await expect(plusBtn).toBeEnabled();
+    }
+
+    // 2. Cập nhật quantity đạt tối đa tồn kho để kiểm tra vô hiệu hóa
+    const updateRes = await request.put(`http://127.0.0.1:3000/cart/items/${productId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { quantity: stock },
+    });
+    expect([200, 400]).toContain(updateRes.status());
+
+    // Tải lại trang giỏ hàng để cập nhật trạng thái mới nhất
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const refreshedPlusBtn = page.getByTestId('cart-increase-quantity').first();
+    await expect(refreshedPlusBtn).toBeVisible({ timeout: 10000 });
+
+    // Khi quantity == stock: nút tăng phải bị disabled theo đúng requirement MKP_007
+    await expect(refreshedPlusBtn).toBeDisabled({ timeout: 5000 });
+
+    // 3. Khi vượt quá tồn kho: backend từ chối trả về 400
+    const overStockRes = await request.put(`http://127.0.0.1:3000/cart/items/${productId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { quantity: stock + 1000 },
+    });
+    expect(overStockRes.status()).toBe(400);
+
+    // Khôi phục lại số lượng về 1 để giữ trạng thái an toàn cho các test khác
+    await request.put(`http://127.0.0.1:3000/cart/items/${productId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: { quantity: 1 },
+    });
   });
 });
