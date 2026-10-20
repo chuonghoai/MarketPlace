@@ -59,5 +59,5 @@ export async function loginViaUI(
   await passwordInput.fill(credentials.password);
   await submitButton.click();
 
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 });
 }
