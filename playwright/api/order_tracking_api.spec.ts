@@ -8,6 +8,11 @@ test.describe('API - Order Tracking & Filter (MKP-062)', () => {
     clientToken = await getAuthToken(request, TEST_USERS.client);
   });
 
+  test.beforeEach(async () => {
+    // Tránh chạm ngưỡng rate-limit của backend (6 req/s) và nghẽn connection pool DB
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  });
+
   test('Test G1: GET /orders/tracking không truyền status trả về toàn bộ đơn hàng (bao gồm CANCELLED)', async ({ request }) => {
     const response = await request.get('/orders/tracking', {
       headers: { Authorization: `Bearer ${clientToken}` },
