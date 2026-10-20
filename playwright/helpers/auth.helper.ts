@@ -26,7 +26,7 @@ export async function getAuthToken(
     return tokenCache.get(cacheKey)!;
   }
 
-  const response = await request.post('/auth/login', {
+  const response = await request.post('http://127.0.0.1:3000/auth/login', {
     data: credentials,
   });
 
@@ -59,5 +59,5 @@ export async function loginViaUI(
   await passwordInput.fill(credentials.password);
   await submitButton.click();
 
-  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 10000 });
+  await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 15000 });
 }

@@ -7,6 +7,7 @@ import {
   Query,
   UseGuards,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { GetOrdersFilterDto, UpdateOrderStatusDto } from './dto/orders.dto';
@@ -115,6 +116,23 @@ export class OrdersController {
       'Hoàn tiền cho khách hàng thành công',
       data,
     );
+  }
+
+  @Patch('return-requests/:id/reject')
+  async rejectReturnRequest(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body() body: { reason: string },
+  ) {
+    if (!body?.reason || !body.reason.trim()) {
+      throw new BadRequestException('Vui lòng nhập lý do từ chối yêu cầu đổi trả');
+    }
+    const data = await this.ordersService.adminRejectReturnRequest(
+      id,
+      req.user.id,
+      body.reason.trim(),
+    );
+    return new ApiResponse(true, 'Từ chối yêu cầu đổi trả thành công', data);
   }
 
   @Get(':id')

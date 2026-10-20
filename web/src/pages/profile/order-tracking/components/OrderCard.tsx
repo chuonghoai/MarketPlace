@@ -53,16 +53,24 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
         }
     };
 
-    const isReturnFinished =
-        (order as any).returnStatus === 'COMPLETED' ||
+    const isReturnRejected =
+        (order as any).returnStatus === 'REJECTED' ||
         (Array.isArray(order.statusHistory) &&
             order.statusHistory.some(
-                (h: any) =>
-                    h.note &&
-                    (h.note.includes('Hoàn tiền') ||
-                        h.note.includes('đổi hàng mới') ||
-                        h.note.includes('Đã hoàn tất'))
+                (h: any) => h.note && (h.note.includes('Từ chối') || h.note.includes('từ chối'))
             ));
+
+    const isReturnFinished =
+        !isReturnRejected &&
+        ((order as any).returnStatus === 'COMPLETED' ||
+            (Array.isArray(order.statusHistory) &&
+                order.statusHistory.some(
+                    (h: any) =>
+                        h.note &&
+                        (h.note.includes('Hoàn tiền') ||
+                            h.note.includes('đổi hàng mới') ||
+                            h.note.includes('Đã hoàn tất'))
+                )));
 
     return (
         <div className="bg-white border border-border-subtle rounded-xl shadow-sm overflow-hidden flex flex-col hover:border-market-primary/30 transition-colors">
@@ -77,7 +85,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                         })}
                     </span>
                 </div>
-                <OrderStatusBadge status={order.orderStatus} isReturnFinished={isReturnFinished} />
+                <OrderStatusBadge
+                    status={order.orderStatus}
+                    isReturnFinished={isReturnFinished}
+                    isReturnRejected={isReturnRejected}
+                />
             </div>
 
             {/* Body */}
@@ -145,6 +157,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
 
                 {order.orderStatus === EOrderStatus.SUCCESS && isWithin7Days && (
                     <button
+                        data-testid="order-return-btn"
                         onClick={handleReturn}
                         className="hidden md:block px-4 py-2 text-sm font-medium text-stone-600 bg-white border border-stone-200 rounded-lg hover:bg-stone-50 hover:text-red-600 transition-colors"
                     >
@@ -152,9 +165,18 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onCancel, onReturn 
                     </button>
                 )}
 
+                {(order.orderStatus === EOrderStatus.SUCCESS || order.orderStatus === EOrderStatus.DELIVERED) && (
+                    <Link
+                        to={`/profile/order/tracking/${order.id}/evaluate`}
+                        className="flex-1 md:flex-initial px-4 py-2 text-sm font-medium text-market-primary bg-market-primary/10 border border-market-primary/20 rounded-lg hover:bg-market-primary/20 transition-colors text-center"
+                    >
+                        Đánh giá
+                    </Link>
+                )}
+
                 <Link
                     to={`/profile/order/tracking/${order.id}`}
-                    className="w-full md:w-auto px-4 py-2 text-sm font-medium text-white bg-market-primary rounded-lg hover:bg-market-primary/90 transition-colors shadow-sm text-center"
+                    className={`${order.orderStatus === EOrderStatus.SUCCESS || order.orderStatus === EOrderStatus.DELIVERED ? "flex-1 md:flex-initial" : "w-full md:w-auto"} px-4 py-2 text-sm font-medium text-white bg-market-primary rounded-lg hover:bg-market-primary/90 transition-colors shadow-sm text-center`}
                 >
                     Xem chi tiết
                 </Link>

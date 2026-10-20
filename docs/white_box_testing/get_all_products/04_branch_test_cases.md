@@ -1,0 +1,36 @@
+# Bảng Test Case (Bao phủ nhánh) — `getAllProducts`
+
+## 1. Bảng Test Cases
+
+| STT | Điều kiện đầu vào | Kết quả mong đợi |
+|:---:|---|---|
+| 1 | • `dto = { search: 'khong_ton_tai' }`<br>• `rawQuery = { filters: { categories: ['c1'] } }`<br>• OpenSearch Mock: `searchProductIds('khong_ton_tai') = []` (Node 17: True) | Rẽ nhánh True tại [17], thực thi [18] trả về sớm `ApiResponse` với mảng rỗng `[]`, `totalItems = 0`, `totalPages = 0`. Không thực thi truy vấn database. |
+| 2 | • `dto = { search: 'gom su', 'filters[sortBy]': 'price_asc', 'filters[minPrice]': '100000', 'filters[maxPrice]': '500000' }`<br>• `rawQuery = { filters: { categories: ['c1', 'c2'] } }`<br>• OpenSearch Mock: `['p1', 'p2']` | Áp dụng lọc `product.id IN ('p1', 'p2')`, lọc danh mục `category.id IN ('c1', 'c2')`, lọc khoảng giá `BETWEEN 100000 AND 500000`, sắp xếp `product.price ASC` (Node 33). Trả về danh sách sản phẩm thành công. |
+| 3 | • `dto = { 'filters[sortBy]': 'price_desc', 'filters[minPrice]': '200000' }`<br>• `rawQuery = { filters: { categories: 'c1' } }` (chuỗi đơn lẻ)<br>• Không có search, không có maxPrice | Node [4] rẽ False, thực thi [6] bọc thành mảng `['c1']`. Bỏ qua OpenSearch (Node 15: False). Lọc `category.id IN ('c1')`, lọc `price >= 200000` (Node 29), sắp xếp `product.price DESC` (Node 34). Trả về danh sách sản phẩm. |
+| 4 | • `dto = { 'filters[sortBy]': 'popularity', 'filters[maxPrice]': '800000' }`<br>• `rawQuery = { 'filters[categories][0]': 'c1', 'filters[categories][1]': 'c2' }`<br>• Không có search, không có minPrice | Bóc tách category từ regex [9] thành công vào map [10], gán `categories` tại [13]. Lọc `category.id IN ('c1', 'c2')`, lọc `price <= 800000` (Node 31), sắp xếp `product.rating DESC` (Node 35). Trả về danh sách sản phẩm. |
+| 5 | • `dto = {}`<br>• `rawQuery = { 'otherKey': 'value' }`<br>• Không có filter categories, không có search, không có giá, không sortBy | Vòng lặp [8] duyệt key không khớp regex (Node 9: False), `catValues` rỗng bỏ qua [13]. Bỏ qua toàn bộ các mệnh đề `where`. Sắp xếp mặc định `product.createdAt DESC` (Node 36). Phân trang mặc định `page = 1`, `pageSize = 50`. |
+| 6 | • `dto = { 'filters[minPrice]': '150000', 'filters[maxPrice]': '600000' }`<br>• `rawQuery = {}`<br>• Không có search, không sortBy | Vòng lặp [8] không chạy do query rỗng (Node 8: False). Bỏ qua lọc search và category. Lọc khoảng giá `BETWEEN 150000 AND 600000` (Node 27), sắp xếp mặc định theo `createdAt DESC` (Node 36). Trả về danh sách sản phẩm. |
+| 7 | • `dto = { 'filters[sortBy]': 'price_asc', 'filters[minPrice]': '300000' }`<br>• `rawQuery = {}` | Bỏ qua search và category. Đánh giá Node 25 (True), Node 26 (False), Node 28 (True), lọc `price >= 300000` (Node 29). Sắp xếp `price ASC` (Node 33). Trả về danh sách sản phẩm. |
+| 8 | • `dto = { 'filters[sortBy]': 'price_desc', 'filters[maxPrice]': '450000' }`<br>• `rawQuery = {}` | Bỏ qua search và category. Đánh giá Node 25 (False), Node 28 (False), Node 30 (True), lọc `price <= 450000` (Node 31). Sắp xếp `price DESC` (Node 34). Trả về danh sách sản phẩm. |
+| 9 | • `dto = { 'filters[sortBy]': 'popularity' }`<br>• `rawQuery = {}` | Bỏ qua search, category và lọc giá (Node 30: False). Sắp xếp theo đánh giá giảm dần `product.rating DESC` (Node 35). Trả về danh sách sản phẩm. |
+| 10 | • `dto = {}`<br>• `rawQuery = { filters: { categories: 12345 as any } }` (categories không phải mảng, không phải string chuẩn) | Node [20] True nhưng Node [21] False (`Array.isArray = false`), bỏ qua gán điều kiện lọc danh mục [23]. Sắp xếp mặc định `createdAt DESC` (Node 36). Trả về danh sách sản phẩm. |
+| 11 | • `dto = {}`<br>• `rawQuery = { filters: { categories: [] } }` (mảng rỗng) | Node [20] True, Node [21] True, nhưng Node [22] False (`categories.length > 0 = false`), bỏ qua gán điều kiện lọc danh mục [23]. Sắp xếp mặc định `createdAt DESC` (Node 36). Trả về danh sách sản phẩm. |
+| 12 | • `dto = { search: 'ao thun', 'filters[sortBy]': 'price_desc', 'filters[minPrice]': '50000', 'filters[maxPrice]': '200000' }`<br>• `rawQuery = { filters: { categories: 'c3' } }`<br>• OpenSearch Mock: `['p3', 'p4']` | Áp dụng lọc OpenSearch `product.id IN ('p3', 'p4')`. Bọc `categories = ['c3']` tại [6] và lọc `category.id IN ('c3')`. Lọc giá `BETWEEN 50000 AND 200000`. Sắp xếp `price DESC` (Node 34). Trả về danh sách sản phẩm. |
+| 13 | • `dto = { search: 'giay', 'filters[sortBy]': 'popularity', 'filters[minPrice]': '500000' }`<br>• `rawQuery = { 'filters[categories][0]': 'c4' }`<br>• OpenSearch Mock: `['p5']` | Áp dụng lọc OpenSearch `product.id IN ('p5')`. Bóc tách regex category `['c4']` tại [13] và áp dụng lọc. Lọc `price >= 500000` (Node 29). Sắp xếp `rating DESC` (Node 35). Trả về danh sách sản phẩm. |
+| 14 | • `dto = { search: 'dong ho', 'filters[maxPrice]': '1000000' }`<br>• `rawQuery = {}`<br>• OpenSearch Mock: `['p6']` | Áp dụng lọc OpenSearch `product.id IN ('p6')`. Bỏ qua lọc category. Lọc `price <= 1000000` (Node 31). Sắp xếp mặc định `createdAt DESC` (Node 36). Trả về danh sách sản phẩm. |
+| 15 | • `dto = { search: 'balo', 'filters[sortBy]': 'price_asc' }`<br>• `rawQuery = {}`<br>• OpenSearch Mock: `['p7']` | Áp dụng lọc OpenSearch `product.id IN ('p7')`. Bỏ qua category và khoảng giá. Sắp xếp `price ASC` (Node 33). Trả về danh sách sản phẩm. |
+| 16 | • `dto = { 'filters[sortBy]': 'price_asc', 'filters[minPrice]': '100000' }`<br>• `rawQuery = { filters: { categories: ['c1'] } }` | Bỏ qua search. Lọc danh mục `category.id IN ('c1')`. Lọc `price >= 100000` (Node 29). Sắp xếp `price ASC` (Node 33). Trả về danh sách sản phẩm. |
+| 17 | • `dto = { 'filters[sortBy]': 'popularity', 'filters[maxPrice]': '700000' }`<br>• `rawQuery = { filters: { categories: 'c2' } }` | Bọc `['c2']` tại [6], lọc danh mục. Lọc `price <= 700000` (Node 31). Sắp xếp `rating DESC` (Node 35). Trả về danh sách sản phẩm. |
+| 18 | • `dto = {}`<br>• `rawQuery = { filters: { categories: 'c5' } }` | Bọc `['c5']` tại [6], lọc danh mục. Bỏ qua search và giá. Sắp xếp mặc định `createdAt DESC` (Node 36). Trả về danh sách sản phẩm. |
+
+---
+
+## 2. Giải thích về độ bao phủ nhánh (Branch Coverage Analysis)
+
+- Trong đồ thị luồng điều khiển (CFG), chức năng `getAllProducts` có **15 điểm quyết định (Predicate Nodes)**:
+  - 14 nút điều kiện nhị phân $\times 2 = 28$ nhánh True/False (gồm các node `[3]`, `[4]`, `[8]`, `[9]`, `[12]`, `[15]`, `[17]`, `[20]`, `[21]`, `[22]`, `[25]`, `[26]`, `[28]`, `[30]`).
+  - 1 lệnh `switch (sortBy)` (Node `[32]`) với 4 nhánh rẽ (`PRICE_LOW_TO_HIGH`, `PRICE_HIGH_TO_LOW`, `POPULARITY`, `NEWEST`/mặc định).
+  - Tổng số nhánh rẽ trong đồ thị CFG là: $28 + 4 = 32$ nhánh rẽ.
+- Theo phương pháp kiểm thử đường cơ sở (Basis Path Testing của McCabe), với độ phức tạp Cyclomatic **$V(G) = 18$**, tập kiểm thử cần đúng **18 ca kiểm thử độc lập (18 Test Cases)**.
+- Bảng trên gồm đúng **18 Test Cases (từ STT 1 đến 18)** tương ứng 1-1 với **18 Đường thi hành độc lập (Paths 1 đến 18)** trong file [`03_independent_paths.md`](file:///d:/study/ute/4 - HK1/KiemThuPhanMem/FinalProject/MarketPlace/docs/white_box_testing/get_all_products/03_independent_paths.md).
+- Khi thực thi đủ 18 Test Cases này, **100% trong số 32 nhánh rẽ** và **100% trong số 38 câu lệnh** đều được kích hoạt và bao phủ toàn diện.

@@ -55,6 +55,10 @@ export class WalletsController {
     @Body() dto: TopupWalletDto,
     @Ip() ip: string,
   ) {
+    if (!['VNPAY', 'MOMO', 'PAYPAL'].includes(dto.paymentMethod)) {
+      throw new BadRequestException('Phương thức thanh toán không hợp lệ');
+    }
+
     const ipAddr =
       req.headers['x-forwarded-for'] ||
       req.socket?.remoteAddress ||
@@ -63,14 +67,12 @@ export class WalletsController {
     const result = await this.walletsService.topup(
       req.user.id,
       dto.amount,
-      dto.paymentMethod || 'DIRECT',
+      dto.paymentMethod,
       ipAddr,
     );
     return {
       success: true,
-      message: result.paymentRequired
-        ? 'Tạo link nạp tiền thành công'
-        : 'Nạp tiền vào ví thành công',
+      message: 'Tạo link nạp tiền thành công',
       data: result,
     };
   }
@@ -99,11 +101,9 @@ export class WalletsController {
       };
     }
 
-    const result = await this.walletsService.topup(
+    const result = await this.walletsService.directCredit(
       req.user.id,
       amount,
-      'DIRECT',
-      '127.0.0.1',
       `Nạp tiền qua VNPay (${txRef})`,
     );
 
@@ -140,11 +140,9 @@ export class WalletsController {
       };
     }
 
-    const result = await this.walletsService.topup(
+    const result = await this.walletsService.directCredit(
       req.user.id,
       amount,
-      'DIRECT',
-      '127.0.0.1',
       `Nạp tiền qua MoMo (${txRef})`,
     );
 
@@ -177,11 +175,9 @@ export class WalletsController {
       };
     }
 
-    const result = await this.walletsService.topup(
+    const result = await this.walletsService.directCredit(
       req.user.id,
       amount,
-      'DIRECT',
-      '127.0.0.1',
       `Nạp tiền qua PayPal (${txRef})`,
     );
 

@@ -18,6 +18,7 @@ export const useResetPasswordController = () => {
         register,
         handleSubmit,
         setError,
+        setValue,
         watch,
         formState: { errors, isSubmitting },
     } = useForm<ResetPasswordRequest>({
@@ -51,6 +52,8 @@ export const useResetPasswordController = () => {
     return {
         register,
         handleSubmit,
+        setError,
+        setValue,
         errors,
         isSubmitting,
         onResetPassword,

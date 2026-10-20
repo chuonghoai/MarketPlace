@@ -1,4 +1,5 @@
 import {
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -12,9 +13,11 @@ export class TopupWalletDto {
   @IsNotEmpty({ message: 'Vui lòng nhập số tiền nạp' })
   amount: number;
 
-  @IsOptional()
-  @IsString()
-  paymentMethod?: 'DIRECT' | 'VNPAY' | 'MOMO' | 'PAYPAL';
+  @IsNotEmpty({ message: 'Vui lòng chọn phương thức thanh toán' })
+  @IsIn(['VNPAY', 'MOMO', 'PAYPAL'], {
+    message: 'Phương thức thanh toán không hợp lệ (chỉ hỗ trợ VNPAY, MOMO, PAYPAL)',
+  })
+  paymentMethod: 'VNPAY' | 'MOMO' | 'PAYPAL';
 }
 
 export class CreateWithdrawalDto {

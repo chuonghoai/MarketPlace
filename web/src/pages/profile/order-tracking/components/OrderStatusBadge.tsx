@@ -4,6 +4,7 @@ import { EOrderStatus } from "../../../../features/order/enums/orderStatus.enum"
 interface OrderStatusBadgeProps {
     status: EOrderStatus;
     isReturnFinished?: boolean;
+    isReturnRejected?: boolean;
     className?: string;
 }
 
@@ -17,16 +18,28 @@ const statusConfig: Record<EOrderStatus, { label: string; colorClass: string }> 
     [EOrderStatus.RETURNED]: { label: "Đang đổi trả", colorClass: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20" },
 };
 
-export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({ status, isReturnFinished, className = "" }) => {
+export const OrderStatusBadge: React.FC<OrderStatusBadgeProps> = ({
+    status,
+    isReturnFinished,
+    isReturnRejected,
+    className = "",
+}) => {
     let config = statusConfig[status];
 
     if (!config) return null;
 
-    if (status === EOrderStatus.RETURNED && isReturnFinished) {
-        config = {
-            label: "Đổi trả thành công",
-            colorClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-        };
+    if (status === EOrderStatus.RETURNED) {
+        if (isReturnRejected) {
+            config = {
+                label: "Từ chối đổi trả",
+                colorClass: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+            };
+        } else if (isReturnFinished) {
+            config = {
+                label: "Đổi trả thành công",
+                colorClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+            };
+        }
     }
 
     return (

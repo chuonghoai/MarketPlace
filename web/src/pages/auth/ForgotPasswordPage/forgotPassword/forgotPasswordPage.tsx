@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
+import { Info } from "lucide-react";
 import { useForgotPasswordController } from "./forgotPassword.controller";
+import { tAuth } from "../../../../features/auth/constants/authL10n";
 
 function ForgotPasswordPage() {
     const {
@@ -69,8 +71,8 @@ function ForgotPasswordPage() {
                     </div>
 
                     {/* Right: Form */}
-                    <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-white relative">
-                        <div className="w-full max-w-[360px] mx-auto relative z-10">
+                    <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-center bg-white relative">
+                        <div className="w-full max-w-[380px] mx-auto relative z-10">
 
                             {/* Mobile Back to Home */}
                             <div className="block md:hidden mb-6 text-left">
@@ -82,23 +84,37 @@ function ForgotPasswordPage() {
                                 <div className="w-10 h-0.5 bg-market-primary mb-8"></div>
                             </div>
 
-                            <div className="mb-8 text-center md:text-left">
+                            <div className="mb-6 text-center md:text-left">
                                 <h2 className="font-['Lora',serif] text-[36px] font-semibold text-[#1C1917] mb-2">
-                                    Quên mật khẩu
+                                    {tAuth("forgotPasswordTitle")}
                                 </h2>
                                 <p className="text-[14px] text-[#57534E]">
-                                    Nhập email đã đăng ký để nhận mã xác nhận.
+                                    {tAuth("forgotPasswordSubtitle")}
                                 </p>
+                            </div>
+
+                            {/* Info Alert Box */}
+                            <div
+                                role="note"
+                                aria-label={tAuth("forgotPasswordGuidance")}
+                                className="flex items-start gap-3 rounded-[8px] border border-market-primary/20 bg-market-background p-3.5 mb-6 text-[13px] text-[#57534E] leading-relaxed shadow-none"
+                            >
+                                <Info className="w-5 h-5 text-market-primary shrink-0 mt-0.5" aria-hidden="true" />
+                                <div>
+                                    <p>{tAuth("forgotPasswordGuidance")}</p>
+                                </div>
                             </div>
 
                             <form onSubmit={handleSubmit(onSubmit)}>
 
                                 {/* Email input */}
                                 <div className="flex flex-col mb-6">
-                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">Email</label>
+                                    <label className="text-[13px] font-semibold text-[#1C1917] mb-2">
+                                        {tAuth("forgotPasswordEmailLabel")}
+                                    </label>
                                     <input
                                         type="text"
-                                        placeholder="Nhập địa chỉ email..."
+                                        placeholder={tAuth("forgotPasswordEmailPlaceholder")}
                                         className={`bg-white border-[1.5px] rounded-[4px] h-[42px] px-[14px] text-[16px] outline-none transition-all duration-200 focus:border-market-primary focus:ring-[3px] focus:ring-market-primary/15 placeholder:text-[#A8A29E] text-[#1C1917] ${errors.email ? "border-market-error" : "border-[#D6D3D1]"}`}
                                         {...register("email", {
                                             required: "Email là bắt buộc",
@@ -128,18 +144,18 @@ function ForgotPasswordPage() {
                                     disabled={isSubmitting || isSendingOtp || otpCountdown > 0}
                                 >
                                     {isSendingOtp
-                                        ? "Đang gửi..."
+                                        ? tAuth("forgotPasswordSending")
                                         : otpCountdown > 0
-                                            ? `Gửi lại sau ${otpCountdown}s`
-                                            : "Gửi mã xác nhận"
+                                            ? `${tAuth("forgotPasswordResendAfter")} ${otpCountdown}s`
+                                            : tAuth("forgotPasswordSubmit")
                                     }
                                 </button>
 
                                 {/* Back to Login */}
                                 <div className="text-center text-[14px] text-[#57534E]">
-                                    Đã nhớ mật khẩu?{" "}
+                                    {tAuth("forgotPasswordRememberPassword")}{" "}
                                     <Link to="/login" className="font-semibold text-market-primary hover:text-[#9A3412] transition-colors">
-                                        Đăng nhập ngay
+                                        {tAuth("forgotPasswordLoginNow")}
                                     </Link>
                                 </div>
 

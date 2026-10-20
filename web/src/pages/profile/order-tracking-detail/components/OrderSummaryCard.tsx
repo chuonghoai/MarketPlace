@@ -10,6 +10,38 @@ interface OrderSummaryCardProps {
 export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => {
     
     const getStatusConfig = (status: EOrderStatus) => {
+        if (status === EOrderStatus.RETURNED) {
+            const isRejected =
+                order.returnStatus === 'REJECTED' ||
+                (order.statusHistory || []).some(
+                    (h) => h.note && (h.note.includes('Từ chối') || h.note.includes('từ chối'))
+                );
+            if (isRejected) {
+                return {
+                    label: "Từ chối đổi trả",
+                    color: "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/40"
+                };
+            }
+            const isCompleted =
+                order.returnStatus === 'COMPLETED' ||
+                (order.statusHistory || []).some(
+                    (h) =>
+                        h.note &&
+                        (h.note.includes('Hoàn tiền') ||
+                            h.note.includes('đổi hàng mới') ||
+                            h.note.includes('Đã hoàn tất'))
+                );
+            if (isCompleted) {
+                return {
+                    label: "Đổi trả thành công",
+                    color: "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/40"
+                };
+            }
+            return {
+                label: "Đang xử lý đổi trả",
+                color: "text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40"
+            };
+        }
         switch (status) {
             case EOrderStatus.PENDING:
                 return { label: "Chờ xác nhận", color: "text-amber-600 bg-amber-50 border-amber-200" };
@@ -23,8 +55,6 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({ order }) => 
                 return { label: "Hoàn thành", color: "text-emerald-600 bg-emerald-50 border-emerald-200" };
             case EOrderStatus.CANCELLED:
                 return { label: "Đã hủy", color: "text-red-600 bg-red-50 border-red-200" };
-            case EOrderStatus.RETURNED:
-                return { label: "Trả hàng/Hoàn tiền", color: "text-rose-600 bg-rose-50 border-rose-200" };
             default:
                 return { label: "Chưa rõ", color: "text-stone-600 bg-stone-50 border-stone-200" };
         }

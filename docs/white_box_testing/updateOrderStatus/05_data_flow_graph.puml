@@ -4,15 +4,23 @@ skinparam ranksep 25
 
 usecase "start" as start_node
 usecase "1" as n1
+note right of n1 : d(order)
 usecase "2" as n2
+note right of n2 : u(order)
 usecase "3" as n3
 usecase "4" as n4
+note right of n4 : u(order)\nd(oldStatus)
 usecase "5" as n5
+note right of n5 : u(order)
 usecase "6" as n6
 usecase "7" as n7
+note right of n7 : u(order)
 usecase "8" as n8
+note right of n8 : u(order)
 usecase "9" as n9
+note left of n9 : u(order)\nd(history)
 usecase "10" as n10
+note right of n10 : u(order)\nd(history)
 usecase "11" as n11
 usecase "12" as n12
 usecase "13" as n13
@@ -22,24 +30,35 @@ usecase "16" as n16
 usecase "17" as n17
 usecase "18" as n18
 usecase "19" as n19
+note right of n19 : u(history)
 usecase "20" as n20
 usecase "21" as n21
 usecase "22" as n22
+note right of n22 : u(order)\nu(history)
 usecase "23" as n23
 usecase "24" as n24
+note right of n24 : u(order)
 usecase "25" as n25
+note right of n25 : u(order)\nd(saved)
 usecase "26" as n26
 usecase "27" as n27
+note right of n27 : u(oldStatus)
 usecase "28" as n28
+note right of n28 : u(order)
 usecase "29" as n29
 usecase "30" as n30
 usecase "31" as n31
 usecase "32" as n32
+note right of n32 : u(order)
 usecase "33" as n33
+note right of n33 : u(oldStatus)
 usecase "34" as n34
+note right of n34 : u(oldStatus)
 usecase "35" as n35
+note right of n35 : u(order)
 usecase "36" as n36
 usecase "37" as n37
+note right of n37 : d(newStatusStr)
 usecase "38" as n38
 usecase "39" as n39
 usecase "40" as n40
@@ -49,83 +68,73 @@ usecase "43" as n43
 usecase "44" as n44
 usecase "45" as n45
 usecase "46" as n46
+note right of n46 : d(newStatusStr)
 usecase "47" as n47
 usecase "48" as n48
 usecase "49" as n49
+note right of n49 : u(saved)\nu(newStatusStr)
 usecase "50" as n50
+note right of n50 : u(saved)
 usecase "51" as n51
 usecase "52" as n52
 usecase "53" as n53
-usecase "54" as n54
-usecase "Exit" as end_node
-
-note right of n1 : d(order)
-note right of n2 : u(order)
-note right of n4 : u(order)\nd(oldStatus)
-note right of n5 : u(order)
-note right of n7 : u(order)
-note right of n8 : u(order)
-note right of n9 : u(order)\nd(history)
-note right of n10 : u(order)\nd(history)
-note right of n11 : d(defaultNote)
-note right of n13 : d(defaultNote)
-note right of n14 : d(defaultNote)
-note right of n15 : d(defaultNote)
-note right of n16 : d(defaultNote)
-note right of n17 : d(defaultNote)
-note right of n18 : d(defaultNote)
-note right of n19 : u(history)
-note right of n21 : u(defaultNote)
-note right of n22 : u(order)\nu(history)
-note right of n24 : u(order)
-note right of n25 : u(order)\nd(saved)
-note right of n27 : u(oldStatus)
-note right of n28 : u(order)
-note right of n32 : u(order)
-note right of n33 : u(oldStatus)
-note right of n34 : u(oldStatus)
-note right of n35 : u(order)
-note right of n37 : d(newStatusStr)
-note right of n39 : d(newStatusStr)
-note right of n40 : d(newStatusStr)
-note right of n41 : d(newStatusStr)
-note right of n42 : d(newStatusStr)
-note right of n43 : d(newStatusStr)
-note right of n44 : d(newStatusStr)
-note right of n45 : d(newStatusStr)
-note right of n47 : d(cancelReason)
-note right of n48 : d(cancelReason)
-note right of n49 : u(saved)\nu(newStatusStr)\nu(cancelReason)
-note right of n50 : u(saved)
 note right of n53 : u(saved)
+usecase "54" as n54
 note right of n54 : u(saved)
-note right of end_node : k(order)\nk(oldStatus)\nk(history)\nk(defaultNote)\nk(saved)\nk(newStatusStr)\nk(cancelReason)
+usecase "Exit" as end_node
+note right of end_node : k(order)\nk(oldStatus)\nk(history)\nk(saved)\nk(newStatusStr)
+
+start_node -[hidden]down-> n1
+n1 -[hidden]down-> n2
+n2 -[hidden]down-> n4
+n4 -[hidden]down-> n5
+n5 -[hidden]down-> n6
+n6 -[hidden]down-> n8
+n8 -[hidden]down-> n11
+n9 -[hidden]right-> n10
+n11 -[hidden]down-> n12
+n12 -[hidden]down-> n19
+n19 -[hidden]down-> n20
+n20 -[hidden]down-> n22
+n22 -[hidden]down-> n23
+n23 -[hidden]down-> n25
+n25 -[hidden]down-> n26
+n26 -[hidden]down-> n30
+n30 -[hidden]down-> n37
+n37 -[hidden]down-> n38
+n38 -[hidden]down-> n46
+n46 -[hidden]down-> n49
+n49 -[hidden]down-> n50
+n50 -[hidden]down-> n54
+n54 -[hidden]down-> end_node
+
+n3 -[hidden]right-> n4
 
 start_node --> n1
 n1 --> n2
-n2 --> n3 : true
-n2 --> n4 : false
+n2 --> n3
+n2 --> n4
 n3 --> end_node
 
 n4 --> n5
 n5 --> n6
-n6 --> n7 : true
-n6 --> n8 : false
+n6 --> n7
+n6 --> n8
 n7 --> n8
 
-n8 --> n9 : true
-n8 --> n10 : false
+n8 --> n9
+n8 --> n10
 n9 --> n11
 n10 --> n11
 
 n11 --> n12
-n12 --> n13 : case PREPARING
-n12 --> n14 : case SHIPPING
-n12 --> n15 : case DELIVERED
-n12 --> n16 : case SUCCESS
-n12 --> n17 : case CANCELLED
-n12 --> n18 : case RETURNED
-n12 --> n19 : default
+n12 --> n13
+n12 --> n14
+n12 --> n15
+n12 --> n16
+n12 --> n17
+n12 --> n18
+n12 --> n19
 
 n13 --> n19
 n14 --> n19
@@ -135,48 +144,48 @@ n17 --> n19
 n18 --> n19
 
 n19 --> n20
-n20 --> n22 : true
-n20 --> n21 : false
+n20 --> n22
+n20 --> n21
 n21 --> n22
 
 n22 --> n23
-n23 --> n24 : true
-n23 --> n25 : false
+n23 --> n24
+n23 --> n25
 n24 --> n25
 
 n25 --> n26
-n26 --> n27 : true
-n26 --> n30 : false
-n27 --> n28 : true
-n27 --> n30 : false
+n26 --> n27
+n26 --> n30
+n27 --> n28
+n27 --> n30
 
-n28 --> n29 : true
-n28 --> n30 : false
+n28 --> n29
+n28 --> n30
 n29 --> n28
 
-n30 --> n32 : true
-n30 --> n31 : false
-n31 --> n32 : true
-n31 --> n37 : false
+n30 --> n32
+n30 --> n31
+n31 --> n32
+n31 --> n37
 
 n32 --> n33
-n33 --> n34 : true
-n33 --> n37 : false
-n34 --> n35 : true
-n34 --> n37 : false
+n33 --> n34
+n33 --> n37
+n34 --> n35
+n34 --> n37
 
-n35 --> n36 : true
-n35 --> n37 : false
+n35 --> n36
+n35 --> n37
 n36 --> n35
 
 n37 --> n38
-n38 --> n39 : case PREPARING
-n38 --> n40 : case SHIPPING
-n38 --> n41 : case DELIVERED
-n38 --> n42 : case SUCCESS
-n38 --> n43 : case CANCELLED
-n38 --> n44 : case RETURNED
-n38 --> n45 : default
+n38 --> n39
+n38 --> n40
+n38 --> n41
+n38 --> n42
+n38 --> n43
+n38 --> n44
+n38 --> n45
 
 n39 --> n46
 n40 --> n46
@@ -186,16 +195,16 @@ n43 --> n46
 n44 --> n46
 n45 --> n46
 
-n46 --> n47 : true
-n46 --> n48 : false
+n46 --> n47
+n46 --> n48
 n47 --> n49
 n48 --> n49
 
 n49 --> n50
-n50 --> n51 : true
-n50 --> n54 : false
-n51 --> n52 : true
-n51 --> n54 : false
+n50 --> n51
+n50 --> n54
+n51 --> n52
+n51 --> n54
 
 n52 --> n53
 n53 --> n54

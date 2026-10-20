@@ -1,0 +1,167 @@
+@startuml
+skinparam nodesep 15
+skinparam ranksep 25
+
+usecase "start" as start_node
+usecase "1" as n1
+usecase "2" as n2
+usecase "3" as n3
+usecase "4" as n4
+usecase "5" as n5
+usecase "6" as n6
+usecase "7" as n7
+usecase "8" as n8
+usecase "9" as n9
+usecase "10" as n10
+usecase "11" as n11
+usecase "12" as n12
+usecase "13" as n13
+usecase "14" as n14
+usecase "15" as n15
+usecase "16" as n16
+usecase "17" as n17
+usecase "18" as n18
+usecase "19" as n19
+usecase "20" as n20
+usecase "21" as n21
+usecase "22" as n22
+usecase "23" as n23
+usecase "24" as n24
+usecase "25" as n25
+usecase "26" as n26
+usecase "27" as n27
+usecase "28" as n28
+usecase "29" as n29
+usecase "30" as n30
+usecase "31" as n31
+usecase "32" as n32
+usecase "33" as n33
+usecase "34" as n34
+usecase "35" as n35
+usecase "36" as n36
+usecase "37" as n37
+usecase "38" as n38
+usecase "Exit" as end_node
+
+start_node -[hidden]down-> n1
+n1 -[hidden]down-> n2
+n2 -[hidden]down-> n3
+n3 -[hidden]down-> n4
+n4 -[hidden]down-> n5
+n5 -[hidden]down-> n14
+n14 -[hidden]down-> n15
+n15 -[hidden]down-> n20
+n20 -[hidden]down-> n21
+n21 -[hidden]down-> n22
+n22 -[hidden]down-> n23
+n23 -[hidden]down-> n24
+n24 -[hidden]down-> n25
+n25 -[hidden]down-> n26
+n26 -[hidden]down-> n27
+n27 -[hidden]down-> n32
+n32 -[hidden]down-> n34
+n34 -[hidden]down-> n37
+n37 -[hidden]down-> n38
+n38 -[hidden]down-> end_node
+
+n5 -[hidden]right-> n6
+n6 -[hidden]down-> n14
+
+n3 -[hidden]right-> n7
+n7 -[hidden]down-> n8
+n8 -[hidden]down-> n11
+n11 -[hidden]down-> n12
+n12 -[hidden]down-> n13
+n13 -[hidden]down-> n14
+n8 -[hidden]right-> n9
+n9 -[hidden]down-> n10
+
+n18 -[hidden]right-> n16
+n18 -[hidden]right-> n17
+n18 -[hidden]right-> n19
+n18 -[hidden]right-> n20
+n16 -[hidden]down-> n17
+n17 -[hidden]down-> n19
+
+n26 -[hidden]right-> n28
+n28 -[hidden]down-> n29
+n28 -[hidden]right-> n30
+n30 -[hidden]down-> n31
+
+n33 -[hidden]right-> n34
+n34 -[hidden]right-> n35
+n35 -[hidden]right-> n36
+
+start_node --> n1
+n1 --> n2
+n2 --> n3
+
+n3 --> n4
+n3 --> n7
+
+n4 --> n5
+n4 --> n6
+n5 --> n14
+n6 --> n14
+
+n7 --> n8
+n8 --> n9
+n8 --> n11
+n9 --> n10
+n9 --> n8
+n10 --> n8
+n11 --> n12
+n12 --> n13
+n12 --> n14
+n13 --> n14
+
+n14 --> n15
+
+n15 --> n16
+n15 --> n20
+
+n16 --> n17
+n17 --> n18
+n17 --> n19
+n18 --> end_node
+n19 --> n20
+
+n20 --> n21
+n20 --> n24
+n21 --> n22
+n21 --> n24
+n22 --> n23
+n22 --> n24
+n23 --> n24
+
+n24 --> n25
+
+n25 --> n26
+n25 --> n28
+
+n26 --> n27
+n26 --> n28
+n27 --> n32
+
+n28 --> n29
+n28 --> n30
+n29 --> n32
+
+n30 --> n31
+n30 --> n32
+n31 --> n32
+
+n32 --> n33
+n32 --> n34
+n32 --> n35
+n32 --> n36
+
+n33 --> n37
+n34 --> n37
+n35 --> n37
+n36 --> n37
+
+n37 --> n38
+n38 --> end_node
+
+@enduml

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { type OrderTrackingDetail as OrderTrackingDetailModel } from "../../../features/order/tracking/model/orderDetail.model";
 import { type OrderItemTracking } from "../../../features/order/tracking/model/orderItem.model";
 import { walletService } from "../../../features/wallet/services/wallet.service";
+import { mediaService } from "../../../features/media/services/media.service";
 
 export interface ReturnOrderFormData {
     type: 'EXCHANGE' | 'RETURN_REFUND';
@@ -29,10 +30,12 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
     // Minh chứng hình ảnh (UC23)
     const [proofImageUrl, setProofImageUrl] = useState("");
     const [proofImages, setProofImages] = useState<string[]>([]);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
 
     // Minh chứng video (UC23 - Mục 1.4)
     const [proofVideoUrl, setProofVideoUrl] = useState("");
     const [proofVideos, setProofVideos] = useState<string[]>([]);
+    const [isUploadingVideo, setIsUploadingVideo] = useState(false);
 
     // Kiểm tra ví điện tử & thông tin tài khoản ngân hàng nếu chưa có ví (UC23 - Mục 1.2 & 1.11)
     const [hasWallet, setHasWallet] = useState<boolean | null>(null);
@@ -57,6 +60,8 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
             setBankAccountNumber("");
             setBankAccountHolder("");
             setIsSubmitting(false);
+            setIsUploadingImage(false);
+            setIsUploadingVideo(false);
 
             // Kiểm tra khách đã kích hoạt ví điện tử chưa
             setCheckingWallet(true);
@@ -87,6 +92,54 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
     }, [open, isSubmitting, onClose]);
 
     if (!open) return null;
+
+    const handleOpenImageUpload = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "image/*";
+        input.multiple = true;
+        input.onchange = async (e: any) => {
+            const files = e.target?.files;
+            if (!files || files.length === 0) return;
+            setIsUploadingImage(true);
+            try {
+                const uploaded = await mediaService.uploadMultipleFiles(Array.from(files), 'returns');
+                if (uploaded && uploaded.length > 0) {
+                    const newUrls = uploaded.map((u) => u.url).filter(Boolean);
+                    setProofImages((prev) => [...prev, ...newUrls]);
+                }
+            } catch (err) {
+                console.error("Lỗi upload ảnh minh chứng:", err);
+            } finally {
+                setIsUploadingImage(false);
+            }
+        };
+        input.click();
+    };
+
+    const handleOpenVideoUpload = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "video/*";
+        input.multiple = true;
+        input.onchange = async (e: any) => {
+            const files = e.target?.files;
+            if (!files || files.length === 0) return;
+            setIsUploadingVideo(true);
+            try {
+                const uploaded = await mediaService.uploadMultipleFiles(Array.from(files), 'returns');
+                if (uploaded && uploaded.length > 0) {
+                    const newUrls = uploaded.map((u) => u.url).filter(Boolean);
+                    setProofVideos((prev) => [...prev, ...newUrls]);
+                }
+            } catch (err) {
+                console.error("Lỗi upload video minh chứng:", err);
+            } finally {
+                setIsUploadingVideo(false);
+            }
+        };
+        input.click();
+    };
 
     const handleAddImage = () => {
         const url = proofImageUrl.trim();
@@ -336,9 +389,20 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
 
                         {/* Đính kèm hình ảnh minh chứng (UC23) */}
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
-                                Link hình ảnh minh chứng
-                            </label>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                                    Hình ảnh minh chứng
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleOpenImageUpload}
+                                    disabled={isUploadingImage}
+                                    className="px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1 transition-colors disabled:opacity-50"
+                                >
+                                    <span className="material-symbols-outlined text-sm">cloud_upload</span>
+                                    {isUploadingImage ? "Đang tải ảnh..." : "Tải lên trực tiếp"}
+                                </button>
+                            </div>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
@@ -350,22 +414,29 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
                                 <button
                                     type="button"
                                     onClick={handleAddImage}
-                                    className="px-3 py-2 text-xs font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition-colors"
+                                    className="px-3 py-2 text-xs font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition-colors shrink-0"
                                 >
-                                    Thêm ảnh
+                                    Thêm URL
                                 </button>
                             </div>
 
                             {proofImages.length > 0 && (
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {proofImages.map((img, i) => (
-                                        <div key={i} className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800 px-2.5 py-1 rounded-lg text-xs max-w-full truncate border border-stone-200 dark:border-stone-700">
-                                            <span className="material-symbols-outlined text-sm text-stone-500">image</span>
-                                            <span className="truncate max-w-[180px]">{img}</span>
+                                        <div key={i} className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800 p-1 rounded-lg text-xs max-w-full border border-stone-200 dark:border-stone-700">
+                                            <img
+                                                src={img}
+                                                alt="Minh chứng"
+                                                className="w-7 h-7 object-cover rounded"
+                                                onError={(e) => {
+                                                    (e.target as HTMLElement).style.display = 'none';
+                                                }}
+                                            />
+                                            <span className="truncate max-w-[150px]">{img}</span>
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveImage(i)}
-                                                className="text-stone-400 hover:text-red-500 ml-1 font-bold"
+                                                className="text-stone-400 hover:text-red-500 ml-1 font-bold px-1"
                                             >
                                                 ×
                                             </button>
@@ -377,9 +448,20 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
 
                         {/* Đính kèm video minh chứng (UC23 - Mục 1.4) */}
                         <div>
-                            <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-1.5">
-                                Link video minh chứng (MP4 / WebM / Youtube)
-                            </label>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <label className="block text-xs font-semibold uppercase tracking-wider text-stone-700 dark:text-stone-300">
+                                    Video minh chứng (MP4 / WebM / Youtube)
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleOpenVideoUpload}
+                                    disabled={isUploadingVideo}
+                                    className="px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 flex items-center gap-1 transition-colors disabled:opacity-50"
+                                >
+                                    <span className="material-symbols-outlined text-sm">cloud_upload</span>
+                                    {isUploadingVideo ? "Đang tải video..." : "Tải video"}
+                                </button>
+                            </div>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
@@ -391,9 +473,9 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
                                 <button
                                     type="button"
                                     onClick={handleAddVideo}
-                                    className="px-3 py-2 text-xs font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition-colors"
+                                    className="px-3 py-2 text-xs font-semibold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition-colors shrink-0"
                                 >
-                                    Thêm video
+                                    Thêm URL
                                 </button>
                             </div>
 
@@ -402,11 +484,11 @@ export const ReturnOrderRequestModal: React.FC<ReturnOrderRequestModalProps> = (
                                     {proofVideos.map((vid, i) => (
                                         <div key={i} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/50 px-2.5 py-1 rounded-lg text-xs max-w-full truncate text-blue-800 dark:text-blue-300">
                                             <span className="material-symbols-outlined text-sm text-blue-600 dark:text-blue-400">videocam</span>
-                                            <span className="truncate max-w-[180px]">{vid}</span>
+                                            <span className="truncate max-w-[150px]">{vid}</span>
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveVideo(i)}
-                                                className="text-stone-400 hover:text-red-500 ml-1 font-bold"
+                                                className="text-stone-400 hover:text-red-500 ml-1 font-bold px-1"
                                             >
                                                 ×
                                             </button>

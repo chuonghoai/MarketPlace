@@ -307,6 +307,7 @@ function ProductPage() {
                                 <button
                                     onClick={handleToggleFavorite}
                                     disabled={isTogglingFavorite}
+                                    data-testid="product-favorite-button"
                                     className={`w-[52px] border flex items-center justify-center transition-all duration-200
                                         ${product.isFavorite
                                             ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#EF4444]'
@@ -324,7 +325,7 @@ function ProductPage() {
                                 <div className="flex flex-col md:flex-row gap-3 md:items-stretch md:h-13">
                                     {/* Quantity */}
                                     <div className="flex items-center border border-border-medium bg-white h-13 md:h-full w-30 shrink-0 overflow-hidden">
-                                        <button onClick={handleDecreaseQuantity} aria-label="Giảm số lượng" className="flex-1 h-full text-[#78716C] hover:bg-[#FAF2EB] hover:text-text-ink transition-colors text-lg font-light">−</button>
+                                        <button onClick={handleDecreaseQuantity} disabled={quantity <= 1} aria-label="Giảm số lượng" className="flex-1 h-full text-[#78716C] hover:bg-[#FAF2EB] hover:text-text-ink transition-colors text-lg font-light disabled:opacity-40 disabled:cursor-not-allowed">−</button>
                                         <input type="number" readOnly value={quantity} className="w-10 text-center bg-transparent font-medium text-text-ink outline-none text-[15px]" />
                                         <button onClick={handleIncreaseQuantity} aria-label="Tăng số lượng" className="flex-1 h-full text-[#78716C] hover:bg-[#FAF2EB] hover:text-text-ink transition-colors text-lg font-light">+</button>
                                     </div>
@@ -354,6 +355,7 @@ function ProductPage() {
                                         <button
                                             onClick={handleToggleFavorite}
                                             disabled={isTogglingFavorite}
+                                            data-testid="product-favorite-button"
                                             className={`w-13 border flex items-center justify-center transition-all duration-200
                                                 ${product.isFavorite
                                                     ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#EF4444]'

@@ -3,12 +3,14 @@ import { authService } from "../../../features/auth/services/auth.service";
 import type { LoginRequest } from "../../../features/auth/dto/login.type";
 import { useToast } from "../../../components/toast/toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getDefaultRouteByRole } from "../../../utils/route.util";
 
 export const useLoginController = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const toggleShowPassword = () => setShowPassword((prev) => !prev);
   const {
     register,
     handleSubmit,
@@ -45,6 +47,15 @@ export const useLoginController = () => {
         toast("Đăng nhập thành công!", "success");
         const nextRoute = getDefaultRouteByRole(result.data.user.role);
         navigate(nextRoute);
+      } else {
+        const apiErrorMsg = (result as any)?.message
+          || (result as any)?.error?.message
+          || "Tài khoản hoặc mật khẩu không đúng";
+        toast(apiErrorMsg, "error");
+        setError("root", {
+          type: "server",
+          message: apiErrorMsg,
+        });
       }
     } catch (error: any) {
       const apiErrorMsg = error.response?.data?.error?.message
@@ -64,5 +75,8 @@ export const useLoginController = () => {
     errors,
     isSubmitting,
     onLogin,
+    showPassword,
+    setShowPassword,
+    toggleShowPassword,
   };
 };

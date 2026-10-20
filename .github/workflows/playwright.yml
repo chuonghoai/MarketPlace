@@ -1,0 +1,134 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Playwright Test Suite
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+
+    env:
+      CI: 'true'
+      APP_ENV: 'dev'
+      NODE_ENV: 'development'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            web/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Install web frontend dependencies
+        run: cd web && npm ci
+
+      - name: Prepare Backend Environment
+        run: |
+          if [ ! -f backend/.env.dev ]; then
+            echo "Creating backend/.env.dev from CI template..."
+            cat << 'EOF' > backend/.env.dev
+          PORT=3000
+          NODE_ENV=development
+          APP_ENV=dev
+          APP_PUBLIC_URL=http://localhost:5173
+          BACKEND_PUBLIC_URL=http://localhost:3000
+          PAYMENT_CALLBACK_BASE_URL=http://localhost:3000
+          CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASS=${{ secrets.DB_PASS }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          DB_SSL=true
+          REDIS_URI=${{ secrets.REDIS_URI }}
+          OPENSEARCH_NODE=${{ secrets.OPENSEARCH_NODE }}
+          OPENSEARCH_USERNAME=${{ secrets.OPENSEARCH_USERNAME }}
+          OPENSEARCH_PASSWORD=${{ secrets.OPENSEARCH_PASSWORD }}
+          JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+          JWT_ACCESS_EXPIRES_IN=7d
+
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME || 'dj650dpxi' }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY || '939982415422772' }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET || 'irAlka0hWQiSraJrVpr_dLkzkqE' }}
+          CLOUDINARY_FOLDER=${{ secrets.CLOUDINARY_FOLDER || 'TMDT_Cloudinary' }}
+
+          MAIL_HOST=smtp.gmail.com
+          MAIL_PORT=465
+          MAIL_USER=${{ secrets.MAIL_USER || 'trinhthy333@gmail.com' }}
+          MAIL_PASS=${{ secrets.MAIL_PASS || 'qukg xvmi xoct fbuz' }}
+          MAIL_FROM="MarketNest <${{ secrets.MAIL_USER || 'trinhthy333@gmail.com' }}>"
+
+          ADMIN_MAIL=admin@marketnest.com
+          ADMIN_PASSWORD=Admin@123456
+          ADMIN_FULL_NAME=MarketNest Administrator
+          ADMIN_AVATAR_URL=https://res.cloudinary.com/demo/image/upload/avatar.png
+
+          MOMO_PARTNER_CODE=${{ secrets.MOMO_PARTNER_CODE || 'MOMOBKUN20180529' }}
+          MOMO_ACCESS_KEY=${{ secrets.MOMO_ACCESS_KEY || 'klm05TvNBzhg7h7j' }}
+          MOMO_SECRET_KEY=${{ secrets.MOMO_SECRET_KEY || 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa' }}
+          MOMO_ENDPOINT=https://test-payment.momo.vn/v2/gateway/api/create
+          VNP_TMN_CODE=${{ secrets.VNP_TMN_CODE || 'CGXZLS0Z' }}
+          VNP_HASH_SECRET=${{ secrets.VNP_HASH_SECRET || 'XNBCJFAKAZQSGTARRLGCHVZWCIOIGSHN' }}
+          VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+          PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID || 'AbltbBZWvUDcqWjB_e27TsVAAGWLL3U6xsKg4c4NQxm9bIznq8o2t6ms4_QNxBok3ugDr_RQCv52WDJI' }}
+          PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET || 'EHp6rk7Mf-r6wBWSHNk6GmWhZBt_9dtoXLhv0rsTZZF4ks4Xvm66YSfy5qKE5zXULq-mcfGfY3PlfzjA' }}
+          PAYPAL_ENVIRONMENT=sandbox
+          EOF
+          fi
+
+      - name: Prepare Web Environment
+        run: |
+          if [ ! -f web/.env.dev ]; then
+            cat << 'EOF' > web/.env.dev
+          VITE_API_BASE_URL=http://localhost:3000
+          VITE_API_TIMEOUT=10000
+          EOF
+          fi
+
+      - name: Cache Playwright Browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Browsers & OS Dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright OS Dependencies (if cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Run Playwright Tests
+        run: npm run test:all
+
+      - name: Upload Playwright Report & Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright/playwright-report/
+            playwright/test-results/
+          retention-days: 14

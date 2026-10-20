@@ -50,26 +50,34 @@ export const OrderTrackingDetail: React.FC = () => {
                     Đơn #{controller.order.id}
                 </span>
                 {controller.order.orderStatus === EOrderStatus.RETURNED && (() => {
-                    const isReturnFinished =
-                        controller.order.returnStatus === 'COMPLETED' ||
+                    const isReturnRejected =
+                        controller.order.returnStatus === 'REJECTED' ||
                         controller.order.statusHistory?.some(
-                            h =>
-                                h.note &&
-                                (h.note.includes('Hoàn tiền') ||
-                                    h.note.includes('đổi hàng mới') ||
-                                    h.note.includes('Đã hoàn tất'))
+                            h => h.note && (h.note.includes('Từ chối') || h.note.includes('từ chối'))
                         );
+                    const isReturnFinished =
+                        !isReturnRejected &&
+                        (controller.order.returnStatus === 'COMPLETED' ||
+                            controller.order.statusHistory?.some(
+                                h =>
+                                    h.note &&
+                                    (h.note.includes('Hoàn tiền') ||
+                                        h.note.includes('đổi hàng mới') ||
+                                        h.note.includes('Đã hoàn tất'))
+                            ));
                     return (
                         <>
                             <span>/</span>
                             <span
                                 className={`px-2.5 py-0.5 rounded-full border text-[11px] font-semibold ${
-                                    isReturnFinished
+                                    isReturnRejected
+                                        ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/40'
+                                        : isReturnFinished
                                         ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/40'
                                         : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/40'
                                 }`}
                             >
-                                {isReturnFinished ? 'Đổi trả thành công' : 'Đang xử lý đổi trả'}
+                                {isReturnRejected ? 'Từ chối đổi trả' : isReturnFinished ? 'Đổi trả thành công' : 'Đang xử lý đổi trả'}
                             </span>
                         </>
                     );

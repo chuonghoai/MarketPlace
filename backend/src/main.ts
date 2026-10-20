@@ -11,6 +11,17 @@ import { User } from './module/users/entities/user.entity';
 import { EUserRole } from './module/users/enums/user.enum';
 import * as bcrypt from 'bcrypt';
 
+process.on('unhandledRejection', (reason: any) => {
+  if (
+    reason?.code === 'HANDSHAKE_SSL_ERROR' ||
+    reason?.code === 'ECONNRESET' ||
+    reason?.message?.includes('ECONNRESET')
+  ) {
+    return;
+  }
+  console.error('Unhandled Rejection at:', reason);
+});
+
 async function seedUsers(app: NestExpressApplication) {
   const userRepository = app.get(getRepositoryToken(User));
   const usersToCreate = [

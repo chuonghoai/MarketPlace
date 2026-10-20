@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import { getAuthToken, TEST_USERS } from '../helpers/auth.helper';
 
 test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
+  test.describe.configure({ mode: 'serial' });
+
   let clientToken: string;
   let adminToken: string;
   let staffToken: string;
@@ -12,6 +14,22 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
     Authorization: `Bearer ${token}`,
     Cookie: `accessToken=${token}`,
   });
+
+  async function getOrCreateRequestId(request: any): Promise<string> {
+    if (createdRequestId) return createdRequestId;
+    const response = await request.post('/support-requests', {
+      headers: authHeader(clientToken),
+      data: {
+        title: 'Playwright API Test - Auto Support Request',
+        content: 'Nội dung chi tiết tự động tạo phục vụ kiểm thử độc lập.',
+      },
+    });
+    if (response.ok()) {
+      const body = await response.json();
+      createdRequestId = body.data?.id;
+    }
+    return createdRequestId;
+  }
 
   test.beforeAll(async ({ request }) => {
     clientToken = await getAuthToken(request, TEST_USERS.client);
@@ -102,9 +120,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('Admin phân công nhân viên xử lý yêu cầu (PATCH /support-requests/:id/assign)', async ({ request }) => {
-    test.skip(!createdRequestId || !staffId, 'Cần createdRequestId và staffId để chạy test');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId || !staffId, 'Cần createdRequestId và staffId để chạy test');
 
-    const response = await request.patch(`/support-requests/${createdRequestId}/assign`, {
+    const response = await request.patch(`/support-requests/${reqId}/assign`, {
       headers: authHeader(adminToken),
       data: {
         staffId: staffId,
@@ -119,9 +138,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('Khách hàng không có quyền phân công nhân viên (PATCH /support-requests/:id/assign)', async ({ request }) => {
-    test.skip(!createdRequestId, 'Cần createdRequestId');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId, 'Cần createdRequestId');
 
-    const response = await request.patch(`/support-requests/${createdRequestId}/assign`, {
+    const response = await request.patch(`/support-requests/${reqId}/assign`, {
       headers: authHeader(clientToken),
       data: { staffId: staffId || 'some-id' },
     });
@@ -130,9 +150,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('Nhân viên gửi tin nhắn phản hồi đầu tiên và chuyển ticket sang IN_PROGRESS (POST /support-requests/:id/messages)', async ({ request }) => {
-    test.skip(!createdRequestId, 'Cần createdRequestId');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId, 'Cần createdRequestId');
 
-    const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
+    const response = await request.post(`/support-requests/${reqId}/messages`, {
       headers: authHeader(staffToken),
       data: {
         content: 'Chào bạn, tôi là nhân viên hỗ trợ. Tôi đang xử lý vấn đề của bạn.',
@@ -155,9 +176,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('Nhân viên đánh dấu đã giải quyết yêu cầu (PATCH /support-requests/:id/resolve)', async ({ request }) => {
-    test.skip(!createdRequestId, 'Cần createdRequestId');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId, 'Cần createdRequestId');
 
-    const response = await request.patch(`/support-requests/${createdRequestId}/resolve`, {
+    const response = await request.patch(`/support-requests/${reqId}/resolve`, {
       headers: authHeader(staffToken),
     });
 
@@ -169,9 +191,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('MKP-069: Nhân viên gửi tin nhắn vào ticket RESOLVED không làm mở lại ticket (vẫn giữ RESOLVED)', async ({ request }) => {
-    test.skip(!createdRequestId, 'Cần createdRequestId');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId, 'Cần createdRequestId');
 
-    const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
+    const response = await request.post(`/support-requests/${reqId}/messages`, {
       headers: authHeader(staffToken),
       data: { content: 'Ghi chú thêm từ nhân viên hỗ trợ khi ticket đang RESOLVED' },
     });
@@ -188,9 +211,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('MKP-069: Khách hàng gửi tin nhắn mới khi ticket đang RESOLVED -> tự động chuyển trạng thái sang IN_PROGRESS', async ({ request }) => {
-    test.skip(!createdRequestId, 'Cần createdRequestId');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId, 'Cần createdRequestId');
 
-    const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
+    const response = await request.post(`/support-requests/${reqId}/messages`, {
       headers: authHeader(clientToken),
       data: { content: 'Tôi vẫn gặp vấn đề này, nhờ hỗ trợ kiểm tra lại giúp tôi' },
     });
@@ -214,9 +238,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('Khách hàng đóng yêu cầu hỗ trợ thành công (PATCH /support-requests/:id/close)', async ({ request }) => {
-    test.skip(!createdRequestId, 'Cần createdRequestId');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId, 'Cần createdRequestId');
 
-    const response = await request.patch(`/support-requests/${createdRequestId}/close`, {
+    const response = await request.patch(`/support-requests/${reqId}/close`, {
       headers: authHeader(clientToken),
     });
 
@@ -228,9 +253,10 @@ test.describe('API - Yêu cầu hỗ trợ (Support Requests)', () => {
   });
 
   test('Không thể gửi thêm tin nhắn khi yêu cầu đã đóng (POST /support-requests/:id/messages)', async ({ request }) => {
-    test.skip(!createdRequestId, 'Cần createdRequestId');
+    const reqId = await getOrCreateRequestId(request);
+    test.skip(!reqId, 'Cần createdRequestId');
 
-    const response = await request.post(`/support-requests/${createdRequestId}/messages`, {
+    const response = await request.post(`/support-requests/${reqId}/messages`, {
       headers: authHeader(clientToken),
       data: { content: 'Tin nhắn này không được gửi vì ticket đã đóng' },
     });

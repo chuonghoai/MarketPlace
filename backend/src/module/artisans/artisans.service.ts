@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { CreateArtisanDto } from './dto/create-artisan.dto';
@@ -17,6 +17,14 @@ export class ArtisansService {
   ) {}
 
   async create(createArtisanDto: CreateArtisanDto) {
+    if (createArtisanDto.birthDate) {
+      const birth = new Date(createArtisanDto.birthDate);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (birth > today) {
+        throw new BadRequestException('Ngày sinh không thể nằm trong tương lai');
+      }
+    }
     const artisan = this.artisanRepository.create(createArtisanDto);
     return this.artisanRepository.save(artisan);
   }
@@ -52,6 +60,14 @@ export class ArtisansService {
   }
 
   async update(id: string, updateArtisanDto: UpdateArtisanDto) {
+    if (updateArtisanDto.birthDate) {
+      const birth = new Date(updateArtisanDto.birthDate);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999);
+      if (birth > today) {
+        throw new BadRequestException('Ngày sinh không thể nằm trong tương lai');
+      }
+    }
     const artisan = await this.findOne(id);
     Object.assign(artisan, updateArtisanDto);
     return this.artisanRepository.save(artisan);

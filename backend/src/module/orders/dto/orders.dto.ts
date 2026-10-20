@@ -3,7 +3,7 @@ import { Transform } from 'class-transformer';
 import { EOrderStatus } from '../../checkout/enums/EOrderStatus.enum';
 import { EPaymentMethod } from '../../checkout/enums/EPaymentMethod.enum';
 import { EPaymentStatus } from '../../checkout/enums/EPaymentStatus.enum';
-import { EOrderReturnStatus } from '../enums/order-return.enum';
+import { EOrderReturnType, EOrderReturnStatus } from '../enums/order-return.enum';
 
 export enum EOrderTrackingFilterStatus {
   ALL = 'ALL',
@@ -92,6 +92,23 @@ export class OrderDetailVoucherDto {
   voucherSnapshot: any;
 }
 
+export class OrderReturnRequestDetailDto {
+  id: string;
+  orderId: string;
+  type: EOrderReturnType;
+  status: EOrderReturnStatus;
+  title: string;
+  reason: string;
+  proofImages: string[];
+  proofVideos: string[];
+  bankName?: string | null;
+  bankAccountNumber?: string | null;
+  bankAccountHolder?: string | null;
+  refundProofUrl?: string | null;
+  adminNote?: string | null;
+  createdAt: Date;
+}
+
 export class OrderDetailDto {
   id: string;
   createdAt: Date;
@@ -114,4 +131,5 @@ export class OrderDetailDto {
   cancelReason?: string;
   returnStatus?: EOrderReturnStatus;
   newOrderId?: string;
+  returnRequest?: OrderReturnRequestDetailDto;
 }

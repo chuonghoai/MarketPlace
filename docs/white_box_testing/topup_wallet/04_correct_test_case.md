@@ -1,0 +1,13 @@
+# 04. Bảng Test Cases bao phủ nhánh (Branch Coverage)
+
+| Kịch bản | Mã test case | Đường thi hành | Điều kiện đầu vào | Kết quả mong đợi | Trạng thái |
+|:---|:---|:---|:---|:---|:---:|
+| Kịch bản 1 | TC01 | 1 -> 2 -> 4 -> Exit | `amount = 0` hoặc `null` (`!amount = true`) | Ném ra `BadRequestException` 'Số tiền nạp tối thiểu là 10.000 ₫' | Pass |
+| Kịch bản 2 | TC02 | 1 -> 2 -> 3 -> 4 -> Exit | `amount = 5000` (`!amount = false`, `amount < 10000 = true`) | Ném ra `BadRequestException` 'Số tiền nạp tối thiểu là 10.000 ₫' | Pass |
+| Kịch bản 3 | TC03 | 1 -> 2 -> 3 -> 5 -> 6 -> 7 -> 8 -> Exit | `amount = 50000`, `paymentMethod = 'VNPAY'` | Tạo URL thanh toán VNPAY thành công, trả về `{ paymentRequired: true, paymentUrl, txRef, amount }` | Pass |
+| Kịch bản 4 | TC04 | 1 -> 2 -> 3 -> 5 -> 9 -> 10 -> 11 -> 12 -> Exit | `amount = 50000`, `paymentMethod = 'MOMO'` | Tạo URL thanh toán MOMO thành công, trả về `{ paymentRequired: true, paymentUrl, txRef, amount }` | Pass |
+| Kịch bản 5 | TC05 | 1 -> 2 -> 3 -> 5 -> 9 -> 13 -> 14 -> 15 -> 16 -> Exit | `amount = 50000`, `paymentMethod = 'PAYPAL'` | Tạo URL thanh toán PayPal thành công, trả về `{ paymentRequired: true, paymentUrl, txRef, amount }` | Pass |
+| Kịch bản 6 | TC06 | 1 -> 2 -> 3 -> 5 -> 9 -> 13 -> 17 -> 18 -> 19 -> 20 -> 21 -> 34 -> 35 -> 36 -> 37 -> Exit | `amount = 50000`, `paymentMethod = 'DIRECT'`, xảy ra lỗi DB khi truy vấn trong `try` | Khối `catch` bắt ngoại lệ, thực hiện rollback transaction, giải phóng queryRunner và rethrow lỗi | Pass |
+| Kịch bản 7 | TC07 | 1 -> 2 -> 3 -> 5 -> 9 -> 13 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22 -> 23 -> 34 -> 35 -> 36 -> 37 -> Exit | `amount = 50000`, `paymentMethod = 'DIRECT'`, query ví không tìm thấy (`!wallet = true`) | Ném ra `NotFoundException` 'Không tìm thấy thông tin ví', rollback transaction, giải phóng queryRunner | Pass |
+| Kịch bản 8 | TC08 | 1 -> 2 -> 3 -> 5 -> 9 -> 13 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22 -> 24 -> 25 -> 34 -> 35 -> 36 -> 37 -> Exit | `amount = 50000`, `paymentMethod = 'DIRECT'`, ví bị tạm khóa (`wallet.status === 'LOCKED'`) | Ném ra `BadRequestException` 'Ví của bạn đang bị tạm khóa', rollback transaction, giải phóng queryRunner | Pass |
+| Kịch bản 9 | TC09 | 1 -> 2 -> 3 -> 5 -> 9 -> 13 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22 -> 24 -> 26 -> 27 -> 28 -> 29 -> 30 -> 31 -> 32 -> 33 -> 37 -> Exit | `amount = 50000`, `paymentMethod = 'DIRECT'`, ví hợp lệ (`status === 'ACTIVE'`) | Cập nhật số dư ví, lưu bản ghi giao dịch `TOPUP`, commit transaction, giải phóng queryRunner, trả về `{ success: true, paymentRequired: false, balance, transaction }` | Pass |
