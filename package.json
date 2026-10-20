@@ -18,6 +18,7 @@
     "test:api": "playwright test --project=api",
     "test:ui": "playwright test --project=ui",
     "test:e2e": "playwright test --project=e2e",
+    "test:web-tests": "playwright test --project=web-tests",
     "test:report": "playwright show-report playwright/playwright-report"
   },
   "devDependencies": {
