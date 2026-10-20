@@ -17,7 +17,7 @@ test.describe('UC21: Quản lý nghệ danh (MKP_099 -> MKP_100)', () => {
           body: JSON.stringify({
             id: 'mock-artisan-future',
             fullName: 'Đạt',
-            birthDate: '2026-10-20',
+            birthDate: '2029-12-31',
           }),
         });
       }
@@ -49,7 +49,7 @@ test.describe('UC21: Quản lý nghệ danh (MKP_099 -> MKP_100)', () => {
 
     await page.locator('input[name="fullName"]').fill('Đạt');
     const birthDateInput = page.locator('input[name="birthDate"]');
-    await birthDateInput.fill('2026-10-20');
+    await birthDateInput.fill('2029-12-31');
 
     const saveBtn = page.getByRole('button', { name: /Lưu thông tin/i });
     await saveBtn.click();

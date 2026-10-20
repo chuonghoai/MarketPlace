@@ -40,7 +40,8 @@ test.describe.serial('Đăng xuất (Logout)', () => {
     
     // 3. Click Đăng xuất trên menu vừa xổ ra
     const logoutBtn = page.getByRole('button', { name: 'Đăng xuất' });
-    await logoutBtn.click();
+    await expect(logoutBtn).toBeVisible({ timeout: 5000 });
+    await logoutBtn.click({ force: true });
 
     // 4. Xác nhận chuyển hướng về trang login
     await expect(page).toHaveURL(/.*\/login/);

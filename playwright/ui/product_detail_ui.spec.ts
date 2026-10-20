@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginViaUI, TEST_USERS } from '../helpers/auth.helper';
 
 test.describe('Giao diện - Chi tiết sản phẩm', () => {
   let sampleProductId: string;
@@ -24,20 +25,40 @@ test.describe('Giao diện - Chi tiết sản phẩm', () => {
     await expect(page.getByRole('button', { name: 'Thêm vào giỏ', exact: true })).toBeVisible({ timeout: 10000 });
   });
 
-  test('Cho phép tăng và giảm số lượng sản phẩm dự định mua', async ({ page }) => {
+  test('Kiểm tra giới hạn số lượng tối thiểu không cho giảm dưới 1 (MKP_046)', async ({ page }) => {
     if (!sampleProductId) test.skip();
 
     await page.goto(`/product/${sampleProductId}`, { waitUntil: 'domcontentloaded' });
 
+    const decreaseBtn = page.getByRole('button', { name: 'Giảm số lượng' });
     const increaseBtn = page.getByRole('button', { name: 'Tăng số lượng' });
-    if (await increaseBtn.isVisible({ timeout: 5000 })) {
-      await increaseBtn.click();
-      const qtyInput = page.locator('input[type="number"][readonly]');
-      await expect(qtyInput).toHaveValue('2');
+    const qtyInput = page.locator('input[type="number"][readonly]');
 
-      const decreaseBtn = page.getByRole('button', { name: 'Giảm số lượng' });
+    if (await decreaseBtn.isVisible({ timeout: 5000 })) {
+      // 1. Số lượng mặc định = 1
+      await expect(qtyInput).toHaveValue('1');
+
+      // 2. Nút trừ (-) bị vô hiệu hóa (disabled) khi số lượng = 1
+      await expect(decreaseBtn).toBeDisabled();
+
+      // 3. Click nút trừ (-) khi đang ở biên dưới không làm số lượng giảm dưới 1
+      await decreaseBtn.click({ force: true }).catch(() => {});
+      await expect(qtyInput).toHaveValue('1');
+
+      // Thử click thêm 2 lần liên tiếp để đảm bảo số lượng không về 0 hay âm
+      await decreaseBtn.click({ force: true }).catch(() => {});
+      await decreaseBtn.click({ force: true }).catch(() => {});
+      await expect(qtyInput).toHaveValue('1');
+
+      // 4. Bấm nút cộng (+) để tăng lên 2 -> nút trừ (-) được kích hoạt lại
+      await increaseBtn.click();
+      await expect(qtyInput).toHaveValue('2');
+      await expect(decreaseBtn).toBeEnabled();
+
+      // 5. Bấm nút trừ (-) để giảm về 1 -> nút trừ (-) trở lại trạng thái disabled
       await decreaseBtn.click();
       await expect(qtyInput).toHaveValue('1');
+      await expect(decreaseBtn).toBeDisabled();
     }
   });
 
@@ -144,5 +165,83 @@ test.describe('Giao diện - Chi tiết sản phẩm', () => {
     // Slug không có ID
     await page.goto('/tuong-phat-di-lac-dang-vang', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/^(http:\/\/localhost:5173\/|\/)$/, { timeout: 10000 });
+  });
+
+  test('Kiểm tra truy cập trang chi tiết sản phẩm với UUID v4 hợp lệ nhưng không tồn tại trong hệ thống (MKP_048)', async ({ page }) => {
+    // UUID v4 hợp lệ nhưng không tồn tại trong DB
+    const nonExistentUuid = '00000000-0000-4000-a000-000000000000';
+    let apiStatus = 0;
+
+    page.on('response', (res) => {
+      if (res.url().includes(`/products/${nonExistentUuid}`)) {
+        apiStatus = res.status();
+      }
+    });
+
+    await page.goto(`/product/${nonExistentUuid}`, { waitUntil: 'domcontentloaded' });
+
+    // Đợi phản hồi API và chuyển hướng an toàn
+    await page.waitForTimeout(1000);
+
+    // Xác nhận API backend trả về 404 cho sản phẩm không tồn tại nếu nhận response
+    if (apiStatus > 0) {
+      expect(apiStatus).toBe(404);
+    }
+
+    // Xác nhận hệ thống điều hướng an toàn về trang chủ (hoặc trang lỗi 404)
+    await expect(page).toHaveURL(/^(http:\/\/localhost:5173\/|\/)$/, { timeout: 10000 });
+
+    // Xác nhận hiển thị thông báo lỗi phù hợp
+    const toast = page.locator('.fixed').getByText(/Sản phẩm không tồn tại|lỗi/i).first();
+    await expect(toast).toBeVisible({ timeout: 5000 });
+
+    // Không render thông tin sản phẩm giả hoặc crash trắng trang
+    await expect(page.locator('h1')).not.toHaveText(nonExistentUuid);
+  });
+
+  test('Kiểm tra thêm và bỏ sản phẩm vào danh sách yêu thích từ trang chi tiết (MKP_050)', async ({ page }) => {
+    if (!sampleProductId) test.skip();
+
+    // 1. Đăng nhập tài khoản kiểm thử
+    await loginViaUI(page, TEST_USERS.client);
+
+    // 2. Mở trang chi tiết sản phẩm hợp lệ
+    await page.goto(`/product/${sampleProductId}`, { waitUntil: 'domcontentloaded' });
+
+    const favButton = page.locator('[data-testid="product-favorite-button"]').first();
+    await expect(favButton).toBeVisible({ timeout: 10000 });
+
+    // Lấy trạng thái yêu thích ban đầu
+    const initialLabel = await favButton.getAttribute('aria-label');
+    const wasFavorite = initialLabel === 'Bỏ yêu thích';
+
+    // 3. Click nút yêu thích
+    await favButton.click();
+
+    // 4. Kiểm tra hiển thị Toast thông báo thành công
+    const expectedToastRegex = wasFavorite
+      ? /xóa khỏi bộ sưu tập yêu thích|xóa khỏi|thành công/i
+      : /thêm vào bộ sưu tập yêu thích|thêm vào|thành công/i;
+    const toast = page.locator('.fixed').getByText(expectedToastRegex);
+    await expect(toast).toBeVisible({ timeout: 5000 });
+
+    // 5. Kiểm tra trạng thái nút thay đổi
+    const expectedLabel = wasFavorite ? 'Yêu thích' : 'Bỏ yêu thích';
+    await expect(favButton).toHaveAttribute('aria-label', expectedLabel, { timeout: 5000 });
+
+    // 6. Tải lại trang (F5) để kiểm tra trạng thái yêu thích được lưu bền vững
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const reloadedFavBtn = page.locator('[data-testid="product-favorite-button"]').first();
+    await expect(reloadedFavBtn).toBeVisible({ timeout: 10000 });
+    await expect(reloadedFavBtn).toHaveAttribute('aria-label', expectedLabel, { timeout: 5000 });
+
+    // 7. Click lại lần nữa để khôi phục trạng thái ban đầu
+    await reloadedFavBtn.click();
+    const restoreToastRegex = wasFavorite
+      ? /thêm vào bộ sưu tập yêu thích|thêm vào|thành công/i
+      : /xóa khỏi bộ sưu tập yêu thích|xóa khỏi|thành công/i;
+    const restoreToast = page.locator('.fixed').getByText(restoreToastRegex);
+    await expect(restoreToast).toBeVisible({ timeout: 5000 });
+    await expect(reloadedFavBtn).toHaveAttribute('aria-label', initialLabel || 'Yêu thích', { timeout: 5000 });
   });
 });
