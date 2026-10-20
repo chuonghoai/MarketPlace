@@ -7,11 +7,29 @@ on:
     branches: [main, dev]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name == 'dev' }}
+
 jobs:
   test:
-    name: Run Playwright Test Suite
+    name: ${{ matrix.name }}
     timeout-minutes: 60
     runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: 'api'
+            name: 'API Tests'
+            flags: '--project=api'
+          - id: 'ui-e2e'
+            name: 'UI & E2E Tests'
+            flags: '--project=ui --project=e2e'
+          - id: 'unit-web'
+            name: 'Unit & Web Tests'
+            flags: '--project=unit --project=web-tests'
 
     env:
       CI: 'true'
@@ -121,13 +139,13 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Run Playwright Tests
-        run: npm run test:all
+        run: npx playwright test ${{ matrix.flags }}
 
       - name: Upload Playwright Report & Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.id }}
           path: |
             playwright/playwright-report/
             playwright/test-results/

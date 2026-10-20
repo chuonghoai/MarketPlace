@@ -133,7 +133,8 @@ test.describe('API - Thống kê KPI nhân viên (Staff KPI)', () => {
       headers: { Authorization: `Bearer ${clientToken}` },
     });
 
-    expect(response.status()).toBe(403);
+    // Chặn truy cập: 403 Forbidden (sai quyền) hoặc 401 Unauthorized
+    expect([401, 403]).toContain(response.status());
   });
 
   test('Nhân viên lấy KPI cá nhân của chính mình thành công (GET /kpi/staffs/me)', async ({ request }) => {

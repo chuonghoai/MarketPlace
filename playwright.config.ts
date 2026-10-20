@@ -75,7 +75,7 @@ export default defineConfig({
     },
     {
       name: 'web-tests',
-      testDir: './web/tests',
+      testDir: './playwright/web-tests',
       use: {
         ...devices['Desktop Chrome'],
         headless: isHeadless,
